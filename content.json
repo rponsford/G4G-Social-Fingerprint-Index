@@ -2,10 +2,30 @@
  "_readme": "All words, cards, questions, and organization settings for the Social Fingerprint Index live in this file. Edit text here; the page picks up changes automatically within about 10 minutes.",
  "endpoint": "",
  "videos": {
-  "welcome": "pw-E1mfhYsI",
-  "cause": "zB36gRz_iF4",
-  "strength": "tmT21iacCrg",
-  "wrap": "CVXu9WLZ5MI"
+  "welcome": {
+   "id": "pw-E1mfhYsI",
+   "start": 0,
+   "end": 0,
+   "title": "Welcome"
+  },
+  "causes": {
+   "id": "zB36gRz_iF4",
+   "start": 0,
+   "end": 0,
+   "title": "Picking your causes"
+  },
+  "strengths": {
+   "id": "tmT21iacCrg",
+   "start": 0,
+   "end": 0,
+   "title": "Becoming a philanthropist"
+  },
+  "wrap": {
+   "id": "CVXu9WLZ5MI",
+   "start": 0,
+   "end": 0,
+   "title": "What now"
+  }
  },
  "sections": {
   "cause": {
@@ -14,7 +34,11 @@
    "eyebrow": "Part 1 · Your causes",
    "title": "What moves you?",
    "title_named": "What moves you, {name}?",
-   "intro": "You'll see 20 cards, each an area of need in our world. Keep the ones that tug at you, set aside the ones that don't, and mark Maybe when you're not sure."
+   "intro": "You'll see 20 cards, each an area of need in our world. Keep the ones that tug at you, set aside the ones that don't, and mark Maybe when you're not sure.",
+   "video_after_six": "causes",
+   "six_title": "You've found your top 6",
+   "six_text": "Before you choose your final three, take a moment with this short video about picking your causes.",
+   "six_button": "Choose my top 3"
   },
   "strength": {
    "noun": "strength",
@@ -22,7 +46,8 @@
    "eyebrow": "Part 2 · Your strengths",
    "title": "There's more to giving than money",
    "title_named": "There's more to giving than money",
-   "intro": "Each of us has skills and abilities that can help the causes we care about. Now let's find the things you're really good at."
+   "intro": "Each of us has skills and abilities that can help the causes we care about. Now let's find the things you're really good at.",
+   "video_intro": "strengths"
   }
  },
  "cards": {
@@ -753,7 +778,8 @@
     "name": "Another Strength",
     "tag": "I have a strength or skill that isn't listed here.",
     "items": [],
-    "search": []
+    "search": [],
+    "pin_last": true
    }
   ]
  },
@@ -923,8 +949,10 @@
     "Get connected to organizations that match my causes",
     "Join a giving project with others who share my causes",
     "Bring this experience to my family, friends, or organization",
+    "Join the Gateway for Good Community",
     "I'm not ready to take action yet"
    ]
   }
- }
+ },
+ "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). Example: start 0, end 90 plays only the first minute and a half."
 }

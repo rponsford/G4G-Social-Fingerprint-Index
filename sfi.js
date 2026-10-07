@@ -36,7 +36,9 @@
     for (const id in Q) if (Q[id].opts === "FROM_INDEX") Q[id].opts = IDX.next_steps;
     const FLOW = CONTENT.flow;
     const RID = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2));
-    function video(key){ const id=(CONTENT.videos||{})[key]; return id?`<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1" title="Video" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`:"" }
+    function video(key){ let v=(CONTENT.videos||{})[key]; if(!v) return ""; if(typeof v==="string") v={id:v}; if(!v.id) return "";
+      let q="rel=0&playsinline=1&modestbranding=1"; if(v.start) q+="&start="+parseInt(v.start,10); if(v.end) q+="&end="+parseInt(v.end,10);
+      return `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${v.id}?${q}" title="${esc(v.title||"Video")}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>` }
     function payload(){
       const ids = k => (S.results[k]||[]).map(x=>x.id);
       return { response_id: RID, submitted_at: new Date().toISOString(), index: idxId, group: GROUP,
@@ -52,7 +54,7 @@
 const byId = {}; for (const k of ["cause","strength"]) DATA[k].forEach(c=>byId[k+":"+c.id]=c);
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let S={name:"",sec:"cause",phase:"welcome",results:{}};
-function fresh(sec){return {sec,deck:shuffle(DATA[sec].map(c=>c.id)),idx:0,keep:[],maybe:[],out:[],hist:[],sel:[],ring:[],ranked:[]}}
+function fresh(sec){const free=DATA[sec].filter(c=>!c.pin_last).map(c=>c.id), last=DATA[sec].filter(c=>c.pin_last).map(c=>c.id);return {sec,deck:shuffle(free).concat(last),idx:0,keep:[],maybe:[],out:[],hist:[],sel:[],ring:[],ranked:[]}}
 let T=fresh("cause");
 const $=s=>root.querySelector(s), app=$("#app");
 const get=id=>byId[T.sec+":"+id];
@@ -91,7 +93,7 @@ intro(){
   <li>Swipe right or tap <b>Keep</b>. Swipe left or tap <b>Not for me</b>.</li>
   <li>Tap a card or the <b>i</b> to see what it includes.</li>
   <li>Then you'll narrow to 6, pick your top 3, and rank them.</li></ul></div>
-  ${video(T.sec)}
+  ${video(x.video_intro||"")}
   <button class="primary" id="go">Start sorting</button>`;
   $("#go").onclick=()=>go("sort");
 },
@@ -112,7 +114,7 @@ six(){
     if(i>=0)T.sel.splice(i,1); else if(T.sel.length<need)T.sel.push(id); else{b.classList.add("shake");setTimeout(()=>b.classList.remove("shake"),400);toast("You already have 6. Tap one to swap it out.");return}
     const y=scrollY;render();scrollTo(0,y);
   });
-  $("#go").onclick=()=>{T.six=[...T.sel];T.ring=[];go("ring")};
+  $("#go").onclick=()=>{T.six=[...T.sel];T.ring=[];go(TEXT[T.sec].video_after_six?"sixvideo":"ring")};
 },
 ring(){
   app.innerHTML=`<div class="eyebrow">${TEXT[T.sec].eyebrow}</div><h2>Now choose your top 3</h2>
@@ -230,7 +232,7 @@ R.checkpoint=function(){
   <button class="primary" id="go">${btn}</button>`;
   $("#go").onclick=()=>{
     if(T.cp==="maybe"){T.deck=shuffle(T.maybe);T.idx=0;T.hist=[];go("maybe");return}
-    T.sel=[]; if(k===6){T.six=[...T.keep];T.ring=[];go("ring")} else go("six");
+    T.sel=[]; if(k===6){T.six=[...T.keep];T.ring=[];go(TEXT[T.sec].video_after_six?"sixvideo":"ring")} else go("six");
   };
 };
 
@@ -306,6 +308,14 @@ function recordHTML(){
   return `<details class="panel rec"><summary>Review: what we'd record for this person</summary><div class="tbl"><table>${rows.map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join("")}</table></div></details>`;
 }
 
+R.sixvideo=function(){
+  const x=TEXT[T.sec];
+  app.innerHTML=`<div class="eyebrow">${x.eyebrow}</div><h2>${esc(x.six_title||"Your top 6")}</h2>
+  <div class="strip">${T.six.map(id=>`<img src="${get(id).img}" alt="${esc(get(id).name)}">`).join("")}</div>
+  <p>${esc(x.six_text||"")}</p>${video(x.video_after_six)}
+  <button class="primary" id="go">${esc(x.six_button||"Continue")}</button>`;
+  $("#go").onclick=()=>go("ring");
+};
 function render(){R[S.phase]()}
 render();
 
