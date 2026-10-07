@@ -6,6 +6,12 @@
    "id": "pw-E1mfhYsI",
    "start": 0,
    "end": 0,
+   "skip": [
+    [
+     48,
+     75
+    ]
+   ],
    "title": "Welcome"
   },
   "causes": {
@@ -954,5 +960,5 @@
    ]
   }
  },
- "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). Example: start 0, end 90 plays only the first minute and a half."
+ "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15."
 }
