@@ -1,0 +1,930 @@
+{
+ "_readme": "All words, cards, questions, and organization settings for the Social Fingerprint Index live in this file. Edit text here; the page picks up changes automatically within about 10 minutes.",
+ "endpoint": "",
+ "videos": {
+  "welcome": "pw-E1mfhYsI",
+  "cause": "zB36gRz_iF4",
+  "strength": "tmT21iacCrg",
+  "wrap": "CVXu9WLZ5MI"
+ },
+ "sections": {
+  "cause": {
+   "noun": "cause",
+   "plural": "causes",
+   "eyebrow": "Part 1 · Your causes",
+   "title": "What moves you?",
+   "title_named": "What moves you, {name}?",
+   "intro": "You'll see 20 cards, each an area of need in our world. Keep the ones that tug at you, set aside the ones that don't, and mark Maybe when you're not sure."
+  },
+  "strength": {
+   "noun": "strength",
+   "plural": "strengths",
+   "eyebrow": "Part 2 · Your strengths",
+   "title": "There's more to giving than money",
+   "title_named": "There's more to giving than money",
+   "intro": "Each of us has skills and abilities that can help the causes we care about. Now let's find the things you're really good at."
+  }
+ },
+ "cards": {
+  "cause": [
+   {
+    "id": "animal",
+    "name": "Animal Care",
+    "tag": "Protecting the well-being of animals, both companion and wild.",
+    "items": [
+     "Animal shelters and rescue",
+     "Pet adoption and fostering",
+     "Spay, neuter, and veterinary care",
+     "Wildlife rehabilitation and habitat protection",
+     "Humane treatment and anti-cruelty efforts"
+    ],
+    "search": [
+     "animal rescue",
+     "animal shelter",
+     "pet adoption",
+     "wildlife rehabilitation",
+     "wildlife conservation",
+     "zoos and aquariums"
+    ]
+   },
+   {
+    "id": "arts",
+    "name": "Arts & Culture",
+    "tag": "Creating and sharing art that enriches communities and inspires people.",
+    "items": [
+     "Museums and galleries",
+     "Theater, music, and dance",
+     "Public art and murals",
+     "Arts education and youth arts programs",
+     "Public radio, television, and community media"
+    ],
+    "search": [
+     "performing arts",
+     "community theater",
+     "art museum",
+     "arts education",
+     "public media",
+     "community arts center"
+    ]
+   },
+   {
+    "id": "cultural",
+    "name": "Cultural Preservation",
+    "tag": "Keeping the traditions, languages, and identities of communities alive.",
+    "items": [
+     "Indigenous and tribal heritage",
+     "Language preservation and revitalization",
+     "Oral history and storytelling",
+     "Traditional crafts, music, and foodways",
+     "Cultural centers and heritage festivals"
+    ],
+    "search": [
+     "cultural heritage",
+     "indigenous culture",
+     "language revitalization",
+     "heritage center",
+     "folk arts",
+     "oral history project"
+    ]
+   },
+   {
+    "id": "historic",
+    "name": "Historic Preservation",
+    "tag": "Protecting the places, buildings, and records that tell our shared story.",
+    "items": [
+     "Restoring landmarks and historic buildings",
+     "Historical societies and local archives",
+     "Historic sites and house museums",
+     "Monuments and memorials",
+     "Heritage trails and preservation education"
+    ],
+    "search": [
+     "historical society",
+     "historic preservation",
+     "landmark restoration",
+     "local history archive",
+     "historic site"
+    ]
+   },
+   {
+    "id": "children",
+    "name": "Children & Youth",
+    "tag": "Helping kids and teens grow up safe, supported, and ready for life.",
+    "items": [
+     "Mentoring and after school programs",
+     "Foster care and adoption",
+     "Youth sports, scouting, and camps",
+     "Leadership and life skills for teens",
+     "Support for youth in crisis"
+    ],
+    "search": [
+     "youth mentoring",
+     "after school program",
+     "foster care",
+     "youth development",
+     "youth sports",
+     "teen leadership"
+    ]
+   },
+   {
+    "id": "elder",
+    "name": "Elder Care",
+    "tag": "Helping older adults live with dignity, health, and connection.",
+    "items": [
+     "Senior centers and social programs",
+     "Home delivered meals and friendly visits",
+     "Help for aging in place",
+     "Memory care and dementia support",
+     "Family caregiver support and hospice"
+    ],
+    "search": [
+     "senior services",
+     "aging in place",
+     "home delivered meals",
+     "senior companion",
+     "caregiver support",
+     "hospice"
+    ]
+   },
+   {
+    "id": "education",
+    "name": "Educational Institutions",
+    "tag": "Strengthening schools, colleges, and the students they serve.",
+    "items": [
+     "Preschool and early learning",
+     "Elementary, middle, and high schools",
+     "Colleges, universities, and trade schools",
+     "Scholarships and financial aid",
+     "Teachers, classrooms, and special education"
+    ],
+    "search": [
+     "school foundation",
+     "scholarship fund",
+     "college access",
+     "teacher support",
+     "STEM education",
+     "special education"
+    ]
+   },
+   {
+    "id": "informal",
+    "name": "Informal Education",
+    "tag": "Learning that happens outside the classroom, at every age.",
+    "items": [
+     "Libraries and reading programs",
+     "Adult literacy, GED, and English classes",
+     "Science and nature centers",
+     "Financial literacy and life skills",
+     "Community workshops and lifelong learning"
+    ],
+    "search": [
+     "library foundation",
+     "adult literacy",
+     "English language classes",
+     "nature center",
+     "financial literacy",
+     "lifelong learning"
+    ]
+   },
+   {
+    "id": "emergency",
+    "name": "Emergency & Disaster Relief",
+    "tag": "Helping communities prepare for, respond to, and recover from crises.",
+    "items": [
+     "Disaster response and relief supplies",
+     "Search and rescue and emergency volunteers",
+     "Emergency shelter, food, and water",
+     "Disaster preparedness training",
+     "Long term rebuilding, at home and abroad"
+    ],
+    "search": [
+     "disaster relief",
+     "emergency preparedness",
+     "search and rescue",
+     "humanitarian aid",
+     "disaster recovery"
+    ]
+   },
+   {
+    "id": "environment",
+    "name": "Environmental",
+    "tag": "Caring for the land, water, and air that sustain all life.",
+    "items": [
+     "Land and habitat conservation",
+     "Clean water and clean air",
+     "Parks, trails, and green spaces",
+     "Recycling and waste reduction",
+     "Energy conservation and climate solutions"
+    ],
+    "search": [
+     "land trust",
+     "watershed protection",
+     "conservation",
+     "parks foundation",
+     "tree planting",
+     "botanical garden"
+    ]
+   },
+   {
+    "id": "family",
+    "name": "Family Services",
+    "tag": "Helping families stay strong, stable, and safe.",
+    "items": [
+     "Parenting education and support",
+     "Affordable childcare",
+     "Family counseling",
+     "Domestic violence shelters and support",
+     "Help for single parents and kinship caregivers"
+    ],
+    "search": [
+     "family resource center",
+     "parenting classes",
+     "childcare assistance",
+     "family counseling",
+     "domestic violence shelter"
+    ]
+   },
+   {
+    "id": "research",
+    "name": "Health Research",
+    "tag": "Advancing science to prevent, treat, and cure disease.",
+    "items": [
+     "Cancer research",
+     "Heart, lung, and chronic disease research",
+     "Brain health and dementia research",
+     "Mental health research",
+     "Rare and genetic disease research"
+    ],
+    "search": [
+     "medical research",
+     "disease research",
+     "clinical trials",
+     "cure research",
+     "research foundation"
+    ]
+   },
+   {
+    "id": "hospitals",
+    "name": "Hospitals & Medical Care",
+    "tag": "Making quality medical care available to patients and their families.",
+    "items": [
+     "Hospitals and children's hospitals",
+     "Free and community clinics",
+     "Patient and family support",
+     "Medical equipment and facilities",
+     "Dental and vision care access"
+    ],
+    "search": [
+     "hospital foundation",
+     "free clinic",
+     "community health center",
+     "patient assistance",
+     "children's hospital"
+    ]
+   },
+   {
+    "id": "pubhealth",
+    "name": "Public Health",
+    "tag": "Keeping whole communities healthy through prevention and education.",
+    "items": [
+     "Disease prevention and immunization",
+     "Maternal and infant health",
+     "Addiction prevention and recovery",
+     "Health education and wellness",
+     "Community health outreach"
+    ],
+    "search": [
+     "public health",
+     "health education",
+     "addiction recovery",
+     "maternal health",
+     "wellness program"
+    ]
+   },
+   {
+    "id": "housing",
+    "name": "Housing",
+    "tag": "Helping people find and keep a safe, stable place to call home.",
+    "items": [
+     "Affordable housing",
+     "Homeless shelters and services",
+     "Transitional and supportive housing",
+     "Home repair and accessibility changes",
+     "Rent, utility, and homebuyer assistance"
+    ],
+    "search": [
+     "affordable housing",
+     "homeless services",
+     "supportive housing",
+     "home repair",
+     "housing assistance",
+     "neighborhood development"
+    ]
+   },
+   {
+    "id": "hunger",
+    "name": "Hunger",
+    "tag": "Making sure everyone has enough nutritious food to eat.",
+    "items": [
+     "Food banks and food pantries",
+     "Community meals and soup kitchens",
+     "School and summer meals for kids",
+     "Community gardens and fresh food access",
+     "Food rescue and nutrition education"
+    ],
+    "search": [
+     "food bank",
+     "food pantry",
+     "soup kitchen",
+     "food rescue",
+     "community garden",
+     "meal program"
+    ]
+   },
+   {
+    "id": "disability",
+    "name": "Physical & Mental Disabilities",
+    "tag": "Helping people with disabilities live full, independent lives.",
+    "items": [
+     "Accessibility and inclusion",
+     "Mental health services and support groups",
+     "Adaptive sports and recreation",
+     "Independent living and job skills",
+     "Assistive technology and caregiver respite"
+    ],
+    "search": [
+     "disability services",
+     "adaptive sports",
+     "independent living",
+     "special needs",
+     "mental health support",
+     "assistive technology"
+    ]
+   },
+   {
+    "id": "religious",
+    "name": "Religious & Spiritual",
+    "tag": "Nurturing faith, spiritual growth, and communities of belief.",
+    "items": [
+     "Local congregations and faith communities",
+     "Faith based service and outreach",
+     "Mission and service trips",
+     "Chaplaincy in hospitals, prisons, and the military",
+     "Interfaith understanding"
+    ],
+    "search": [
+     "church",
+     "synagogue",
+     "mosque",
+     "temple",
+     "faith based nonprofit",
+     "ministry",
+     "interfaith"
+    ]
+   },
+   {
+    "id": "justice",
+    "name": "Civil Rights & Civic Engagement",
+    "tag": "Working toward fair treatment, equal rights, and a voice for everyone.",
+    "items": [
+     "Civil and human rights",
+     "Voter education and civic engagement",
+     "Legal aid and access to justice",
+     "Justice reform and reentry support",
+     "Economic opportunity and job training"
+    ],
+    "search": [
+     "civil rights",
+     "legal aid",
+     "civic engagement",
+     "reentry program",
+     "workforce development",
+     "equal opportunity"
+    ]
+   },
+   {
+    "id": "vets",
+    "name": "Veterans & First Responders",
+    "tag": "Supporting those who serve and protect, and the families who stand behind them.",
+    "items": [
+     "Career and transition support for veterans",
+     "Post traumatic stress and mental health care",
+     "Support for military and first responder families",
+     "Training and equipment for firefighters, police, and EMS",
+     "Honoring service, memorials, and fallen heroes"
+    ],
+    "search": [
+     "veteran services",
+     "military families",
+     "first responder support",
+     "volunteer fire department",
+     "fallen heroes fund",
+     "service dogs for veterans"
+    ]
+   }
+  ],
+  "strength": [
+   {
+    "id": "admin",
+    "name": "Administrator",
+    "tag": "I keep things running smoothly behind the scenes, from records to schedules to the details others miss.",
+    "items": [
+     "Managing volunteer schedules and sign ups",
+     "Keeping donor and member records current",
+     "Handling correspondence and paperwork",
+     "Serving as secretary for a board or committee"
+    ],
+    "search": [
+     "administrative volunteer",
+     "office support",
+     "data entry",
+     "board secretary"
+    ]
+   },
+   {
+    "id": "artist",
+    "name": "Artist",
+    "tag": "I create art, design, or stories that stir emotion and move people to act.",
+    "items": [
+     "Designing flyers, logos, and event materials",
+     "Photographing or filming an organization's work",
+     "Donating artwork for auctions and fundraisers",
+     "Leading art activities for kids, seniors, or patients"
+    ],
+    "search": [
+     "graphic design volunteer",
+     "photography volunteer",
+     "mural project",
+     "creative volunteer"
+    ]
+   },
+   {
+    "id": "connector",
+    "name": "Connector",
+    "tag": "I love introducing people and helping new relationships grow.",
+    "items": [
+     "Introducing leaders to donors, partners, or board members",
+     "Recruiting friends and colleagues as volunteers",
+     "Opening doors to businesses and community groups",
+     "Welcoming newcomers and helping them find their place"
+    ],
+    "search": [
+     "volunteer recruitment",
+     "community partnerships",
+     "board recruitment",
+     "networking"
+    ]
+   },
+   {
+    "id": "craft",
+    "name": "Craftsperson",
+    "tag": "I enjoy building, fixing, and making things with my hands.",
+    "items": [
+     "Home repair and building projects",
+     "Fixing up facilities, playgrounds, and parks",
+     "Making handmade items to donate or sell at fundraisers",
+     "Teaching a trade or hands on skill"
+    ],
+    "search": [
+     "home repair volunteer",
+     "build day",
+     "handyman volunteer",
+     "skilled trades"
+    ]
+   },
+   {
+    "id": "educator",
+    "name": "Educator",
+    "tag": "I explain things in a way that helps people understand and grow.",
+    "items": [
+     "Tutoring or mentoring students",
+     "Teaching workshops or classes",
+     "Training volunteers and staff",
+     "Helping the public understand a cause"
+    ],
+    "search": [
+     "tutoring",
+     "mentoring",
+     "literacy volunteer",
+     "workshop instructor"
+    ]
+   },
+   {
+    "id": "facilitator",
+    "name": "Facilitator",
+    "tag": "I listen well and help groups think things through and find a clear path forward.",
+    "items": [
+     "Leading planning sessions and retreats",
+     "Guiding board or committee discussions",
+     "Running listening sessions and focus groups",
+     "Leading support or discussion groups"
+    ],
+    "search": [
+     "meeting facilitation",
+     "strategic planning volunteer",
+     "support group leader",
+     "focus groups"
+    ]
+   },
+   {
+    "id": "host",
+    "name": "Host",
+    "tag": "I create welcoming spaces and gatherings that bring people together.",
+    "items": [
+     "Hosting fundraisers, dinners, or house parties",
+     "Planning and running events",
+     "Welcoming guests and new members",
+     "Opening a home or venue for gatherings"
+    ],
+    "search": [
+     "event volunteer",
+     "host committee",
+     "event planning",
+     "hospitality volunteer"
+    ]
+   },
+   {
+    "id": "influencer",
+    "name": "Influencer",
+    "tag": "People trust my voice and follow my lead, online and in my community.",
+    "items": [
+     "Raising awareness through my platform or network",
+     "Lending my name to a campaign",
+     "Inspiring others to give or volunteer",
+     "Speaking at events or in the media"
+    ],
+    "search": [
+     "ambassador",
+     "spokesperson",
+     "awareness campaign",
+     "peer to peer fundraising"
+    ]
+   },
+   {
+    "id": "innovator",
+    "name": "Innovator",
+    "tag": "I come up with fresh ideas and bring them to life.",
+    "items": [
+     "Designing new programs or services",
+     "Finding new ways to raise money",
+     "Testing new approaches to old problems",
+     "Starting a new giving project or initiative"
+    ],
+    "search": [
+     "social innovation",
+     "social entrepreneurship",
+     "program design",
+     "pilot program"
+    ]
+   },
+   {
+    "id": "investor",
+    "name": "Investor",
+    "tag": "I put my financial resources to work for causes, and I look for real impact from every dollar.",
+    "items": [
+     "Making strategic, recurring gifts",
+     "Funding a program, scholarship, or matching challenge",
+     "Impact investing and loans to social ventures",
+     "Giving through a donor advised fund or family foundation"
+    ],
+    "search": [
+     "impact investing",
+     "donor advised fund",
+     "matching gift",
+     "giving circle",
+     "family foundation"
+    ]
+   },
+   {
+    "id": "mediator",
+    "name": "Mediator",
+    "tag": "I help people with opposing views find common ground and reach agreement.",
+    "items": [
+     "Resolving conflicts on boards or in community groups",
+     "Volunteering with community mediation programs",
+     "Building bridges between divided groups",
+     "Helping neighbors and families work through disputes"
+    ],
+    "search": [
+     "community mediation",
+     "conflict resolution",
+     "restorative justice",
+     "dialogue programs"
+    ]
+   },
+   {
+    "id": "organizer",
+    "name": "Organizer",
+    "tag": "I design systems and processes that make things more efficient and organized.",
+    "items": [
+     "Streamlining how an organization works",
+     "Organizing supply drives, inventory, or donation centers",
+     "Creating checklists, templates, and workflows",
+     "Improving how new volunteers get started"
+    ],
+    "search": [
+     "process improvement",
+     "operations volunteer",
+     "logistics volunteer",
+     "inventory management"
+    ]
+   },
+   {
+    "id": "professional",
+    "name": "Professional",
+    "tag": "I share my professional expertise and business experience to help organizations succeed.",
+    "items": [
+     "Offering pro bono legal, financial, marketing, or HR help",
+     "Serving on a board or advisory committee",
+     "Mentoring nonprofit leaders",
+     "Helping with strategy, budgets, and planning"
+    ],
+    "search": [
+     "pro bono",
+     "skills based volunteering",
+     "board service",
+     "nonprofit consulting"
+    ]
+   },
+   {
+    "id": "pm",
+    "name": "Project Manager",
+    "tag": "I lead people and projects from the first idea to the finish line.",
+    "items": [
+     "Leading a service project or event from start to finish",
+     "Coordinating volunteer teams",
+     "Managing timelines, budgets, and tasks",
+     "Chairing a committee or campaign"
+    ],
+    "search": [
+     "volunteer coordinator",
+     "project lead",
+     "committee chair",
+     "event chair"
+    ]
+   },
+   {
+    "id": "champion",
+    "name": "Champion",
+    "tag": "I help others see the value of a cause and inspire them to support it.",
+    "items": [
+     "Asking friends, family, and colleagues to give",
+     "Running a fundraising campaign",
+     "Recruiting sponsors and partners",
+     "Speaking up for the cause wherever I go"
+    ],
+    "search": [
+     "fundraising volunteer",
+     "peer to peer fundraising",
+     "sponsorship",
+     "advocacy"
+    ]
+   },
+   {
+    "id": "social",
+    "name": "Social Media Expert",
+    "tag": "I know my way around social media and online tools, and I help others make the most of them.",
+    "items": [
+     "Managing an organization's social accounts",
+     "Creating posts, videos, and online campaigns",
+     "Training staff and volunteers on digital tools",
+     "Promoting events and fundraisers online"
+    ],
+    "search": [
+     "social media volunteer",
+     "digital marketing volunteer",
+     "content creation",
+     "online fundraising"
+    ]
+   },
+   {
+    "id": "tech",
+    "name": "Tech Savvy",
+    "tag": "I'm the one people call for help with computers and technology.",
+    "items": [
+     "Setting up computers, networks, and software",
+     "Building or updating websites",
+     "Teaching digital skills to seniors or families",
+     "Helping organizations choose and use technology"
+    ],
+    "search": [
+     "tech volunteer",
+     "IT support volunteer",
+     "website volunteer",
+     "digital literacy"
+    ]
+   },
+   {
+    "id": "troubleshooter",
+    "name": "Troubleshooter",
+    "tag": "I solve problems and I'm always up for a challenge.",
+    "items": [
+     "Stepping in when something breaks or stalls",
+     "Finding the root cause of recurring problems",
+     "Solving logistics puzzles for events and programs",
+     "Taking on the tough assignments others avoid"
+    ],
+    "search": [
+     "problem solving",
+     "operations support",
+     "crisis response",
+     "logistics"
+    ]
+   },
+   {
+    "id": "volunteer",
+    "name": "Volunteer",
+    "tag": "When I give my time and talents, I'm living my higher purpose, and I'm happy to help wherever I'm needed most.",
+    "items": [
+     "Hands on service days",
+     "Regular shifts at a local organization",
+     "Helping out at events",
+     "Filling in wherever there's a need"
+    ],
+    "search": [
+     "volunteer opportunities",
+     "service day",
+     "volunteer shift",
+     "community service"
+    ]
+   },
+   {
+    "id": "other",
+    "name": "Another Strength",
+    "tag": "I have a strength or skill that isn't listed here.",
+    "items": [],
+    "search": []
+   }
+  ]
+ },
+ "questions": {
+  "belief_pre": {
+   "sec": "Before we begin",
+   "type": "scale",
+   "prompt": "I believe I have the ability to personally make a difference.",
+   "opts": [
+    "No way, not me",
+    "Maybe, but you'd have to show me how",
+    "I'm neutral",
+    "Yes, I can change lives",
+    "I'm definitely going to be part of something big and can change the world"
+   ]
+  },
+  "past12": {
+   "sec": "Before we begin",
+   "type": "multi",
+   "prompt": "In the past 12 months, I have...",
+   "help": "Check all that apply.",
+   "opts": [
+    "Donated money to a cause",
+    "Volunteered my time",
+    "Used my professional skills for a cause",
+    "Raised awareness or advocated for a cause",
+    "None of these yet"
+   ],
+   "excl": [
+    "None of these yet"
+   ]
+  },
+  "why_causes": {
+   "sec": "Part 1 · Your causes",
+   "type": "multi",
+   "show": "cause",
+   "prompt": "Why did you choose these three?",
+   "help": "Check all that apply.",
+   "opts": [
+    "I see myself making an impact here",
+    "I've had personal experience with these causes",
+    "They align with my beliefs and values",
+    "I already support these areas",
+    "I felt I should choose them",
+    "I'm not sure, they just felt right",
+    "Another reason"
+   ]
+  },
+  "giving_align": {
+   "sec": "Part 1 · Your causes",
+   "type": "scale",
+   "show": "cause",
+   "prompt": "How closely does your current giving match these causes?",
+   "opts": [
+    "Not even close",
+    "Similar, but not quite",
+    "I see some resemblance",
+    "Very close",
+    "These are exactly where I give today"
+   ]
+  },
+  "vol_align": {
+   "sec": "Part 2 · Your strengths",
+   "type": "scale",
+   "show": "strength",
+   "prompt": "How much does the way you volunteer today use these strengths?",
+   "opts": [
+    "Not at all",
+    "A little",
+    "Some of the time",
+    "Most of the time",
+    "Completely"
+   ],
+   "extra": "I don't volunteer right now"
+  },
+  "barriers": {
+   "sec": "Part 2 · Your strengths",
+   "type": "multi",
+   "prompt": "What gets in the way of using your strengths to make a difference?",
+   "help": "Check all that apply.",
+   "opts": [
+    "Time",
+    "Knowing where to start",
+    "Finding the right opportunity",
+    "Feeling like my contribution matters",
+    "Connecting with others who care about the same things",
+    "Nothing is in my way",
+    "Something else"
+   ],
+   "excl": [
+    "Nothing is in my way"
+   ]
+  },
+  "open_to": {
+   "sec": "Part 2 · Your strengths",
+   "type": "multi",
+   "prompt": "Which kinds of opportunities are you open to?",
+   "help": "Check all that apply.",
+   "opts": [
+    "One time volunteer events",
+    "Ongoing volunteer roles",
+    "Giving money or resources",
+    "Sharing my skills or expertise",
+    "Advocacy or raising awareness",
+    "Board or leadership roles",
+    "A group project with others"
+   ]
+  },
+  "belief_post": {
+   "sec": "Wrapping up",
+   "type": "scale",
+   "prompt": "Now that you've been through it: I believe I have the ability to personally make a difference.",
+   "opts": [
+    "No way, not me",
+    "Maybe, but you'd have to show me how",
+    "I'm neutral",
+    "Yes, I can change lives",
+    "I'm definitely going to be part of something big and can change the world"
+   ]
+  },
+  "next_steps": {
+   "sec": "Wrapping up",
+   "type": "multi",
+   "prompt": "What would you like to do next?",
+   "help": "Check all that apply.",
+   "opts": "FROM_INDEX",
+   "excl": [
+    "I'm not ready to take action yet"
+   ]
+  },
+  "comments": {
+   "sec": "Wrapping up",
+   "type": "text",
+   "prompt": "Anything else you'd like to share about your giving journey, or what would help you get started?",
+   "help": "Optional."
+  }
+ },
+ "flow": [
+  "belief_pre",
+  "past12",
+  {
+   "sort": "cause"
+  },
+  "why_causes",
+  "giving_align",
+  {
+   "sort": "strength"
+  },
+  "vol_align",
+  "barriers",
+  "open_to",
+  "wrap",
+  "belief_post",
+  "next_steps",
+  "comments",
+  "contact",
+  "results"
+ ],
+ "indexes": {
+  "g4g": {
+   "org_name": "Gateway for Good",
+   "eyebrow": "Gateway for Good",
+   "kajabi_tag": "sfi-index-g4g",
+   "subscribe_label": "Keep me informed about ways to make a difference with Gateway for Good.",
+   "next_steps": [
+    "Talk with a professional about my own giving strategy",
+    "Get connected to organizations that match my causes",
+    "Join a giving project with others who share my causes",
+    "Bring this experience to my family, friends, or organization",
+    "I'm not ready to take action yet"
+   ]
+  }
+ }
+}
