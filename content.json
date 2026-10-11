@@ -1,6 +1,6 @@
 {
  "_readme": "All words, cards, questions, and organization settings for the Social Fingerprint Index live in this file. Edit text here; the page picks up changes automatically within about 10 minutes.",
- "endpoint": "",
+ "endpoint": "https://g4gminion1.team-a92.workers.dev/sfi",
  "videos": {
   "welcome": {
    "id": "pw-E1mfhYsI",
@@ -942,7 +942,7 @@
   "g4g": {
    "org_name": "Gateway for Good",
    "eyebrow": "Gateway for Good",
-   "kajabi_tag": "sfi-index-g4g",
+   "kajabi_tag": "Tool: Social Fingerprint Index",
    "subscribe_label": "Keep me informed about ways to make a difference with Gateway for Good.",
    "next_steps": [
     "Talk with a professional about my own giving strategy",

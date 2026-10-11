@@ -57,8 +57,22 @@
         first_name: S.name, email: (S.contact||{}).email||"", zip: (S.contact||{}).zip||"", subscribe: !!(S.contact||{}).sub,
         top_causes: ids("cause"), top_strengths: ids("strength"), answers: S.ans };
     }
+    // Shared workbook used by the other Gateway for Good tools (GivingLens reads the same key).
+    function remember(p){
+      try{
+        const KEY="gfg_workbook_v1"; let wb={};
+        try{ wb=JSON.parse(localStorage.getItem(KEY))||{} }catch(e){ wb={} }
+        wb.version=wb.version||1;
+        wb.fingerprint={ causes:p.top_causes, strengths:p.top_strengths, source:"social-fingerprint", response_id:p.response_id, saved_at:p.submitted_at };
+        wb.person=wb.person||{};
+        if(p.first_name && !wb.person.first) wb.person.first=p.first_name;
+        if(p.email && !wb.person.email) wb.person.email=p.email;
+        localStorage.setItem(KEY, JSON.stringify(wb));
+      }catch(e){ /* storage blocked (private mode, etc.): results still show */ }
+    }
     function submit(){
       const p = payload();
+      remember(p);
       if(!CONTENT.endpoint){ console.info("[Social Fingerprint] test mode, not sent:", p); return; }
       try{ fetch(CONTENT.endpoint,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}); }catch(e){ console.error(e) }
     }
