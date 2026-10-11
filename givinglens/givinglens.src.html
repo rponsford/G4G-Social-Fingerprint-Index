@@ -156,6 +156,14 @@ a { color: var(--green-ink); }
 .journey small { font-weight: 400; font-size: 11px; color: var(--muted); }
 .journey span.j.here small { color: #cfe8d0; }
 @media (max-width: 560px) { .journey ol { grid-template-columns: repeat(2, 1fr); } }
+
+.sharebox { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.sharebox h2 { font-size: 18px; }
+.share-alt { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.share-alt[hidden] { display: none; }
+.share-alt a, .share-alt button { font: inherit; font-size: 14px; font-weight: 600; color: var(--green-ink); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; text-decoration: none; cursor: pointer; }
+.share-alt a:hover, .share-alt button:hover { border-color: var(--green); }
+.share-note { font-size: 13px; color: var(--muted); }
 </style>
 
 <div class="wrap">
@@ -374,10 +382,23 @@ a { color: var(--green-ink); }
       <ul class="done-list" id="done-list"></ul>
       <div class="actions done-actions">
         <button class="btn" type="button" id="another">Analyze another organization</button>
+        <button class="btn ghost" type="button" id="share-done">Share with a friend</button>
         <button class="btn ghost" type="button" id="keep">Keep editing this one</button>
       </div>
     </div>
   </div>
+  <section class="sharebox" aria-labelledby="share-h">
+    <h2 id="share-h">Know someone who'd enjoy GivingLens?</h2>
+    <p class="hint">It's free. Send it to a friend, your family, or your giving group.</p>
+    <button class="btn" type="button" id="share-btn">Share with a friend</button>
+    <div class="share-alt" id="share-alt" hidden>
+      <button type="button" id="share-copy">Copy link</button>
+      <a id="share-sms" target="_top">Text it</a>
+      <a id="share-mail" target="_top">Email it</a>
+    </div>
+    <span class="share-note" id="share-note" hidden></span>
+  </section>
+
   <footer>GivingLens by Gateway for Good® · Reuniting a divided world</footer>
 </div>
 
@@ -406,6 +427,29 @@ a { color: var(--green-ink); }
       const sm = document.createElement("small"); sm.textContent = s.url || s.id === HERE ? s.sub : "Coming soon";
       el.appendChild(sm); li.appendChild(el); ol.appendChild(li);
     });
+  })();
+
+  // ---------- Share with a friend (phone share sheet when available; otherwise copy / text / email) ----------
+  const SHARE = { title: document.title || "Gateway for Good", text: "I've been checking out nonprofits with GivingLens from Gateway for Good. Know before you give:", url: (JOURNEY.find((s) => s.id === HERE) || {}).url || location.href };
+  (function setupShare() {
+    const msg = SHARE.text + " " + SHARE.url;
+    $("share-sms").href = "sms:?&body=" + encodeURIComponent(msg);
+    $("share-mail").href = "mailto:?subject=" + encodeURIComponent(SHARE.title) + "&body=" + encodeURIComponent(msg);
+    const note = (t) => { $("share-note").textContent = t; $("share-note").hidden = !t; };
+    async function share() {
+      if (navigator.share) {
+        try { await navigator.share({ title: SHARE.title, text: SHARE.text, url: SHARE.url }); return; }
+        catch (e) { if (e && e.name === "AbortError") return; }
+      }
+      $("share-alt").hidden = false;
+      $("share-alt").scrollIntoView({ block: "nearest" });
+    }
+    $("share-btn").onclick = share;
+    const sd = $("share-done"); if (sd) sd.onclick = () => { $("done").hidden = true; share(); };
+    $("share-copy").onclick = async () => {
+      try { await navigator.clipboard.writeText(SHARE.url); note("Link copied. Paste it into a text, email, or post."); }
+      catch { note("Copy this link: " + SHARE.url); }
+    };
   })();
   const loadWB = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const saveWB = wb => { try { localStorage.setItem(KEY, JSON.stringify(wb)); return true; } catch { return false; } };
