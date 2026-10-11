@@ -18,7 +18,9 @@ The report is sent by the g4gminion1 Worker through Resend when someone finishes
 
 **Easy edits (top of the file)**
 
-- `SFI_NEXT_LINKS`: the button under each "What would you like to do next?" choice. Leave `url` blank to show the line without a button.
+- `SFI_PURPOSELENS_URL`: the PurposeLens page where people write their giving purpose statement. Blank until that page is live; once filled in, the "Write my giving purpose statement" buttons appear.
+
+- `SFI_NEXT_LINKS`: the button under each "What would you like to do next?" choice. Leave `url` blank to show the line without a button. `note` adds a short line of text under the choice.
 - `SFI_BARRIER_TIPS`: the tip shown for each "What gets in the way?" answer (up to two per email).
 
 `sfi-report-preview.html` shows the email with sample answers.

@@ -12,22 +12,32 @@
 const SFI_BASE = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/";
 const SFI_SITE = "https://www.gatewayforgood.com";
 
+// PurposeLens: where people write their giving purpose statement (mission,
+// vision, purpose). Put the page address here once it's live, and the
+// "Write my giving purpose statement" buttons appear. Blank = no button.
+const SFI_PURPOSELENS_URL = "";
+const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
+const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
+
 // Buttons for the next steps people pick on the last screen.
 // Leave a url blank ("") and that step shows as a plain line with no button.
 const SFI_NEXT_LINKS = {
-  "Talk with a professional about my own giving strategy": { url: "", label: "" },
-  "Get connected to organizations that match my causes": { url: SFI_SITE + "/givinglens", label: "Check an organization with GivingLens" },
-  "Join a giving project with others who share my causes": { url: "", label: "" },
-  "Bring this experience to my family, friends, or organization": { url: "", label: "" },
-  "Join the Gateway for Good Community": { url: SFI_SITE, label: "Visit Gateway for Good" },
-  "I'm not ready to take action yet": { url: "", label: "" },
+  "Talk with a professional about my own giving strategy": { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk" },
+  "Get connected to organizations that match my causes": { url: SFI_PURPOSELENS_URL, label: "Write my giving purpose statement",
+    note: "Start with PurposeLens. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for." },
+  "Join a giving project with others who share my causes": { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle on Grapevine" },
+  "Bring this experience to my family, friends, or organization": { url: "", label: "",
+    note: "Reply to this email and tell us who you'd like to bring. We'll help you set up a group version with its own community report." },
+  "Join the Gateway for Good Community": { url: "https://www.gatewayforgood.com/offers/R6CUkaMz/checkout", label: "Join the Community" },
+  "I'm not ready to take action yet": { url: "", label: "",
+    note: "That's fine. Your Social Fingerprint will keep. We'll send a few short ideas over the coming weeks, and you can pick it up whenever you're ready." },
 };
 
 // A short, practical tip for each answer to "What gets in the way?"
 const SFI_BARRIER_TIPS = {
   "Time": "Short on time? Start with a one time event, or a role you can do from home in an hour a week. Small and steady beats big and rare.",
-  "Knowing where to start": "Not sure where to start? Use the starting point at the top of this email. One call or one sign up this week is enough.",
-  "Finding the right opportunity": "Looking for the right fit? Take the search terms under each cause and add your town or ZIP code. Ask each organization what they need most right now.",
+  "Knowing where to start": "Not sure where to start? Begin with your giving purpose statement. Once you know what you're giving for, the right next step gets much easier to see.",
+  "Finding the right opportunity": "Looking for the right fit? Your giving purpose statement gives you the criteria. Then use the search terms under each cause, add your town or ZIP code, and check what you find with GivingLens.",
   "Feeling like my contribution matters": "Wondering if it matters? Ask the organization how they measure results, and check their numbers with GivingLens before you give.",
   "Connecting with others who care about the same things": "Want company? Share your Social Fingerprint with a friend or your group and compare. Shared causes make great group projects.",
 };
@@ -134,11 +144,32 @@ function buildSfiReport(p, content) {
   barriers.forEach(b => plan.push(`<p style="${FONT}font-size:15px;line-height:1.55;color:${INK};margin:0 0 12px">${esc(SFI_BARRIER_TIPS[b])}</p>`));
   const nextHtml = next.length ? `<div style="${FONT}font-size:13px;font-weight:bold;color:${INK};margin:14px 0 4px">Your next steps</div>` + next.map(n => {
     const l = SFI_NEXT_LINKS[n] || {};
-    return `<div style="${FONT}font-size:15px;line-height:1.5;color:${INK};margin:6px 0">&#10003;&nbsp; ${esc(n)}</div>${l.url ? btn(l.url, l.label || "Get started") : ""}`;
+    return `<div style="${FONT}font-size:15px;line-height:1.5;color:${INK};margin:10px 0 2px">&#10003;&nbsp; <b>${esc(n)}</b></div>${l.note ? `<div style="${FONT}font-size:14px;line-height:1.5;color:${MUTED};margin:0 0 4px 22px">${esc(l.note)}</div>` : ""}${l.url ? `<div style="margin-left:22px">${btn(l.url, l.label || "Get started")}</div>` : ""}`;
   }).join("") : "";
 
-  // Skip the GivingLens block when a next-step button already points there.
-  const showLens = !next.some(n => ((SFI_NEXT_LINKS[n] || {}).url || "").indexOf("/givinglens") > -1);
+  // Connect, Analyze, Invest: where they are and what comes next.
+  const stage = (n, title, now, body, links) => `<tr>
+      <td width="40" valign="top" style="padding:14px 0 14px 18px"><div style="width:30px;height:30px;line-height:30px;border-radius:15px;text-align:center;${FONT}font-size:14px;font-weight:bold;${now ? `background:${GREEN};color:#ffffff` : `background:#ffffff;color:${GREEN};border:2px solid ${GREEN};line-height:26px;width:26px;height:26px`}">${n}</div></td>
+      <td valign="top" style="padding:14px 18px 14px 12px">
+        <div style="${H}font-size:18px;line-height:1.2">${esc(title)}${now ? ` <span style="${FONT}font-size:11px;letter-spacing:1px;text-transform:uppercase;color:${GREEN};font-weight:bold;vertical-align:middle">&nbsp;You are here</span>` : ""}</div>
+        <div style="${FONT}font-size:14px;line-height:1.5;color:${INK};margin-top:4px">${body}</div>${links || ""}
+      </td></tr>`;
+  const link = (url, label) => url ? `<div style="${FONT}font-size:14px;margin-top:6px"><a href="${esc(url)}" target="_blank" style="color:${GREEN};font-weight:bold">${esc(label)} &rarr;</a></div>` : "";
+  const pathBlock = `<tr><td style="padding:22px 28px 4px">
+    <div style="${FONT}font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${GREEN};font-weight:bold;padding-bottom:8px">Your giving path</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${LINE};border-radius:14px">
+      ${stage(1, "Connect", true,
+        `&#10003; Your Social Fingerprint<br><b>Next: PurposeLens.</b> Write your giving purpose statement: your mission, vision, and purpose for giving. It turns your causes and strengths into clear criteria for where your time and money go.`,
+        SFI_PURPOSELENS_URL ? btn(SFI_PURPOSELENS_URL, "Write my giving purpose statement") : "")}
+      <tr><td colspan="2" style="border-top:1px solid ${LINE};font-size:0;line-height:0">&nbsp;</td></tr>
+      ${stage(2, "Analyze", false,
+        "Find organizations that fit your purpose, then check each one with GivingLens before you give.",
+        link(SFI_FIND_GUIDE_URL, "How to find organizations") + link(SFI_GIVINGLENS_URL, "GivingLens"))}
+      <tr><td colspan="2" style="border-top:1px solid ${LINE};font-size:0;line-height:0">&nbsp;</td></tr>
+      ${stage(3, "Invest", false,
+        "Bring your donor profile (causes, strengths, and purpose) to the organizations you choose: give, volunteer, make connections, or help with an event or fundraiser.", "")}
+    </table>
+  </td></tr>`;
 
   const preheader = causes.length && strengths.length
     ? `Your top causes: ${causes.map(c => c.name).join(", ")}. Your top strengths: ${strengths.map(s => s.name).join(", ")}.`
@@ -159,9 +190,11 @@ function buildSfiReport(p, content) {
   <tr><td style="padding:18px 22px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};padding:0 6px 10px">The causes you care about most</div>${strip("cause", causes)}</td></tr>
   <tr><td style="padding:18px 22px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};padding:0 6px 10px">The strengths you bring</div>${strip("strength", strengths)}</td></tr>
 
+  ${pathBlock}
+
   ${s1 && c1 ? `<tr><td style="padding:22px 28px 4px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${SOFT};border-radius:14px"><tr><td style="padding:18px 20px">
-      <div style="${FONT}font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${GREEN};font-weight:bold">Your starting point</div>
+      <div style="${FONT}font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${GREEN};font-weight:bold">A first idea</div>
       <div style="${H}font-size:20px;line-height:1.25;margin-top:4px">Put your ${esc(s1.name)} strength to work for ${esc(c1.name)}</div>
       ${ul((s1.items || []).slice(0, 3))}
     </td></tr></table>
@@ -176,13 +209,7 @@ function buildSfiReport(p, content) {
   ${(belief || plan.length || nextHtml) ? `${sectionHead("Part 3", "Your action plan")}
   <tr><td style="padding:8px 28px 4px">${belief}${plan.join("")}${nextHtml}</td></tr>` : ""}
 
-  ${showLens ? `<tr><td style="padding:24px 28px 8px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${LINE}"><tr><td style="padding-top:20px">
-      <div style="${H}font-size:18px">Know before you give</div>
-      <div style="${FONT}font-size:15px;line-height:1.5;color:${INK};margin-top:4px">Found an organization working on one of your causes? GivingLens reads its public tax filing and shows how it uses its money, free.</div>
-      ${btn(SFI_SITE + "/givinglens", "Try GivingLens")}
-    </td></tr></table>
-  </td></tr>` : ""}
+
 
   <tr><td align="center" style="padding:24px 28px 30px;background:#ffffff;border-top:1px solid ${LINE}">
     <img src="${SFI_BASE}givinglens/img/g4g-logo-email.png" width="160" alt="Gateway for Good" style="display:block;width:160px;height:auto;border:0;margin:0 auto">
@@ -194,18 +221,22 @@ function buildSfiReport(p, content) {
   // Plain text version.
   const T = [];
   T.push(`${name ? name + "'s" : "Your"} Social Fingerprint`, `${org} · ${date}`, "");
+  T.push("YOUR GIVING PATH",
+    "1. Connect (you are here): your Social Fingerprint is done. Next is PurposeLens: write your giving purpose statement (mission, vision, purpose)." + (SFI_PURPOSELENS_URL ? " " + SFI_PURPOSELENS_URL : ""),
+    "2. Analyze: find organizations that fit your purpose (" + SFI_FIND_GUIDE_URL + "), then check each one with GivingLens (" + SFI_GIVINGLENS_URL + ").",
+    "3. Invest: bring your donor profile to the organizations you choose: give, volunteer, make connections, or help with an event or fundraiser.", "");
   T.push("YOUR CAUSES");
   causes.forEach((c, i) => { T.push(`${i + 1}. ${c.name}: ${c.tag}`); (c.items || []).forEach(x => T.push(`   - ${x}`)); if ((c.search || []).length) T.push(`   Search terms: ${c.search.slice(0, 5).join(", ")}`); });
   T.push("", "YOUR STRENGTHS");
   strengths.forEach((s, i) => { T.push(`${i + 1}. ${s.name}: ${s.tag}`); (s.items || []).forEach(x => T.push(`   - ${x}`)); });
-  if (s1 && c1) { T.push("", `YOUR STARTING POINT: Put your ${s1.name} strength to work for ${c1.name}`); (s1.items || []).slice(0, 3).forEach(x => T.push(`   - ${x}`)); }
+  if (s1 && c1) { T.push("", `A FIRST IDEA: Put your ${s1.name} strength to work for ${c1.name}`); (s1.items || []).slice(0, 3).forEach(x => T.push(`   - ${x}`)); }
   if (openTo.length || barriers.length || next.length) {
     T.push("", "YOUR ACTION PLAN");
     if (openTo.length) T.push(`You're open to: ${openTo.join(", ").toLowerCase()}.`);
     barriers.forEach(b => T.push(SFI_BARRIER_TIPS[b]));
-    next.forEach(n => { const l = SFI_NEXT_LINKS[n] || {}; T.push(`[x] ${n}${l.url ? " -> " + l.url : ""}`); });
+    next.forEach(n => { const l = SFI_NEXT_LINKS[n] || {}; T.push(`[x] ${n}${l.note ? "\n    " + l.note : ""}${l.url ? "\n    " + l.url : ""}`); });
   }
-  T.push("", `Know before you give: ${SFI_SITE}/givinglens`, "", "Gateway for Good · Reuniting a divided world", "Questions? Just reply to this email.");
+  T.push("", "Gateway for Good · Reuniting a divided world", "Questions? Just reply to this email.");
 
   return {
     subject: name ? `${name}, here's your Social Fingerprint` : "Your Social Fingerprint",
