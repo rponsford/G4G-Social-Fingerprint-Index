@@ -7,7 +7,7 @@
 // Routes
 //   GET  /health
 //   POST /draft        AI-drafted Purpose/Vision/Mission options
-//   POST /statement    saves a Purpose Lens statement, emails the copy, syncs Kajabi
+//   POST /statement    saves a PurposeLens statement, emails the copy, syncs Kajabi
 //   POST /analysis     saves a GivingLens analysis, emails the report, syncs Kajabi
 //   POST /sfi          saves a Social Fingerprint Index response, emails the SFI report (first save only), syncs Kajabi
 //   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
@@ -18,7 +18,7 @@ const DRAFTS_PER_IP_PER_DAY = 25;
 const REPORTS_PER_IP_PER_DAY = 20;
 const REPORTS_PER_EMAIL_PER_DAY = 10;
 const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
-const FROM_PURPOSE = "Purpose Lens by Gateway for Good <team@gatewayforgood.com>";
+const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
 const KAJABI_SITE_ID = "2148521347";
 const ICON_URL = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/img/icons/";
@@ -163,7 +163,7 @@ function parseJson(t) {
   return null;
 }
 
-// ---------- /statement (Purpose Lens) ----------
+// ---------- /statement (PurposeLens) ----------
 async function saveStatement(b, request, env, ctx, cors) {
   const combined = clip(b.combined, 2000);
   if (!combined) return json({ error: "missing_combined" }, 400, cors);
@@ -192,7 +192,7 @@ async function saveStatement(b, request, env, ctx, cors) {
     const report = purposeLensEmail(d);
     emailed = await sendEmail(env, email, report.subject, report.html, report.text, FROM_PURPOSE);
   }
-  const tags = ["Tool: Purpose Lens"];
+  const tags = ["Tool: PurposeLens"];
   for (const c of causes) tags.push("Cause: " + CAUSES[c]);
   for (const x of strengths) tags.push("Strength: " + STRENGTHS[x]);
   ctx.waitUntil(kajabiSync(env, { email, name: [d.first, d.last].filter(Boolean).join(" "), subscribed: !!b.subscribe, tags }));
@@ -212,11 +212,11 @@ function purposeLensEmail(d) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3e6"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fffdf5;border:1px solid #ddd8c3;border-radius:14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2a22">
 <tr><td align="center" style="padding:24px 24px 6px;text-align:center">
-  <div style="font-size:14px;font-weight:800;color:#1b5e20;letter-spacing:.02em">Purpose Lens <span style="font-weight:400;color:#5d6a60">· Find your why</span></div>
+  <div style="font-size:14px;font-weight:800;color:#1b5e20;letter-spacing:.02em">PurposeLens <span style="font-weight:400;color:#5d6a60">· Find your why</span></div>
   <h1 style="margin:14px 0 4px;font-size:24px;line-height:1.2;color:#1b5e20">Your Make a Difference statements</h1>
   ${who ? `<div style="font-size:14px;color:#5d6a60">${esc(who)}</div>` : ""}
 </td></tr>
-<tr><td style="padding:10px 24px 0;font-size:15px;line-height:1.55">${hello} here are the statements you crafted with Purpose Lens. Keep your Combined Statement somewhere you'll see it; it's your North Star for the rest of the guidebook.</td></tr>
+<tr><td style="padding:10px 24px 0;font-size:15px;line-height:1.55">${hello} here are the statements you crafted with PurposeLens. Keep your Combined Statement somewhere you'll see it; it's your North Star for the rest of the guidebook.</td></tr>
 <tr><td style="padding:16px 24px 0"><div style="background:#2e7d32;border-radius:14px;padding:22px 20px;color:#ffffff">
   <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#bfe9fa">Your Combined Statement</div>
   <div style="font-family:Georgia,'Iowan Old Style',serif;font-size:21px;line-height:1.45;margin-top:8px">${esc(d.combined)}</div>
@@ -226,20 +226,20 @@ ${d.causes.length || d.strengths.length ? `<tr><td align="center" style="padding
 <tr><td style="padding:22px 24px 4px">
   <div style="font-weight:800;color:#1b5e20;font-size:15px;margin-bottom:4px">What's next</div>
   <div style="font-size:14px;line-height:1.55;color:#1f2a22;margin-bottom:10px">Use your statements to choose organizations that fit. GivingLens helps you check an organization's finances and plan your outreach before you give.</div>
-  ${btn("https://www.gatewayforgood.com/givinglens", "Research an organization with GivingLens", true)}${btn("https://www.gatewayforgood.com/purposelens", "Revisit Purpose Lens", false)}
+  ${btn("https://www.gatewayforgood.com/givinglens", "Research an organization with GivingLens", true)}${btn("https://www.gatewayforgood.com/purposelens", "Revisit PurposeLens", false)}
 </td></tr>
 <tr><td align="center" style="padding:18px 24px 4px;border-top:1px solid #ddd8c3"><a href="https://www.gatewayforgood.com" target="_blank" rel="noopener"><img src="${LOGO_URL}" width="160" alt="Gateway for Good" style="display:block;width:160px;max-width:60%;height:auto;border:0"></a></td></tr>
-<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain<br><br>You received this because you asked for a copy of your statements at gatewayforgood.com/purposelens. Reply to reach the Gateway for Good team.<br>Purpose Lens by Gateway for Good® · Reuniting a divided world</td></tr>
+<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain<br><br>You received this because you asked for a copy of your statements at gatewayforgood.com/purposelens. Reply to reach the Gateway for Good team.<br>PurposeLens by Gateway for Good® · Reuniting a divided world</td></tr>
 </table></td></tr></table></body></html>`;
 
-  const text = ["Your Make a Difference statements (Purpose Lens)", who, "",
+  const text = ["Your Make a Difference statements (PurposeLens)", who, "",
     "YOUR COMBINED STATEMENT", d.combined, "",
     d.purpose ? "Purpose: " + d.purpose : "", d.vision ? "Vision: " + d.vision : "", d.mission ? "Mission: " + d.mission : "",
     d.causes.length ? "\nCauses: " + d.causes.map((c) => CAUSES[c]).join(", ") : "",
     d.strengths.length ? "Strengths: " + d.strengths.map((x) => STRENGTHS[x]).join(", ") : "",
     "\nNext: research an organization with GivingLens: https://www.gatewayforgood.com/givinglens",
-    "Revisit Purpose Lens: https://www.gatewayforgood.com/purposelens"].filter((x) => x !== "").join("\n");
-  return { subject: "Your North Star: your Purpose Lens statements", html, text };
+    "Revisit PurposeLens: https://www.gatewayforgood.com/purposelens"].filter((x) => x !== "").join("\n");
+  return { subject: "Your North Star: your PurposeLens statements", html, text };
 }
 
 // ---------- /analysis (GivingLens) ----------

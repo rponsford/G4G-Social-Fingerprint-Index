@@ -1,6 +1,6 @@
-<title>Purpose Lens</title>
+<title>PurposeLens</title>
 <style>
-/* Purpose Lens by Gateway for Good. One centered column, a journey strip, a step rail, one step visible at a time. Social Fingerprint palette. */
+/* PurposeLens by Gateway for Good. One centered column, a journey strip, a step rail, one step visible at a time. Social Fingerprint palette. */
 :root {
   color-scheme: light;
   --bg: #f5f3e6; --panel: #fffdf5; --ink: #1f2a22; --muted: #5d6a60; --line: #ddd8c3;
@@ -155,9 +155,9 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
   <!-- STEP 1: Brainstorm -->
   <section class="card" id="s1" aria-labelledby="h1a">
-    <div class="eyebrow">Purpose Lens · Guidebook Step 2</div>
+    <div class="eyebrow">PurposeLens · Guidebook Step 2</div>
     <h1 id="h1a">Put your ideas down. We'll help shape them.</h1>
-    <p class="lead">Don't worry about wording. Jot down thoughts, phrases, or stories for each prompt below. Then Purpose Lens turns them into a few versions of your Purpose, Vision, and Mission, and you choose the one that feels right.</p>
+    <p class="lead">Don't worry about wording. Jot down thoughts, phrases, or stories for each prompt below. Then PurposeLens turns them into a few versions of your Purpose, Vision, and Mission, and you choose the one that feels right.</p>
     <blockquote class="twain">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain</blockquote>
 
     <div class="actions" role="group" aria-label="Who is this for">
@@ -256,7 +256,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
     <div class="sendbox">
       <h2 id="h4a">Keep a copy</h2>
-      <p class="hint">Your statements are already saved in this browser and will be waiting in your Make a Difference Profile. Add your email and we'll send you a Purpose Lens copy you can keep, print, or share.</p>
+      <p class="hint">Your statements are already saved in this browser and will be waiting in your Make a Difference Profile. Add your email and we'll send you a PurposeLens copy you can keep, print, or share.</p>
       <div class="row2">
         <label class="field" for="first">First name<input id="first" type="text" autocomplete="given-name"></label>
         <label class="field" for="last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="last" type="text" autocomplete="family-name"></label>
@@ -286,7 +286,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
   </div>
 
-  <footer>Purpose Lens by Gateway for Good® · Reuniting a divided world</footer>
+  <footer>PurposeLens by Gateway for Good® · Reuniting a divided world</footer>
 </div>
 
 <script>
@@ -297,7 +297,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   // ---------- The Make a Difference journey (guidebook order). Empty url = not live yet. ----------
   const JOURNEY = [
     { id: "sfi", name: "Social Fingerprint", sub: "Causes & strengths", url: "https://www.gatewayforgood.com/social-fingerprint-test" },
-    { id: "purpose", name: "Purpose Lens", sub: "Purpose, vision, mission", url: "https://www.gatewayforgood.com/purposelens" },
+    { id: "purpose", name: "PurposeLens", sub: "Purpose, vision, mission", url: "https://www.gatewayforgood.com/purposelens" },
     { id: "profile", name: "MAD Profile", sub: "Your giving plan", url: "" },
     { id: "givinglens", name: "GivingLens", sub: "Research organizations", url: "https://www.gatewayforgood.com/givinglens" },
   ];
@@ -549,7 +549,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       if (!r.ok) res = null;
     } catch {}
     btn.disabled = false; btn.textContent = "Email me my statements";
-    if (res && res.emailed) done(true, ["We emailed your Purpose Lens statements to " + email + ". If you don't see it in a few minutes, check your spam folder.", "Your statements are also saved in this browser for your Make a Difference Profile."]);
+    if (res && res.emailed) done(true, ["We emailed your PurposeLens statements to " + email + ". If you don't see it in a few minutes, check your spam folder.", "Your statements are also saved in this browser for your Make a Difference Profile."]);
     else if (res && res.ok) done(false, ["Your statements were saved, but the email couldn't be sent right now. Try again later, or reply to any Gateway for Good email and we'll help.", "Your statements are also saved in this browser."]);
     else done(false, ["We couldn't reach Gateway for Good just now, so nothing was sent.", "Your statements are still saved in this browser. Try again in a minute."]);
   };
