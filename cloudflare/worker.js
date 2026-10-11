@@ -21,8 +21,8 @@ const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
 const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
 const KAJABI_SITE_ID = "2148521347";
-const ICON_URL = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/img/icons/";
-const LOGO_URL = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/img/g4g-logo-email.png";
+const ICON_URL = "https://tools.gatewayforgood.com/givinglens/img/icons/";
+const LOGO_URL = "https://tools.gatewayforgood.com/givinglens/img/g4g-logo-email.png";
 
 const CAUSES = { animal: "Animal Care", arts: "Arts & Culture", cultural: "Cultural Preservation", historic: "Historic Preservation", children: "Children & Youth", elder: "Elder Care", education: "Educational Institutions", informal: "Informal Education", emergency: "Emergency & Disaster Relief", environment: "Environmental", family: "Family Services", research: "Health Research", hospitals: "Hospitals & Medical Care", pubhealth: "Public Health", housing: "Housing", hunger: "Hunger", disability: "Physical & Mental Disabilities", religious: "Religious & Spiritual", justice: "Civil Rights & Civic Engagement", vets: "Veterans & First Responders" };
 const STRENGTHS = { admin: "Administrator", artist: "Artist", connector: "Connector", craft: "Craftsperson", educator: "Educator", facilitator: "Facilitator", host: "Host", influencer: "Influencer", innovator: "Innovator", investor: "Investor", mediator: "Mediator", organizer: "Organizer", professional: "Professional", pm: "Project Manager", champion: "Champion", social: "Social Media Expert", tech: "Tech Savvy", troubleshooter: "Troubleshooter", volunteer: "Volunteer", other: "Another Strength" };
@@ -322,7 +322,7 @@ async function saveSfi(b, env, ctx, cors) {
 // sendSfiReport(p, env) fetches content.json, builds the email and sends it
 // through Resend with env.RESEND_API_KEY.
 
-const SFI_BASE = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/";
+const SFI_BASE = "https://tools.gatewayforgood.com/";
 const SFI_SITE = "https://www.gatewayforgood.com";
 
 // PurposeLens: where people write their giving purpose statement (mission,

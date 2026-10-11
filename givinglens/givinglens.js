@@ -1,6 +1,6 @@
 /* GivingLens by Gateway for Good. Embed on any page with:
  *   <div id="givinglens"></div>
- *   <script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/givinglens.js" defer></script>
+ *   <script src="https://tools.gatewayforgood.com/givinglens/givinglens.js" defer></script>
  * Edit the source in givinglens.src.html, not this file. */
 (function(){
 var HOST = document.getElementById("givinglens");
@@ -59,7 +59,7 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
   const saveWB = wb => { try { localStorage.setItem(KEY, JSON.stringify(wb)); return true; } catch { return false; } };
 
   const CAUSE_LIST = [["animal","Animal Care"],["arts","Arts & Culture"],["cultural","Cultural Preservation"],["historic","Historic Preservation"],["children","Children & Youth"],["elder","Elder Care"],["education","Educational Institutions"],["informal","Informal Education"],["emergency","Emergency & Disaster Relief"],["environment","Environmental"],["family","Family Services"],["research","Health Research"],["hospitals","Hospitals & Medical Care"],["pubhealth","Public Health"],["housing","Housing"],["hunger","Hunger"],["disability","Physical & Mental Disabilities"],["religious","Religious & Spiritual"],["justice","Civil Rights & Civic Engagement"],["vets","Veterans & First Responders"]];
-  const ICONS = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/img/icons/cause/";
+  const ICONS = "https://tools.gatewayforgood.com/givinglens/img/icons/cause/";
   let selectedCauses = [];
   function renderCauses() {
     const box = $("causes"); box.innerHTML = "";

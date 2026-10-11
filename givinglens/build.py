@@ -16,7 +16,7 @@ for a, b in [('document.getElementById(', 'ROOT.getElementById('), ('document.qu
 html = '<style>' + style.strip() + '</style><div class="gl-body">' + markup + '</div>'
 js = ('/* ' + name + ' by Gateway for Good. Embed on any page with:\n'
       ' *   <div id="' + host + '"></div>\n'
-      ' *   <script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/' + folder + '/' + host + '.js" defer></script>\n'
+      ' *   <script src="https://tools.gatewayforgood.com/' + folder + '/' + host + '.js" defer></script>\n'
       ' * Edit the source in ' + host + '.src.html, not this file. */\n'
       '(function(){\n'
       'var HOST = document.getElementById("' + host + '");\n'

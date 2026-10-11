@@ -9,7 +9,7 @@
 // sendSfiReport(p, env) fetches content.json, builds the email and sends it
 // through Resend with env.RESEND_API_KEY.
 
-const SFI_BASE = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/";
+const SFI_BASE = "https://tools.gatewayforgood.com/";
 const SFI_SITE = "https://www.gatewayforgood.com";
 
 // PurposeLens: where people write their giving purpose statement (mission,

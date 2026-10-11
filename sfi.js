@@ -1,6 +1,6 @@
 /*! Gateway for Good · Social Fingerprint Index · embeddable build
  * Usage: <div id="social-fingerprint" data-index="g4g"></div>
- *        <script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/sfi.js" defer></script>
+ *        <script src="https://tools.gatewayforgood.com/sfi.js" defer></script>
  * All words, cards, questions and organization settings live in content.json next to this file.
  */
 (function(){

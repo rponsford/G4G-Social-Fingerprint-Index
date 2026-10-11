@@ -10,7 +10,7 @@ In Kajabi, add a **Custom Code** section to the page and paste:
 
 ```html
 <div id="social-fingerprint" data-index="g4g"></div>
-<script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/sfi.js" defer></script>
+<script src="https://tools.gatewayforgood.com/sfi.js" defer></script>
 ```
 
 `data-index` picks which organization's settings to use. `g4g` is the Gateway for Good version.
@@ -45,7 +45,7 @@ GivingLens (the nonprofit 990 ratio calculator, outreach notes and research libr
 
 ```html
 <div id="givinglens"></div>
-<script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/givinglens.js" defer></script>
+<script src="https://tools.gatewayforgood.com/givinglens/givinglens.js" defer></script>
 ```
 
 | File | What it is |
@@ -62,7 +62,7 @@ PurposeLens (guidebook Step 2: Purpose, Vision and Mission statements with AI dr
 
 ```html
 <div id="purposelens"></div>
-<script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/purposelens/purposelens.js" defer></script>
+<script src="https://tools.gatewayforgood.com/purposelens/purposelens.js" defer></script>
 ```
 
 Edit `purposelens/purposelens.src.html`, then rebuild with `python3 givinglens/build.py purposelens/purposelens.src.html purposelens/purposelens.js purposelens "PurposeLens" purposelens`.
