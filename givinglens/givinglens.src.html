@@ -142,9 +142,27 @@ textarea:focus-visible, input[type=checkbox]:focus-visible { outline: 3px solid 
 .age input { width: 20px; height: 20px; accent-color: var(--green); }
 footer { font-size: 13px; color: var(--muted); text-align: center; }
 a { color: var(--green-ink); }
+.journey { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+.journey .jt { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--muted); }
+.journey ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; counter-reset: j; }
+.journey li { counter-increment: j; margin: 0; display: flex; flex-direction: column; }
+.journey li > * { flex: 1; }
+.journey a, .journey span.j { display: flex; flex-direction: column; gap: 2px; height: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel); text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.25; }
+.journey a::before, .journey span.j::before { content: counter(j); font-size: 11px; color: var(--muted); font-weight: 700; }
+.journey a:hover { border-color: var(--sky); }
+.journey span.j.here { background: var(--green); border-color: var(--green); color: #fff; }
+.journey span.j.here::before { color: #cfe8d0; }
+.journey .soon { color: var(--muted); font-weight: 500; }
+.journey small { font-weight: 400; font-size: 11px; color: var(--muted); }
+.journey span.j.here small { color: #cfe8d0; }
+@media (max-width: 560px) { .journey ol { grid-template-columns: repeat(2, 1fr); } }
 </style>
 
 <div class="wrap">
+  <nav class="journey" aria-label="Make a Difference journey">
+    <span class="jt">Your Make a Difference journey</span>
+    <ol id="journey"></ol>
+  </nav>
 
   <section class="intro">
     <div class="brand"><span class="mark">GivingLens</span><span class="tag">Know before you give</span></div>
@@ -368,6 +386,27 @@ a { color: var(--green-ink); }
   const $ = id => document.getElementById(id);
   const KEY = "gfg_workbook_v1";
   const API = "https://g4gminion1.team-a92.workers.dev";
+  // ---------- The Make a Difference journey (guidebook order). Empty url = not live yet. ----------
+  const JOURNEY = [
+    { id: "sfi", name: "Social Fingerprint", sub: "Causes & strengths", url: "https://www.gatewayforgood.com/social-fingerprint-test" },
+    { id: "purpose", name: "Purpose Lens", sub: "Purpose, vision, mission", url: "https://www.gatewayforgood.com/purposelens" },
+    { id: "profile", name: "MAD Profile", sub: "Your giving plan", url: "" },
+    { id: "givinglens", name: "GivingLens", sub: "Research organizations", url: "https://www.gatewayforgood.com/givinglens" },
+  ];
+  const HERE = "givinglens";
+  (function renderJourney() {
+    const ol = $("journey");
+    JOURNEY.forEach((s) => {
+      const li = document.createElement("li");
+      const el = document.createElement(s.id === HERE || !s.url ? "span" : "a");
+      el.className = s.id === HERE ? "j here" : s.url ? "" : "j soon";
+      if (s.id === HERE) el.setAttribute("aria-current", "step");
+      if (el.tagName === "A") { el.href = s.url; el.target = "_top"; }
+      el.append(s.name);
+      const sm = document.createElement("small"); sm.textContent = s.url || s.id === HERE ? s.sub : "Coming soon";
+      el.appendChild(sm); li.appendChild(el); ol.appendChild(li);
+    });
+  })();
   const loadWB = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const saveWB = wb => { try { localStorage.setItem(KEY, JSON.stringify(wb)); return true; } catch { return false; } };
 

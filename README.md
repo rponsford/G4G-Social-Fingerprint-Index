@@ -55,3 +55,20 @@ GivingLens (the nonprofit 990 ratio calculator, outreach notes and research libr
 | `givinglens/index.html` | A test page. |
 
 Saved and shared analyses go to the Gateway for Good Cloudflare Worker (`g4gminion1.team-a92.workers.dev`).
+
+## Purpose Lens
+
+Purpose Lens (guidebook Step 2: Purpose, Vision and Mission statements with AI drafting) lives in the `purposelens/` folder:
+
+```html
+<div id="purposelens"></div>
+<script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/purposelens/purposelens.js" defer></script>
+```
+
+Edit `purposelens/purposelens.src.html`, then rebuild with `python3 givinglens/build.py purposelens/purposelens.src.html purposelens/purposelens.js purposelens "Purpose Lens" purposelens`.
+
+Both tools show a "Make a Difference journey" strip (Social Fingerprint → Purpose Lens → MAD Profile → GivingLens). The links are in the `JOURNEY` list near the top of each tool's script; a blank `url` shows "Coming soon".
+
+## Cloudflare Worker
+
+`cloudflare/worker.js` is a copy of the code running at `g4gminion1.team-a92.workers.dev` (drafting, saving, emailed reports). It holds no keys; those live in Cloudflare Secrets. To update the Worker, open this file's raw view, copy everything, and paste it into the Cloudflare editor.
