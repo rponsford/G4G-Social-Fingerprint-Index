@@ -71,4 +71,4 @@ Both tools show a "Make a Difference journey" strip (Social Fingerprint → Purp
 
 ## Cloudflare Worker
 
-`cloudflare/worker.js` is a copy of the code running at `g4gminion1.team-a92.workers.dev` (drafting, saving, emailed reports). It holds no keys; those live in Cloudflare Secrets. To update the Worker, open this file's raw view, copy everything, and paste it into the Cloudflare editor.
+`cloudflare/worker.js` is a copy of the code running at `g4gminion1.team-a92.workers.dev` (drafting, saving, emailed reports). It holds no keys; those live in Cloudflare Secrets. The Worker is connected to this repo through Cloudflare Workers Builds (root directory `cloudflare`, settings in `cloudflare/wrangler.jsonc`): every push to `main` redeploys it. Don't edit the Worker in the Cloudflare editor, because the next push overwrites it.
