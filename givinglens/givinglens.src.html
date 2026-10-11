@@ -119,6 +119,12 @@ textarea:focus-visible, input[type=checkbox]:focus-visible { outline: 3px solid 
 .badge .bar i { display: block; height: 100%; background: var(--green); }
 .proto { font-size: 13px; color: var(--muted); background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
 .privacy { font-size: 13px; color: var(--muted); }
+.lbl { font-weight: 600; font-size: 15px; }
+.causes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.cz { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font: inherit; font-size: 11.5px; line-height: 1.2; color: var(--ink); text-align: center; }
+.cz img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+.cz[aria-pressed="true"] { border: 2px solid var(--green); background: var(--green-soft); padding: 5px 3px 7px; font-weight: 600; }
+.cz:disabled { opacity: .45; cursor: not-allowed; }
 .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .brand .mark { font-weight: 800; font-size: 15px; letter-spacing: .02em; color: var(--green-ink); }
 .brand .mark::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 3px solid var(--sky); margin-right: 7px; vertical-align: -1px; }
@@ -150,7 +156,7 @@ a { color: var(--green-ink); }
           <div class="f"><label for="ein">Tax ID (EIN)</label><input id="ein" type="text" inputmode="numeric" placeholder="12-3456789"></div>
         </div>
         <p class="where">EIN is at the top right of page 1.</p>
-        <div class="f"><label for="cause">Cause area <span class="hint" style="font-weight:400">(optional)</span></label><select id="cause"><option value="">Choose one</option><option value="children">Children &amp; Youth</option><option value="animal">Animal Care</option><option value="arts">Arts &amp; Culture</option><option value="cultural">Cultural Preservation</option><option value="elder">Elder Care</option><option value="education">Educational Institutions</option><option value="environment">Environmental</option><option value="emergency">Emergency &amp; Disaster</option><option value="family">Family Services</option><option value="historic">Historic Preservation</option><option value="hospitals">Hospitals &amp; Medical</option><option value="research">Health Research</option><option value="housing">Housing</option><option value="hunger">Hunger</option><option value="informal">Informal Education</option><option value="disability">Physical &amp; Mental Disabilities</option><option value="pubhealth">Public Health</option><option value="justice">Social Justice</option><option value="vets">Veterans &amp; Service</option><option value="religious">Religious &amp; Spiritual</option></select></div>
+        <div class="f"><span class="lbl">Cause areas <span class="hint" style="font-weight:400">(choose up to 3)</span></span><div class="causes" id="causes" role="group" aria-label="Cause areas"></div></div>
       </fieldset>
       <hr>
       <fieldset>
@@ -345,6 +351,23 @@ a { color: var(--green-ink); }
   const loadWB = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const saveWB = wb => { try { localStorage.setItem(KEY, JSON.stringify(wb)); return true; } catch { return false; } };
 
+  const CAUSE_LIST = [["animal","Animal Care"],["arts","Arts & Culture"],["cultural","Cultural Preservation"],["historic","Historic Preservation"],["children","Children & Youth"],["elder","Elder Care"],["education","Educational Institutions"],["informal","Informal Education"],["emergency","Emergency & Disaster Relief"],["environment","Environmental"],["family","Family Services"],["research","Health Research"],["hospitals","Hospitals & Medical Care"],["pubhealth","Public Health"],["housing","Housing"],["hunger","Hunger"],["disability","Physical & Mental Disabilities"],["religious","Religious & Spiritual"],["justice","Civil Rights & Civic Engagement"],["vets","Veterans & First Responders"]];
+  const ICONS = "https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/img/icons/cause/";
+  let selectedCauses = [];
+  function renderCauses() {
+    const box = $("causes"); box.innerHTML = "";
+    CAUSE_LIST.forEach(([id, label]) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "cz";
+      const on = selectedCauses.includes(id);
+      b.setAttribute("aria-pressed", String(on)); b.disabled = !on && selectedCauses.length >= 3;
+      const img = document.createElement("img"); img.src = ICONS + id + ".jpg"; img.alt = ""; img.loading = "lazy";
+      const t = document.createElement("span"); t.textContent = label;
+      b.append(img, t);
+      b.onclick = () => { selectedCauses = on ? selectedCauses.filter(x => x !== id) : [...selectedCauses, id]; renderCauses(); };
+      box.appendChild(b);
+    });
+  }
+  renderCauses();
   const MONEY = ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec"];
   const num = id => { const v = parseFloat(String($(id).value).replace(/[$,\s]/g, "")); return isFinite(v) ? v : null; };
   const fmt$ = n => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
@@ -506,7 +529,7 @@ a { color: var(--green-ink); }
     Object.entries(SAMPLE).forEach(([k, v]) => { $(k).value = typeof v === "number" ? v.toLocaleString("en-US") : v; });
     update(); $("sample-note").hidden = false;
   };
-  $("clear").onclick = () => { $("form").reset(); $("sample-note").hidden = true; update(); };
+  $("clear").onclick = () => { selectedCauses = []; renderCauses(); $("form").reset(); $("sample-note").hidden = true; update(); };
 
   function summary() {
     const lines = [`${$("r-org").textContent}${$("r-meta").textContent.startsWith("Enter") ? "" : " — " + $("r-meta").textContent}`, ""];
@@ -573,7 +596,7 @@ a { color: var(--green-ink); }
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       outreach: { date: $("o-date").value.trim(), contact: $("o-who").value.trim(), responsiveness: pick("o-resp"), volunteer: pick("o-vol"), stoodOut: $("o-stood").value.trim(), openQuestions: $("o-open").value.trim(), outcome: pick("o-out") },
       shareWithLibrary: $("share").checked,
-      cause: $("cause").value, analyst: $("o-first").value.trim(), subscribe: $("subscribe").checked,
+      causes: selectedCauses.slice(), analyst: $("o-first").value.trim(), subscribe: $("subscribe").checked,
       savedAt: new Date().toISOString()
     };
     const i = wb.orgs.findIndex(o => o.name === name && o.year === rec.year);
