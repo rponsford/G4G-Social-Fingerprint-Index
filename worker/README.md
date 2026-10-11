@@ -4,7 +4,9 @@
 
 The report is sent by the g4gminion1 Worker through Resend when someone finishes the Social Fingerprint Index and gives their email. It pulls card names and descriptions from the live `content.json`, so card edits show up in the email automatically.
 
-**To turn it on**
+**Already included in Worker v3.** `cloudflare/worker.js` (version 3) contains this file and the `/sfi` hook, and only emails on the first save of a `response_id`. Pasting that full file into Cloudflare turns the report on; the manual steps below are only needed if you're adding it to an older Worker by hand.
+
+**To turn it on by hand**
 
 1. In the Cloudflare editor, paste all of `sfi-report.js` near the top of the Worker, below any imports.
 2. In the `POST /sfi` route, after the row is saved to D1, add this line. Use `isNew` (or your equivalent) so a repeat submission of the same `response_id` doesn't send a second email:

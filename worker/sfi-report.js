@@ -15,7 +15,7 @@ const SFI_SITE = "https://www.gatewayforgood.com";
 // PurposeLens: where people write their giving purpose statement (mission,
 // vision, purpose). Put the page address here once it's live, and the
 // "Write my giving purpose statement" buttons appear. Blank = no button.
-const SFI_PURPOSELENS_URL = "";
+const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
 const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
 
