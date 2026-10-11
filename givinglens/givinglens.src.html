@@ -41,7 +41,7 @@ legend { font-weight: 700; color: var(--green-ink); padding: 0; margin-bottom: 4
 .money { position: relative; }
 .money span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .money input[type=text] { padding-left: 28px; }
-input[type=text] { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; }
+input[type=text], select { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; }
 input:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .sub { border-left: 3px solid var(--sky-soft); padding-left: 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -150,6 +150,7 @@ a { color: var(--green-ink); }
           <div class="f"><label for="ein">Tax ID (EIN)</label><input id="ein" type="text" inputmode="numeric" placeholder="12-3456789"></div>
         </div>
         <p class="where">EIN is at the top right of page 1.</p>
+        <div class="f"><label for="cause">Cause area <span class="hint" style="font-weight:400">(optional)</span></label><select id="cause"><option value="">Choose one</option><option value="children">Children &amp; Youth</option><option value="animal">Animal Care</option><option value="arts">Arts &amp; Culture</option><option value="cultural">Cultural Preservation</option><option value="elder">Elder Care</option><option value="education">Educational Institutions</option><option value="environment">Environmental</option><option value="emergency">Emergency &amp; Disaster</option><option value="family">Family Services</option><option value="historic">Historic Preservation</option><option value="hospitals">Hospitals &amp; Medical</option><option value="research">Health Research</option><option value="housing">Housing</option><option value="hunger">Hunger</option><option value="informal">Informal Education</option><option value="disability">Physical &amp; Mental Disabilities</option><option value="pubhealth">Public Health</option><option value="justice">Social Justice</option><option value="vets">Veterans &amp; Service</option><option value="religious">Religious &amp; Spiritual</option></select></div>
       </fieldset>
       <hr>
       <fieldset>
@@ -298,11 +299,17 @@ a { color: var(--green-ink); }
       <input type="checkbox" id="share" checked>
       <span><b>Add my findings to the Gateway for Good research library.</b> Most people can't easily find out how a charity really operates. When you share what you found, the next giver researching this organization starts where you left off. Your name is never shown with your findings.</span>
     </label>
-    <div class="f">
-      <label for="o-email">Your email <span class="hint" style="font-weight:400">(optional)</span></label>
-      <input id="o-email" type="text" inputmode="email" autocomplete="email" placeholder="name@example.com">
-      <span class="where">Keep a record of every organization you analyze, on any device, and earn recognition in the Gateway for Good community as your research grows.</span>
+    <div class="row2">
+      <div class="f"><label for="o-first">First name <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-first" type="text" autocomplete="given-name"></div>
+      <div class="f"><label for="o-email">Your email <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-email" type="text" inputmode="email" autocomplete="email" placeholder="name@example.com"></div>
     </div>
+    <div class="f">
+      <span class="where">Add your email and we'll send you a GivingLens report for this organization. Over time it keeps a record of every organization you analyze and earns you recognition in the Gateway for Good community.</span>
+    </div>
+    <label class="age" id="sub-wrap">
+      <input type="checkbox" id="subscribe" checked>
+      <span>Keep me informed about ways to make a difference with Gateway for Good.</span>
+    </label>
     <label class="age" id="age-wrap">
       <input type="checkbox" id="age">
       <span>I'm 13 or older.</span>
@@ -530,6 +537,11 @@ a { color: var(--green-ink); }
     { ic: "↗", name: "Field Researcher", desc: "Report back after contacting an organization", need: s => [s.outreach, 1] },
     { ic: "★", name: "Trusted Reviewer", desc: "10 analyses and 3 outreach reports", need: s => [Math.min(s.orgs, 10) + Math.min(s.outreach, 3), 13] },
   ];
+  function badgeStats() {
+    const orgs = loadWB().orgs || [];
+    return { orgs: orgs.length, outreach: orgs.filter(o => o.outreach && (o.outreach.stoodOut || o.outreach.responsiveness || o.outreach.outcome)).length };
+  }
+  function earnedBadges() { const s = badgeStats(); return BADGES.filter(b => { const [h, n] = b.need(s); return h >= n; }).map(b => b.name); }
   function renderBadges() {
     const wb = loadWB(), orgs = wb.orgs || [];
     const s = { orgs: orgs.length, outreach: orgs.filter(o => o.outreach && (o.outreach.stoodOut || o.outreach.responsiveness || o.outreach.outcome)).length };
@@ -554,18 +566,21 @@ a { color: var(--green-ink); }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = "Check your email address, or leave it blank."; return; }
     const wb = loadWB(); wb.version = 1; wb.orgs = wb.orgs || []; wb.person = wb.person || {};
     if (email) wb.person.email = email;
+    if ($("o-first").value.trim()) wb.person.first = $("o-first").value.trim();
     const rec = {
       name, year: $("year").value.trim(), ein: $("ein").value.trim(),
       inputs: Object.fromEntries(MONEY.map(k => [k, num(k)])),
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       outreach: { date: $("o-date").value.trim(), contact: $("o-who").value.trim(), responsiveness: pick("o-resp"), volunteer: pick("o-vol"), stoodOut: $("o-stood").value.trim(), openQuestions: $("o-open").value.trim(), outcome: pick("o-out") },
       shareWithLibrary: $("share").checked,
+      cause: $("cause").value, firstName: $("o-first").value.trim(), subscribe: $("subscribe").checked,
       savedAt: new Date().toISOString()
     };
     const i = wb.orgs.findIndex(o => o.name === name && o.year === rec.year);
     if (i >= 0) wb.orgs[i] = { ...wb.orgs[i], ...rec }; else wb.orgs.push(rec);
     const savedLocal = saveWB(wb);
     const wantsServer = rec.shareWithLibrary || !!email;
+    rec.badges = earnedBadges();
     const count = `You've analyzed ${wb.orgs.length} organization${wb.orgs.length === 1 ? "" : "s"}.`;
     renderBadges();
     if (!wantsServer) { msg.textContent = savedLocal ? `Saved in this browser. ${count}` : "This browser isn't allowing saves. Use Copy results instead."; return; }
@@ -573,10 +588,10 @@ a { color: var(--green-ink); }
     msg.textContent = "Saving…";
     fetch(API + "/analysis", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...rec, email: email || null }) })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(() => { msg.textContent = `Saved${rec.shareWithLibrary ? " and added to the research library" : ""}. Thank you! ${count}`; })
+      .then(r => { msg.textContent = `Saved${rec.shareWithLibrary ? " and added to the research library" : ""}.${r && r.emailed ? " Your report is on its way to " + email + "." : ""} Thank you! ${count}`; })
       .catch(() => { msg.textContent = (savedLocal ? "Saved in this browser, but " : "") + "we couldn't reach the research library just now. Try Save again in a moment."; });
   };
-  try { const p = loadWB().person; if (p && p.email) $("o-email").value = p.email; } catch {}
+  try { const p = loadWB().person; if (p && p.email) $("o-email").value = p.email; if (p && p.first) $("o-first").value = p.first; } catch {}
   renderBadges();
 
   update();
