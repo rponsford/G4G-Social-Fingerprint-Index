@@ -1,0 +1,16 @@
+// Cloudflare Workers Builds reads this file (build root directory: /cloudflare).
+// Every push to main that changes this folder redeploys the g4gminion1 Worker.
+// Secrets (ANTHROPIC_API_KEY, ADMIN_KEY, RESEND_API_KEY, KAJABI_*) stay in the Cloudflare dashboard and are not affected.
+{
+  "name": "g4gminion1",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gfg-research",
+      "database_id": "PASTE-DATABASE-ID-HERE"
+    }
+  ]
+}
