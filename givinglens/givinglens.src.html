@@ -300,7 +300,7 @@ a { color: var(--green-ink); }
       <span><b>Add my findings to the Gateway for Good research library.</b> Most people can't easily find out how a charity really operates. When you share what you found, the next giver researching this organization starts where you left off. Your name is never shown with your findings.</span>
     </label>
     <div class="row2">
-      <div class="f"><label for="o-first">First name <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-first" type="text" autocomplete="given-name"></div>
+      <div class="f"><label for="o-first">Your name <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-first" type="text" autocomplete="name" placeholder="Shown as the analyst on your report"></div>
       <div class="f"><label for="o-email">Your email <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-email" type="text" inputmode="email" autocomplete="email" placeholder="name@example.com"></div>
     </div>
     <div class="f">
@@ -573,7 +573,7 @@ a { color: var(--green-ink); }
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       outreach: { date: $("o-date").value.trim(), contact: $("o-who").value.trim(), responsiveness: pick("o-resp"), volunteer: pick("o-vol"), stoodOut: $("o-stood").value.trim(), openQuestions: $("o-open").value.trim(), outcome: pick("o-out") },
       shareWithLibrary: $("share").checked,
-      cause: $("cause").value, firstName: $("o-first").value.trim(), subscribe: $("subscribe").checked,
+      cause: $("cause").value, analyst: $("o-first").value.trim(), subscribe: $("subscribe").checked,
       savedAt: new Date().toISOString()
     };
     const i = wb.orgs.findIndex(o => o.name === name && o.year === rec.year);
