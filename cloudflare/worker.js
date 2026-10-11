@@ -56,7 +56,7 @@ export default {
 // ---------- helpers ----------
 function isAllowedOrigin(origin) {
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (origin === "https://rponsford.github.io") return true; // GitHub test pages
+  if (origin === "https://tools.gatewayforgood.com" || origin === "https://rponsford.github.io") return true; // test pages
   return /^https:\/\/[a-z0-9-]+\.(claudeusercontent\.com|claude\.ai|mykajabi\.com|kajabi\.com)$/i.test(origin);
 }
 function corsHeaders(origin) {
