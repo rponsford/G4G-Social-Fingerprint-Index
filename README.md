@@ -38,3 +38,20 @@ Optional extras:
 - **Turn on saving responses:** put the Google script address in `endpoint`. While it's blank, the experience runs in test mode and saves nothing.
 
 Changes reach live pages within about 10 minutes.
+
+## GivingLens
+
+GivingLens (the nonprofit 990 ratio calculator, outreach notes and research library) lives in the `givinglens/` folder and is added to a page the same way:
+
+```html
+<div id="givinglens"></div>
+<script src="https://rponsford.github.io/G4G-Social-Fingerprint-Index/givinglens/givinglens.js" defer></script>
+```
+
+| File | What it is |
+|---|---|
+| `givinglens/givinglens.src.html` | The editable source: text, ratios, ranges and questions. |
+| `givinglens/givinglens.js` | The built script pages load. Rebuild after editing the source with `python3 givinglens/build.py givinglens/givinglens.src.html givinglens/givinglens.js`. |
+| `givinglens/index.html` | A test page. |
+
+Saved and shared analyses go to the Gateway for Good Cloudflare Worker (`g4gminion1.team-a92.workers.dev`).
