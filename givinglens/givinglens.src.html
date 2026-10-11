@@ -119,6 +119,15 @@ textarea:focus-visible, input[type=checkbox]:focus-visible { outline: 3px solid 
 .badge .bar i { display: block; height: 100%; background: var(--green); }
 .proto { font-size: 13px; color: var(--muted); background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
 .privacy { font-size: 13px; color: var(--muted); }
+.overlay { position: fixed; inset: 0; background: rgba(20,30,22,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 2147483000; }
+.overlay[hidden] { display: none; }
+.sheet { background: var(--panel); border-radius: 16px; max-width: 440px; width: 100%; padding: 26px 22px 22px; display: flex; flex-direction: column; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+.done-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; font-size: 28px; font-weight: 800; color: #fff; background: var(--green); }
+.done-icon.warn { background: var(--look); }
+.done-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; text-align: left; font-size: 15px; }
+.done-list li { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.done-actions { justify-content: center; flex-direction: column; align-items: stretch; }
+.age.need { outline: 2px solid var(--look); outline-offset: 4px; border-radius: 8px; background: var(--look-bg); }
 .lbl { font-weight: 600; font-size: 15px; }
 .causes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
 .cz { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font: inherit; font-size: 11.5px; line-height: 1.2; color: var(--ink); text-align: center; }
@@ -340,6 +349,17 @@ a { color: var(--green-ink); }
     <p><a href="https://www.gatewayforgood.com/analyzing-organizations" target="_blank" rel="noopener">Go deeper: Analyzing Organizations →</a></p>
   </section>
 
+  <div class="overlay" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="done-h">
+    <div class="sheet">
+      <div class="done-icon" id="done-icon">✓</div>
+      <h2 id="done-h">Saved</h2>
+      <ul class="done-list" id="done-list"></ul>
+      <div class="actions done-actions">
+        <button class="btn" type="button" id="another">Analyze another organization</button>
+        <button class="btn ghost" type="button" id="keep">Keep editing this one</button>
+      </div>
+    </div>
+  </div>
   <footer>GivingLens by Gateway for Good® · Reuniting a divided world</footer>
 </div>
 
@@ -581,12 +601,40 @@ a { color: var(--green-ink); }
     });
   }
 
+  function showDone(ok, title, items) {
+    $("done-icon").textContent = ok ? "✓" : "!";
+    $("done-icon").className = "done-icon" + (ok ? "" : " warn");
+    $("done-h").textContent = title;
+    const ul = $("done-list"); ul.innerHTML = "";
+    items.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+    $("done").hidden = false; $("another").focus();
+  }
+  $("keep").onclick = () => { $("done").hidden = true; };
+  $("done").addEventListener("click", e => { if (e.target === $("done")) $("done").hidden = true; });
+  $("another").onclick = () => {
+    $("done").hidden = true;
+    $("form").reset(); selectedCauses = []; renderCauses();
+    ["o-date", "o-who", "o-stood", "o-open"].forEach(id => { $(id).value = ""; });
+    ROOT.querySelectorAll(".chips[data-group] .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+    $("sample-note").hidden = true; $("saved").hidden = true; update();
+    HOST.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("org").focus({ preventScroll: true }), 400);
+  };
+  $("age").addEventListener("change", () => $("age-wrap").classList.remove("need"));
+
   $("saveorg").onclick = () => {
     const name = $("org").value.trim();
-    const msg = $("saved"); msg.hidden = false;
-    if (!name) { msg.textContent = "Add the organization's name at the top first."; $("org").focus(); return; }
+    const msg = $("saved"); msg.hidden = true;
+    const note = t => { msg.hidden = false; msg.textContent = t; };
+    if (!name) { note("Add the organization's name at the top first."); $("org").focus(); return; }
     const email = $("o-email").value.trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = "Check your email address, or leave it blank."; return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { note("Check your email address, or leave it blank."); $("o-email").focus(); return; }
+    const wantsServer = $("share").checked || !!email;
+    if (wantsServer && !$("age").checked) {
+      $("age-wrap").classList.add("need"); $("age-wrap").scrollIntoView({ behavior: "smooth", block: "center" });
+      note("Please confirm you're 13 or older to share your findings or get your report by email. Or uncheck sharing and leave email blank to save only in this browser.");
+      return;
+    }
     const wb = loadWB(); wb.version = 1; wb.orgs = wb.orgs || []; wb.person = wb.person || {};
     if (email) wb.person.email = email;
     if ($("o-first").value.trim()) wb.person.first = $("o-first").value.trim();
@@ -599,20 +647,31 @@ a { color: var(--green-ink); }
       causes: selectedCauses.slice(), analyst: $("o-first").value.trim(), subscribe: $("subscribe").checked,
       savedAt: new Date().toISOString()
     };
+    const before = earnedBadges();
     const i = wb.orgs.findIndex(o => o.name === name && o.year === rec.year);
     if (i >= 0) wb.orgs[i] = { ...wb.orgs[i], ...rec }; else wb.orgs.push(rec);
     const savedLocal = saveWB(wb);
-    const wantsServer = rec.shareWithLibrary || !!email;
     rec.badges = earnedBadges();
-    const count = `You've analyzed ${wb.orgs.length} organization${wb.orgs.length === 1 ? "" : "s"}.`;
     renderBadges();
-    if (!wantsServer) { msg.textContent = savedLocal ? `Saved in this browser. ${count}` : "This browser isn't allowing saves. Use Copy results instead."; return; }
-    if (!$("age").checked) { msg.textContent = (savedLocal ? "Saved in this browser. " : "") + "To share with the library or save to your email, confirm you're 13 or older, then save again."; return; }
-    msg.textContent = "Saving…";
+    const newBadges = rec.badges.filter(b => !before.includes(b));
+    const count = `You've analyzed ${wb.orgs.length} organization${wb.orgs.length === 1 ? "" : "s"}.`;
+    const extras = [count, ...newBadges.map(b => `New badge earned: ${b}`)];
+    if (!wantsServer) {
+      if (savedLocal) showDone(true, `${name} saved`, ["Saved in this browser.", ...extras]);
+      else showDone(false, "Couldn't save", ["This browser isn't allowing saves. Use Copy results instead."]);
+      return;
+    }
+    const btn = $("saveorg"); btn.disabled = true; btn.textContent = "Saving…";
     fetch(API + "/analysis", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...rec, email: email || null }) })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(r => { msg.textContent = `Saved${rec.shareWithLibrary ? " and added to the research library" : ""}.${r && r.emailed ? " Your report is on its way to " + email + "." : ""} Thank you! ${count}`; })
-      .catch(() => { msg.textContent = (savedLocal ? "Saved in this browser, but " : "") + "we couldn't reach the research library just now. Try Save again in a moment."; });
+      .then(r => {
+        const items = [];
+        if (rec.shareWithLibrary) items.push("Added to the Gateway for Good research library. Thank you!");
+        if (email) items.push(r && r.emailed ? `Your report is on its way to ${email}.` : `Saved, but the report email didn't go out. Check the address (${email}) and try again later.`);
+        showDone(true, `${name} saved`, [...items, ...extras]);
+      })
+      .catch(() => showDone(false, "Not saved to the library yet", [(savedLocal ? "Your analysis is saved in this browser, but " : "") + "we couldn't reach the research library just now.", "Close this and click Save again in a moment."]))
+      .finally(() => { btn.disabled = false; btn.textContent = "Save organization"; });
   };
   try { const p = loadWB().person; if (p && p.email) $("o-email").value = p.email; if (p && p.first) $("o-first").value = p.first; } catch {}
   renderBadges();
