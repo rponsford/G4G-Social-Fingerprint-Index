@@ -39,6 +39,7 @@ const SFI_BARRIER_TIPS = {
   "Knowing where to start": "Not sure where to start? Begin with your giving purpose statement. Once you know what you're giving for, the right next step gets much easier to see.",
   "Finding the right opportunity": "Looking for the right fit? Your giving purpose statement gives you the criteria. Then use the search terms under each cause, add your town or ZIP code, and check what you find with GivingLens.",
   "Feeling like my contribution matters": "Wondering if it matters? Ask the organization how they measure results, and check their numbers with GivingLens before you give.",
+  "I would help if I was asked": "Waiting to be asked? Consider this your invitation. Reach out to one organization working on your top cause and ask, \"How can I help?\" Most are thrilled to hear it.",
   "Connecting with others who care about the same things": "Want company? Share your Social Fingerprint with a friend or your group and compare. Shared causes make great group projects.",
 };
 
@@ -129,7 +130,7 @@ function buildSfiReport(p, content) {
 
   // Action plan, built from their answers.
   const barriers = (ans.barriers || []).filter(b => SFI_BARRIER_TIPS[b]).slice(0, 2);
-  const openTo = ans.open_to || [];
+  const openTo = (ans.open_to || []).filter(o => o !== "I'm not open to any opportunities");
   const next = ans.next_steps || [];
   const pre = +ans.belief_pre || 0, post = +ans.belief_post || 0;
   const scale = (Q.belief_post && Q.belief_post.opts) || [];

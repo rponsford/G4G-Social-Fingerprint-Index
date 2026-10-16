@@ -38,7 +38,8 @@
    "video_after_six": "causes",
    "six_title": "You've found your top 6",
    "six_text": "Before you choose your final three, take a moment with this short video about picking your causes.",
-   "six_button": "Choose my top 3"
+   "six_button": "Choose my top 3",
+   "six_question": "narrowing"
   },
   "strength": {
    "noun": "strength",
@@ -784,18 +785,6 @@
   ]
  },
  "questions": {
-  "belief_pre": {
-   "sec": "Before we begin",
-   "type": "scale",
-   "prompt": "I believe I have the ability to personally make a difference.",
-   "opts": [
-    "No way, not me",
-    "Maybe, but you'd have to show me how",
-    "I'm neutral",
-    "Yes, I can change lives",
-    "I'm definitely going to be part of something big and can change the world"
-   ]
-  },
   "past12": {
    "sec": "Before we begin",
    "type": "multi",
@@ -804,8 +793,9 @@
    "opts": [
     "Donated money to a cause",
     "Volunteered my time",
-    "Used my professional skills for a cause",
+    "Used my skills for a cause",
     "Raised awareness or advocated for a cause",
+    "Helped out a friend, family member, or stranger",
     "None of these yet"
    ],
    "excl": [
@@ -836,9 +826,7 @@
    "opts": [
     "Not even close",
     "Similar, but not quite",
-    "I see some resemblance",
-    "Very close",
-    "These are exactly where I give today"
+    "Very close, or exactly where I give today"
    ]
   },
   "vol_align": {
@@ -848,10 +836,8 @@
    "prompt": "How much does the way you volunteer today use these strengths?",
    "opts": [
     "Not at all",
-    "A little",
     "Some of the time",
-    "Most of the time",
-    "Completely"
+    "Most of the time, or completely"
    ],
    "extra": "I don't volunteer right now"
   },
@@ -866,6 +852,7 @@
     "Finding the right opportunity",
     "Feeling like my contribution matters",
     "Connecting with others who care about the same things",
+    "I would help if I was asked",
     "Nothing is in my way",
     "Something else"
    ],
@@ -885,7 +872,11 @@
     "Sharing my skills or expertise",
     "Advocacy or raising awareness",
     "Board or leadership roles",
-    "A group project with others"
+    "A group project with others",
+    "I'm not open to any opportunities"
+   ],
+   "excl": [
+    "I'm not open to any opportunities"
    ]
   },
   "belief_post": {
@@ -895,9 +886,7 @@
    "opts": [
     "No way, not me",
     "Maybe, but you'd have to show me how",
-    "I'm neutral",
-    "Yes, I can change lives",
-    "I'm definitely going to be part of something big and can change the world"
+    "Yes, I can change lives"
    ]
   },
   "next_steps": {
@@ -915,10 +904,20 @@
    "type": "text",
    "prompt": "Anything else you'd like to share about your giving journey, or what would help you get started?",
    "help": "Optional."
+  },
+  "narrowing": {
+   "sec": "Part 1 · Your causes",
+   "type": "scale",
+   "inline": true,
+   "prompt": "Narrowing my choices has been...",
+   "opts": [
+    "Super easy",
+    "Thought provoking, but not too hard",
+    "Definitely harder than I expected"
+   ]
   }
  },
  "flow": [
-  "belief_pre",
   "past12",
   {
    "sort": "cause"
@@ -941,7 +940,7 @@
  "indexes": {
   "g4g": {
    "org_name": "Gateway for Good",
-   "eyebrow": "Gateway for Good",
+   "eyebrow": "Gateway for Good®",
    "kajabi_tag": "Tool: Social Fingerprint Index",
    "subscribe_label": "Keep me informed about ways to make a difference with Gateway for Good.",
    "next_steps": [
@@ -954,5 +953,6 @@
    ]
   }
  },
- "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15."
+ "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15.",
+ "content_version": 2
 }
