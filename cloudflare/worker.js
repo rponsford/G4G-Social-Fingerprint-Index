@@ -9,7 +9,7 @@
 //   POST /draft        AI-drafted Purpose/Vision/Mission options
 //   POST /statement    saves a PurposeLens statement, emails the copy, syncs Kajabi
 //   POST /analysis     saves a GivingLens analysis, emails the report, syncs Kajabi
-//   POST /sfi          saves a Social Fingerprint Index response, emails the SFI report (first save only), syncs Kajabi
+//   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
 //   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
 
 const ALLOWED_ORIGINS = ["https://www.gatewayforgood.com", "https://gatewayforgood.com"];
@@ -283,31 +283,57 @@ async function saveAnalysis(b, request, env, ctx, cors) {
 }
 
 // ---------- /sfi (Social Fingerprint Index) ----------
+// sfi.js saves the same response_id several times: after causes, after strengths,
+// after the questions, and when the person finishes. "completed" is true only on the
+// last save; the report email and Kajabi sync wait for it. Older copies of sfi.js
+// (no "completed" field) only ever saved at the end, so a missing flag counts as done.
+const SFI_AGES = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
+let sfiColumnsReady = false;
+async function ensureSfiColumns(env) {
+  if (sfiColumnsReady) return;
+  for (const col of ["age_range TEXT", "last_step TEXT", "completed INTEGER DEFAULT 0", "emailed_at TEXT", "updated_at TEXT"]) {
+    try { await env.DB.prepare(`ALTER TABLE sfi_responses ADD COLUMN ${col}`).run(); } catch {} // already there
+  }
+  sfiColumnsReady = true;
+}
 async function saveSfi(b, env, ctx, cors) {
   const rid = clip(b.response_id, 80);
   if (!rid) return json({ error: "missing_response_id" }, 400, cors);
+  // Under 13: nothing is stored (COPPA). sfi.js doesn't send these; this is a backstop.
+  if (b.age_range === "under13") return json({ ok: true, stored: false }, 200, cors);
+  await ensureSfiColumns(env);
+  const age = SFI_AGES.includes(b.age_range) ? b.age_range : null;
+  const minor = age === "13-17";
+  const completed = b.completed === undefined ? true : !!b.completed;
   const email = cleanEmail(b.email);
+  const subscribe = !!b.subscribe && !minor;
   const causes = list(b.top_causes, 5), strengths = list(b.top_strengths, 5);
   let answers = "{}";
   try { answers = JSON.stringify(b.answers || {}).slice(0, 20000); } catch {}
-  const isNew = !(await env.DB.prepare("SELECT 1 FROM sfi_responses WHERE response_id = ?").bind(rid).first());
   await env.DB.prepare(
-    `INSERT INTO sfi_responses (response_id, submitted_at, index_id, group_code, page, first_name, email, zip, subscribe, top_causes, top_strengths, answers_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO sfi_responses (response_id, submitted_at, index_id, group_code, page, first_name, email, zip, subscribe, top_causes, top_strengths, answers_json, age_range, last_step, completed, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(response_id) DO UPDATE SET first_name=excluded.first_name, email=excluded.email, zip=excluded.zip,
-       subscribe=excluded.subscribe, top_causes=excluded.top_causes, top_strengths=excluded.top_strengths, answers_json=excluded.answers_json`
+       subscribe=excluded.subscribe, top_causes=excluded.top_causes, top_strengths=excluded.top_strengths, answers_json=excluded.answers_json,
+       age_range=COALESCE(excluded.age_range, sfi_responses.age_range), last_step=CASE WHEN COALESCE(sfi_responses.completed, 0) = 1 THEN sfi_responses.last_step ELSE excluded.last_step END,
+       completed=MAX(COALESCE(sfi_responses.completed, 0), excluded.completed), updated_at=excluded.updated_at`
   ).bind(rid, clip(b.submitted_at, 40), clip(b.index, 40), clip(b.group, 80), clip(b.page, 300), clip(b.first_name, 80),
-    email, clip(b.zip, 12), b.subscribe ? 1 : 0, causes.join("; "), strengths.join("; "), answers).run();
+    email, clip(b.zip, 12), subscribe ? 1 : 0, causes.join("; "), strengths.join("; "), answers,
+    age, clip(b.step, 40) || (completed ? "complete" : null), completed ? 1 : 0, new Date().toISOString()).run();
 
-  if (email && isNew && env.RESEND_API_KEY) ctx.waitUntil(sendSfiReport({ ...b, email }, env));
-  if (email) {
-    const tags = ["Tool: Social Fingerprint Index"];
-    for (const c of causes) if (CAUSES[c]) tags.push("Cause: " + CAUSES[c]);
-    for (const s of strengths) if (STRENGTHS[s]) tags.push("Strength: " + STRENGTHS[s]);
-    if (b.group) tags.push("Group: " + clip(b.group, 60));
-    ctx.waitUntil(kajabiSync(env, { email, name: clip(b.first_name, 80), subscribed: !!b.subscribe, tags }));
-  }
-  return json({ ok: true }, 200, cors);
+  if (!completed || !email) return json({ ok: true, stored: true }, 200, cors);
+
+  // Email the report once per response.
+  const claim = await env.DB.prepare("UPDATE sfi_responses SET emailed_at = ? WHERE response_id = ? AND emailed_at IS NULL")
+    .bind(new Date().toISOString(), rid).run();
+  if (claim.meta && claim.meta.changes && env.RESEND_API_KEY) ctx.waitUntil(sendSfiReport({ ...b, email }, env));
+
+  const tags = ["Tool: Social Fingerprint Index"];
+  for (const c of causes) if (CAUSES[c]) tags.push("Cause: " + CAUSES[c]);
+  for (const s of strengths) if (STRENGTHS[s]) tags.push("Strength: " + STRENGTHS[s]);
+  if (b.group && !minor) tags.push("Group: " + clip(b.group, 60)); // 13-17: interest tags only
+  ctx.waitUntil(kajabiSync(env, { email, name: clip(b.first_name, 80), subscribed: subscribe, tags }));
+  return json({ ok: true, stored: true }, 200, cors);
 }
 
 // ==================================================================

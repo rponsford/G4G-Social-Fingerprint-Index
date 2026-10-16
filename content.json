@@ -954,5 +954,40 @@
   }
  },
  "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15.",
- "content_version": 2
+ "content_version": 3,
+ "privacy_url": "https://www.gatewayforgood.com/policies",
+ "ages": [
+  [
+   "under13",
+   "Under 13"
+  ],
+  [
+   "13-17",
+   "13 to 17"
+  ],
+  [
+   "18-24",
+   "18 to 24"
+  ],
+  [
+   "25-34",
+   "25 to 34"
+  ],
+  [
+   "35-44",
+   "35 to 44"
+  ],
+  [
+   "45-54",
+   "45 to 54"
+  ],
+  [
+   "55-64",
+   "55 to 64"
+  ],
+  [
+   "65+",
+   "65 or older"
+  ]
+ ]
 }
