@@ -378,6 +378,7 @@ R.nextrank=function(){
 // share sheet, or downloaded with a copyable caption. Nothing is posted for them.
 // Under 13: not offered. The link in the caption is tagged so GA4 can count arrivals.
 const FP_URL=(CONTENT.share_url||"https://www.gatewayforgood.com/social-fingerprint")+"?utm_source=fingerprint_share&utm_medium=social&utm_campaign=social_fingerprint";
+const FP_SHOW=CONTENT.share_display||"GatewayForGood.com/social-fingerprint"; // the address printed on the image
 let fpBlob=null, fpUrl="", fpNoName=false;
 const fpAdult=()=>S.age&&S.age!=="13-17"&&S.age!=="under13";
 function fpShareHTML(){
@@ -400,30 +401,44 @@ async function fpRender(){
   const Z=1080, c=document.createElement("canvas"); c.width=Z; c.height=Z; const x=c.getContext("2d");
   const F=(w,px,fam)=>`${w} ${px}px ${fam==="d"?'"Bricolage Grotesque", system-ui, sans-serif':'Figtree, system-ui, -apple-system, "Segoe UI", sans-serif'}`;
   const rr=(X,Y,W,H,R)=>{x.beginPath(); if(x.roundRect) x.roundRect(X,Y,W,H,R); else x.rect(X,Y,W,H)};
+  const spaced=(t,X,Y,sp)=>{ let cx=X; for(const ch of t){ x.fillText(ch,cx,Y); cx+=x.measureText(ch).width+sp } return cx-X };
+  const GREEN="#2e7d32", DARK="#1b5e20", INK="#1d2a1f";
+  // background + green banner
   x.fillStyle="#f3f5ef"; x.fillRect(0,0,Z,Z);
-  x.strokeStyle="#2e7d32"; x.lineWidth=6; rr(36,36,Z-72,Z-72,30); x.stroke();
-  const name=fpAdult()&&S.name&&!fpNoName?S.name:"";
-  x.fillStyle="#2e7d32"; x.font=F(700,26,"b"); x.fillText("GATEWAY FOR GOOD",96,118);
-  x.fillStyle="#1d2a1f"; x.font=F(700,name&&name.length>14?50:58,"d"); x.fillText(name?name+"'s Social Fingerprint":"My Social Fingerprint",96,182);
-  const SZ=250, GAP=(Z-192-3*SZ)/2;
+  const g=x.createLinearGradient(0,0,Z,210); g.addColorStop(0,DARK); g.addColorStop(1,GREEN);
+  x.fillStyle=g; x.fillRect(0,0,Z,210);
+  x.fillStyle="rgba(255,255,255,.07)"; x.beginPath(); x.arc(Z-90,40,190,0,Math.PI*2); x.fill(); x.beginPath(); x.arc(Z-250,230,110,0,Math.PI*2); x.fill();
+    const name=fpAdult()&&S.name&&!fpNoName?S.name:"";
+  x.textAlign="left"; x.fillStyle="rgba(255,255,255,.85)"; x.font=F(700,24,"b"); spaced("GATEWAY FOR GOOD",80,82,4);
+  const title=name?name+"'s Social Fingerprint":"My Social Fingerprint";
+  let tp=64; x.font=F(700,tp,"d"); while(x.measureText(title).width>Z-160&&tp>40){ tp-=2; x.font=F(700,tp,"d") }
+  x.fillStyle="#ffffff"; x.fillText(title,80,158);
+  const SZ=230, M=110, GAP=(Z-2*M-3*SZ)/2;
   const wrapTxt=(t,max)=>{const w=t.split(" "),L=[];let l="";w.forEach(v=>{const q=l?l+" "+v:v;if(x.measureText(q).width>max&&l){L.push(l);l=v}else l=q});if(l)L.push(l);return L.slice(0,2)};
-  async function row(label,list,top){
-    x.fillStyle="#5d6b5f"; x.font=F(600,26,"b"); x.fillText(label,96,top);
+  function label(t,y){
+    x.textAlign="left"; x.fillStyle=GREEN; x.font=F(800,26,"b"); const w=spaced(t.toUpperCase(),M,y,3);
+    x.strokeStyle="#cfdcc9"; x.lineWidth=3; x.beginPath(); x.moveTo(M+w+18,y-9); x.lineTo(Z-M,y-9); x.stroke();
+  }
+  async function row(t,list,top){
+    label(t,top);
     const imgs=await Promise.all(list.map(it=>fpLoad(it.img)));
-    imgs.forEach((im,i)=>{ const X=96+i*(SZ+GAP), Y=top+20;
-      x.save(); rr(X,Y,SZ,SZ,22); x.clip(); x.fillStyle="#ffffff"; x.fillRect(X,Y,SZ,SZ);
+    imgs.forEach((im,i)=>{ const X=M+i*(SZ+GAP), Y=top+24;
+      x.save(); x.shadowColor="rgba(29,42,31,.18)"; x.shadowBlur=18; x.shadowOffsetY=6; x.fillStyle="#fff"; rr(X,Y,SZ,SZ,22); x.fill(); x.restore();
+      x.save(); rr(X,Y,SZ,SZ,22); x.clip();
       if(im){ const s=Math.min(im.width,im.height); x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,X,Y,SZ,SZ) } x.restore();
-      x.fillStyle="#2e7d32"; x.font=F(700,28,"d"); x.fillText(String(i+1),X,Y+SZ+38);
-      x.fillStyle="#1d2a1f"; x.font=F(600,24,"b"); wrapTxt(list[i].name,SZ-30).forEach((l,k)=>x.fillText(l,X+28,Y+SZ+37+k*29));
+      x.textAlign="center"; x.fillStyle=INK; x.font=F(700,25,"b");
+      wrapTxt(list[i].name,SZ+GAP-16).forEach((l,k)=>x.fillText(l,X+SZ/2,Y+SZ+38+k*29));
     });
     if(imgs.some(im=>!im)) throw new Error("card image");
   }
-  await row("Causes I care about most",S.results.cause,248);
-  await row("Strengths I bring",S.results.strength,618);
-  x.fillStyle="#5d6b5f"; x.font=F(500,24,"b"); x.fillText("Find yours at",96,1004);
-  x.fillStyle="#1d2a1f"; x.font=F(700,26,"b"); x.fillText("gatewayforgood.com/social-fingerprint",96,1036);
+  await row("Causes I care about most",S.results.cause,262);
+  await row("Strengths I bring",S.results.strength,646);
+  // footer band
+  x.fillStyle="#ffffff"; x.fillRect(0,968,Z,112); x.fillStyle="#d9e0d4"; x.fillRect(0,968,Z,3);
+  x.textAlign="left"; x.fillStyle=GREEN; x.font=F(800,26,"b"); x.fillText("Find yours",80,1018);
+  x.fillStyle=INK; x.font=F(600,26,"b"); x.fillText(FP_SHOW,80,1052);
   const logo=await fpLoad(BASE+"purposelens/img/g4g-logo.png");
-  if(logo){ const w=210,h=Math.round(w*logo.height/logo.width); x.drawImage(logo,Z-80-w,Z-62-h,w,h) }
+  if(logo){ const w=200,h=Math.round(w*logo.height/logo.width); x.drawImage(logo,Z-80-w,1024-h/2,w,h) }
   fpBlob=await new Promise(r=>c.toBlob(r,"image/png")); // throws if a picture blocked cross-site use
   if(!fpBlob) throw new Error("no image");
   if(fpUrl) URL.revokeObjectURL(fpUrl); fpUrl=URL.createObjectURL(fpBlob);
