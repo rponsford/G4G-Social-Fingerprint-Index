@@ -3,6 +3,7 @@
 //   Binding:  D1 database, variable name DB  ->  gfg-research
 //   Secrets:  ANTHROPIC_API_KEY, ADMIN_KEY, RESEND_API_KEY
 //   Optional: KAJABI_CLIENT_ID, KAJABI_CLIENT_SECRET (Kajabi Public API; contacts + tags sync turns on when present)
+//   Optional: TURNSTILE_SECRET (Cloudflare Turnstile human check on /sfi; enforced once present)
 //
 // Routes
 //   GET  /health
@@ -11,12 +12,16 @@
 //   POST /analysis     saves a GivingLens analysis, emails the report, syncs Kajabi
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
 //   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
+//        Retired once the g4g-admin Worker (Cloudflare Access) is live: delete ADMIN_KEY in the dashboard and this stops working.
 
 const ALLOWED_ORIGINS = ["https://www.gatewayforgood.com", "https://gatewayforgood.com"];
 const MODEL = "claude-sonnet-5-5";
 const DRAFTS_PER_IP_PER_DAY = 25;
 const REPORTS_PER_IP_PER_DAY = 20;
 const REPORTS_PER_EMAIL_PER_DAY = 10;
+const SFI_SAVES_PER_IP_PER_DAY = 400;   // ~4 saves per person, so ~100 people on one connection (a group event on shared wifi)
+const SFI_REPORTS_PER_EMAIL_PER_DAY = 5;
+const SFI_MIN_SECONDS = 60;           // finishing faster than this is flagged "too_fast"
 const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
 const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
@@ -44,7 +49,7 @@ export default {
         if (url.pathname === "/draft") return draft(body, request, env, cors);
         if (url.pathname === "/statement") return saveStatement(body, request, env, ctx, cors);
         if (url.pathname === "/analysis") return saveAnalysis(body, request, env, ctx, cors);
-        if (url.pathname === "/sfi") return saveSfi(body, env, ctx, cors);
+        if (url.pathname === "/sfi") return saveSfi(body, request, env, ctx, cors);
       }
       return json({ error: "not_found" }, 404, cors);
     } catch (e) {
@@ -56,7 +61,7 @@ export default {
 // ---------- helpers ----------
 function isAllowedOrigin(origin) {
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (origin === "https://tools.gatewayforgood.com" || origin === "https://rponsford.github.io") return true; // test pages
+  if (origin === "https://tools.gatewayforgood.com") return true; // test pages
   return /^https:\/\/[a-z0-9-]+\.(claudeusercontent\.com|claude\.ai|mykajabi\.com|kajabi\.com)$/i.test(origin);
 }
 function corsHeaders(origin) {
@@ -92,7 +97,7 @@ async function health(env, cors) {
   try { await env.DB.prepare("SELECT 1 FROM sfi_responses LIMIT 1").all(); sfi = true; } catch {}
   return json({
     ok: true, version: 3, database: db, sfi_table: sfi,
-    ai_key: !!env.ANTHROPIC_API_KEY, admin_key: !!env.ADMIN_KEY, email_key: !!env.RESEND_API_KEY,
+    ai_key: !!env.ANTHROPIC_API_KEY, admin_key: !!env.ADMIN_KEY, email_key: !!env.RESEND_API_KEY, turnstile: !!env.TURNSTILE_SECRET,
     kajabi: !!(env.KAJABI_CLIENT_ID && env.KAJABI_CLIENT_SECRET),
   }, 200, cors);
 }
@@ -291,37 +296,71 @@ const SFI_AGES = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 let sfiColumnsReady = false;
 async function ensureSfiColumns(env) {
   if (sfiColumnsReady) return;
-  for (const col of ["age_range TEXT", "last_step TEXT", "completed INTEGER DEFAULT 0", "emailed_at TEXT", "updated_at TEXT"]) {
+  for (const col of ["age_range TEXT", "last_step TEXT", "completed INTEGER DEFAULT 0", "emailed_at TEXT", "updated_at TEXT",
+                     "created_at TEXT", "human_check TEXT", "quality_flags TEXT"]) {
     try { await env.DB.prepare(`ALTER TABLE sfi_responses ADD COLUMN ${col}`).run(); } catch {} // already there
   }
   sfiColumnsReady = true;
 }
-async function saveSfi(b, env, ctx, cors) {
+// Data quality (bots and trolls). Nothing is deleted; suspect rows are flagged so reports can leave them out.
+//   human_check: passed | failed | missing | off (no TURNSTILE_SECRET set yet)
+//     Checked once per response (the first save that carries a token); later saves inherit "passed".
+//   quality_flags: comma list of honeypot | too_fast
+//   Rows that fail the human check or trip the honeypot are stored but get no email and no Kajabi sync.
+async function verifyTurnstile(env, token, ip) {
+  if (!token) return "missing";
+  try {
+    const form = new FormData();
+    form.append("secret", env.TURNSTILE_SECRET); form.append("response", clip(token, 2048)); if (ip) form.append("remoteip", ip);
+    const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
+    const d = await r.json();
+    return d.success ? "passed" : "failed";
+  } catch { return "failed"; }
+}
+async function saveSfi(b, request, env, ctx, cors) {
   const rid = clip(b.response_id, 80);
   if (!rid) return json({ error: "missing_response_id" }, 400, cors);
   // Under 13: nothing is stored (COPPA). sfi.js doesn't send these; this is a backstop.
   if (b.age_range === "under13") return json({ ok: true, stored: false }, 200, cors);
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if ((await bump(env, "sfi:" + ip + ":" + today())) > SFI_SAVES_PER_IP_PER_DAY) return json({ error: "rate_limited" }, 429, cors);
   await ensureSfiColumns(env);
+  const prev = await env.DB.prepare("SELECT human_check, quality_flags, created_at FROM sfi_responses WHERE response_id = ?").bind(rid).first();
+  const nowIso = new Date().toISOString();
+  let human = "off";
+  if (env.TURNSTILE_SECRET) human = prev && prev.human_check === "passed" ? "passed" : await verifyTurnstile(env, b.cf_turnstile, ip);
+  const flags = new Set(((prev && prev.quality_flags) || "").split(",").filter(Boolean));
+  if (clip(b.hp, 200)) flags.add("honeypot");
   const age = SFI_AGES.includes(b.age_range) ? b.age_range : null;
   const minor = age === "13-17";
   const completed = b.completed === undefined ? true : !!b.completed;
+  if (completed) {
+    const elapsed = Number(b.elapsed_s);
+    const firstSeen = prev && prev.created_at ? (Date.now() - Date.parse(prev.created_at)) / 1000 : null;
+    if ((Number.isFinite(elapsed) && elapsed > 0 && elapsed < SFI_MIN_SECONDS) || (firstSeen !== null && firstSeen < 20)) flags.add("too_fast");
+  }
+  const qflags = [...flags].join(",");
+  const suspect = flags.has("honeypot") || human === "failed" || human === "missing";
   const email = cleanEmail(b.email);
   const subscribe = !!b.subscribe && !minor;
   const causes = list(b.top_causes, 5), strengths = list(b.top_strengths, 5);
   let answers = "{}";
   try { answers = JSON.stringify(b.answers || {}).slice(0, 20000); } catch {}
   await env.DB.prepare(
-    `INSERT INTO sfi_responses (response_id, submitted_at, index_id, group_code, page, first_name, email, zip, subscribe, top_causes, top_strengths, answers_json, age_range, last_step, completed, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO sfi_responses (response_id, submitted_at, index_id, group_code, page, first_name, email, zip, subscribe, top_causes, top_strengths, answers_json, age_range, last_step, completed, updated_at, created_at, human_check, quality_flags)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(response_id) DO UPDATE SET first_name=excluded.first_name, email=excluded.email, zip=excluded.zip,
        subscribe=excluded.subscribe, top_causes=excluded.top_causes, top_strengths=excluded.top_strengths, answers_json=excluded.answers_json,
        age_range=COALESCE(excluded.age_range, sfi_responses.age_range), last_step=CASE WHEN COALESCE(sfi_responses.completed, 0) = 1 THEN sfi_responses.last_step ELSE excluded.last_step END,
-       completed=MAX(COALESCE(sfi_responses.completed, 0), excluded.completed), updated_at=excluded.updated_at`
+       completed=MAX(COALESCE(sfi_responses.completed, 0), excluded.completed), updated_at=excluded.updated_at,
+       created_at=COALESCE(sfi_responses.created_at, excluded.created_at), human_check=excluded.human_check, quality_flags=excluded.quality_flags`
   ).bind(rid, clip(b.submitted_at, 40), clip(b.index, 40), clip(b.group, 80), clip(b.page, 300), clip(b.first_name, 80),
     email, clip(b.zip, 12), subscribe ? 1 : 0, causes.join("; "), strengths.join("; "), answers,
-    age, clip(b.step, 40) || (completed ? "complete" : null), completed ? 1 : 0, new Date().toISOString()).run();
+    age, clip(b.step, 40) || (completed ? "complete" : null), completed ? 1 : 0, nowIso, nowIso, human, qflags || null).run();
 
-  if (!completed || !email) return json({ ok: true, stored: true }, 200, cors);
+  // Bots get the same "ok" answer so they learn nothing; they just don't trigger email or Kajabi.
+  if (!completed || !email || suspect) return json({ ok: true, stored: true }, 200, cors);
+  if ((await bump(env, "sfimail:" + email + ":" + today())) > SFI_REPORTS_PER_EMAIL_PER_DAY) return json({ ok: true, stored: true }, 200, cors);
 
   // Email the report once per response.
   const claim = await env.DB.prepare("UPDATE sfi_responses SET emailed_at = ? WHERE response_id = ? AND emailed_at IS NULL")

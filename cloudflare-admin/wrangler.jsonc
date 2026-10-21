@@ -1,0 +1,24 @@
+// Gateway for Good admin Worker (g4g-admin): data downloads now, the reporting dashboard later.
+// Cloudflare Workers Builds reads this file (build root directory: /cloudflare-admin).
+// It shares the gfg-research database with g4gminion1 but is a separate Worker, so the whole
+// thing can sit behind Cloudflare Access (Settings > Domains & Routes > workers.dev > Enable Cloudflare Access).
+//
+// Set in the dashboard (Settings > Variables and Secrets), from the box Cloudflare shows when Access is enabled:
+//   TEAM_DOMAIN         e.g. https://gatewayforgood.cloudflareaccess.com
+//   POLICY_AUD          the Access application's AUD tag
+//   FULL_ACCESS_EMAILS  comma list of people who may see names, emails and ZIP codes (everyone else gets them removed)
+// Until TEAM_DOMAIN and POLICY_AUD are set, every request is refused.
+{
+  "name": "g4g-admin",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "keep_vars": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gfg-research",
+      "database_id": "8aed19bc-8082-4f1e-925e-030cad9a3230"
+    }
+  ]
+}

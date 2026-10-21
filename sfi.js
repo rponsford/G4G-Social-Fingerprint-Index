@@ -55,6 +55,7 @@
       return { response_id: RID, submitted_at: new Date().toISOString(), index: idxId, group: GROUP, age_range: S.age||"",
         kajabi_tag: IDX.kajabi_tag, page: location.href.split("#")[0],
         first_name: S.name, email: (S.contact||{}).email||"", zip: (S.contact||{}).zip||"", subscribe: !!(S.contact||{}).sub,
+        elapsed_s: S.started_at ? Math.round((Date.now()-S.started_at)/1000) : null, hp: S.hp||"",
         top_causes: ids("cause"), top_strengths: ids("strength"), answers: Object.assign({}, S.ans, {_v: CONTENT.content_version||1, _consent_at: S.consent_at||""}) };
     }
     // Shared workbook used by the other Gateway for Good tools (GivingLens reads the same key).
@@ -77,7 +78,46 @@
       if(completed) remember(p);
       if(S.age==="under13") return;
       if(!CONTENT.endpoint){ console.info("[Social Fingerprint] test mode, not sent:", p); return; }
-      try{ fetch(CONTENT.endpoint,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}); }catch(e){ console.error(e) }
+      tsLoad();
+      humanToken().then(function(tok){
+        if(tok){ p.cf_turnstile=tok; S.verified=RID }
+        try{ fetch(CONTENT.endpoint,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}); }catch(e){ console.error(e) }
+      });
+    }
+    // Human check (Cloudflare Turnstile). Off until content.json has turnstile_sitekey.
+    // Runs once per response, just before the first save; usually invisible. If Cloudflare
+    // needs a click, the check floats at the bottom of the screen. It lives outside the
+    // shadow DOM because Turnstile renders its own iframe into the page.
+    const TS_KEY = CONTENT.turnstile_sitekey || "";
+    let tsBox=null, tsId=null, tsUsed=false; const tsWait=[];
+    function tsDone(t){ tsWait.splice(0).forEach(function(f){ f(t) }) }
+    function tsRun(){ try{ if(tsUsed) window.turnstile.reset(tsId); tsUsed=true; window.turnstile.execute(tsId) }catch(e){ tsDone("") } }
+    function tsLoad(){
+      if(!TS_KEY || tsBox) return;
+      tsBox=document.createElement("div"); tsBox.className="sfi-human-check";
+      tsBox.style.cssText="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483000";
+      document.body.appendChild(tsBox);
+      const render=function(){ try{
+        tsId=window.turnstile.render(tsBox,{sitekey:TS_KEY, execution:"execute", appearance:"interaction-only", action:"sfi",
+          callback:function(t){ tsDone(t) }, "error-callback":function(){ tsDone(""); return true }, "timeout-callback":function(){ tsDone("") }});
+        if(tsWait.length) tsRun();
+      }catch(e){ tsDone("") } };
+      if(window.turnstile) return render();
+      (window.__sfiTs=window.__sfiTs||[]).push(render);
+      if(!document.getElementById("sfi-ts-api")){
+        window.__sfiTsReady=function(){ (window.__sfiTs||[]).splice(0).forEach(function(f){ f() }) };
+        const t=document.createElement("script"); t.id="sfi-ts-api"; t.async=true;
+        t.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__sfiTsReady"; document.head.appendChild(t);
+      }
+    }
+    function humanToken(){
+      return new Promise(function(res){
+        if(!TS_KEY || S.verified===RID) return res("");
+        let done=false; const fin=function(t){ if(!done){ done=true; res(t||"") } };
+        setTimeout(function(){ fin("") }, 15000);
+        tsWait.push(fin);
+        if(tsId!=null && tsWait.length===1) tsRun();
+      });
     }
 const byId = {}; for (const k of ["cause","strength"]) DATA[k].forEach(c=>byId[k+":"+c.id]=c);
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -126,7 +166,7 @@ welcome(){
   const ready=()=>{ const a=$("#ag").value; $("#kid").hidden=a!=="under13"; $("#go").disabled=!(a&&$("#ok").checked) };
   $("#ag").onchange=ready; $("#ok").onchange=ready; ready();
   $("#nm").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("#go").disabled)$("#go").click()});
-  $("#go").onclick=()=>{S.name=$("#nm").value.trim();S.age=$("#ag").value;S.consent_at=new Date().toISOString();S.step=0;S.ans={};S.contact=null;H=[];enter()};
+  $("#go").onclick=()=>{S.name=$("#nm").value.trim();S.age=$("#ag").value;S.consent_at=new Date().toISOString();S.started_at=Date.now();S.step=0;S.ans={};S.contact=null;H=[];if(S.age!=="under13"&&CONTENT.endpoint)tsLoad();enter()};
 },
 intro(){
   const x=TEXT[T.sec];
@@ -340,12 +380,13 @@ R.contact=function(){
   <label class="sub" for="em">Email</label><input type="text" inputmode="email" id="em" autocomplete="email" placeholder="you@example.com" value="${esc(c.email)}">
   <label class="sub" for="zp">ZIP code <span class="muted">(optional, for opportunities near you)</span></label><input type="text" inputmode="numeric" id="zp" autocomplete="postal-code" maxlength="10" value="${esc(c.zip)}">
   ${minor?"":`<label class="check"><input type="checkbox" id="sb" ${c.sub?"checked":""}><span>${esc(IDX.subscribe_label)}</span></label>`}
+  <div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden"><label for="hp">Leave this blank</label><input type="text" id="hp" name="website" tabindex="-1" autocomplete="off"></div>
   ${nav(`<button class="primary" id="go">Send my report and see results</button>`)}
   <button class="ghost" id="skip">Skip for now and just show my results</button>
   ${CONTENT.endpoint?"":`<p class="note">Test mode: responses are not being saved yet.</p>`}`;
   const valid=()=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("#em").value.trim());
   const upd=()=>{$("#go").disabled=!valid()}; $("#em").oninput=upd; upd();
-  const save=()=>({email:$("#em").value.trim(),zip:$("#zp").value.trim(),sub:!minor&&!!($("#sb")&&$("#sb").checked)});
+  const save=()=>{S.hp=$("#hp").value;return {email:$("#em").value.trim(),zip:$("#zp").value.trim(),sub:!minor&&!!($("#sb")&&$("#sb").checked)}};
   $("#go").onclick=()=>{S.contact=save();submit("complete",true);next()};
   $("#skip").onclick=()=>{S.contact={email:"",zip:$("#zp").value.trim(),sub:false,skipped:true};submit("complete",true);next()};
 };
