@@ -393,6 +393,9 @@ const SFI_SITE = "https://www.gatewayforgood.com";
 // PurposeLens: where people write their giving purpose statement (mission,
 // vision, purpose). Put the page address here once it's live, and the
 // "Write my giving purpose statement" buttons appear. Blank = no button.
+// Tool names as people see them in the report. Renaming a tool = change the name here (and the URL if the page moves).
+const SFI_PURPOSE_NAME = "PurposeLens";
+const SFI_GIVING_NAME = "GivingLens";
 const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
 const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
@@ -402,12 +405,12 @@ const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
 // Keys are the next-step answers exactly as worded in content.json. Older wordings stay so earlier responses still render.
 const SFI_NEXT_LINKS = {
   "Find organizations that align with my causes": { url: SFI_PURPOSELENS_URL, label: "Write my giving purpose statement",
-    note: "Start with PurposeLens. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for." },
+    note: `Start with ${SFI_PURPOSE_NAME}. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for.` },
   "Explore a giving project with others": { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle on Grapevine" },
   "Connect with a professional to talk about my own giving strategy": { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk" },
   "Talk with a professional about my own giving strategy": { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk" },
   "Get connected to organizations that match my causes": { url: SFI_PURPOSELENS_URL, label: "Write my giving purpose statement",
-    note: "Start with PurposeLens. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for." },
+    note: `Start with ${SFI_PURPOSE_NAME}. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for.` },
   "Join a giving project with others who share my causes": { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle on Grapevine" },
   "Bring this experience to my family, friends, or organization": { url: "", label: "",
     note: "Reply to this email and tell us who you'd like to bring. We'll help you set up a group version with its own community report." },
@@ -420,8 +423,8 @@ const SFI_NEXT_LINKS = {
 const SFI_BARRIER_TIPS = {
   "Time": "Short on time? Start with a one time event, or a role you can do from home in an hour a week. Small and steady beats big and rare.",
   "Knowing where to start": "Not sure where to start? Begin with your giving purpose statement. Once you know what you're giving for, the right next step gets much easier to see.",
-  "Finding the right opportunity": "Looking for the right fit? Your giving purpose statement gives you the criteria. Then use the search terms under each cause, add your town or ZIP code, and check what you find with GivingLens.",
-  "Feeling like my contribution matters": "Wondering if it matters? Ask the organization how they measure results, and check their numbers with GivingLens before you give.",
+  "Finding the right opportunity": `Looking for the right fit? Your giving purpose statement gives you the criteria. Then use the search terms under each cause, add your town or ZIP code, and check what you find with ${SFI_GIVING_NAME}.`,
+  "Feeling like my contribution matters": `Wondering if it matters? Ask the organization how they measure results, and check their numbers with ${SFI_GIVING_NAME} before you give.`,
   "I would help if I was asked": "Waiting to be asked? Consider this your invitation. Reach out to one organization working on your top cause and ask, \"How can I help?\" Most are thrilled to hear it.",
   "Connecting with others who care about the same things": "Want company? Share your Social Fingerprint with a friend or your group and compare. Shared causes make great group projects.",
 };
@@ -543,12 +546,12 @@ function buildSfiReport(p, content) {
     <div style="${FONT}font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${GREEN};font-weight:bold;padding-bottom:8px">Your giving path</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${LINE};border-radius:14px">
       ${stage(1, "Connect", true,
-        `&#10003; Your Social Fingerprint<br><b>Next: PurposeLens.</b> Write your giving purpose statement: your mission, vision, and purpose for giving. It turns your causes and strengths into clear criteria for where your time and money go.`,
+        `&#10003; Your Social Fingerprint<br><b>Next: ${SFI_PURPOSE_NAME}.</b> Write your giving purpose statement: your mission, vision, and purpose for giving. It turns your causes and strengths into clear criteria for where your time and money go.`,
         SFI_PURPOSELENS_URL ? btn(SFI_PURPOSELENS_URL, "Write my giving purpose statement") : "")}
       <tr><td colspan="2" style="border-top:1px solid ${LINE};font-size:0;line-height:0">&nbsp;</td></tr>
       ${stage(2, "Analyze", false,
-        "Find organizations that fit your purpose, then check each one with GivingLens before you give.",
-        link(SFI_FIND_GUIDE_URL, "How to find organizations") + link(SFI_GIVINGLENS_URL, "GivingLens"))}
+        `Find organizations that fit your purpose, then check each one with ${SFI_GIVING_NAME} before you give.`,
+        link(SFI_FIND_GUIDE_URL, "How to find organizations") + link(SFI_GIVINGLENS_URL, SFI_GIVING_NAME))}
       <tr><td colspan="2" style="border-top:1px solid ${LINE};font-size:0;line-height:0">&nbsp;</td></tr>
       ${stage(3, "Invest", false,
         "Bring your donor profile (causes, strengths, and purpose) to the organizations you choose: give, volunteer, make connections, or help with an event or fundraiser.", "")}
@@ -606,8 +609,8 @@ function buildSfiReport(p, content) {
   const T = [];
   T.push(`${name ? name + "'s" : "Your"} Social Fingerprint`, `${org} · ${date}`, "");
   T.push("YOUR GIVING PATH",
-    "1. Connect (you are here): your Social Fingerprint is done. Next is PurposeLens: write your giving purpose statement (mission, vision, purpose)." + (SFI_PURPOSELENS_URL ? " " + SFI_PURPOSELENS_URL : ""),
-    "2. Analyze: find organizations that fit your purpose (" + SFI_FIND_GUIDE_URL + "), then check each one with GivingLens (" + SFI_GIVINGLENS_URL + ").",
+    "1. Connect (you are here): your Social Fingerprint is done. Next is " + SFI_PURPOSE_NAME + ": write your giving purpose statement (mission, vision, purpose)." + (SFI_PURPOSELENS_URL ? " " + SFI_PURPOSELENS_URL : ""),
+    "2. Analyze: find organizations that fit your purpose (" + SFI_FIND_GUIDE_URL + "), then check each one with " + SFI_GIVING_NAME + " (" + SFI_GIVINGLENS_URL + ").",
     "3. Invest: bring your donor profile to the organizations you choose: give, volunteer, make connections, or help with an event or fundraiser.", "");
   T.push("YOUR CAUSES");
   causes.forEach((c, i) => { T.push(`${i + 1}. ${c.name}: ${c.tag}`); (c.items || []).forEach(x => T.push(`   - ${x}`)); if ((c.search || []).length) T.push(`   Search terms: ${c.search.slice(0, 5).join(", ")}`); });
