@@ -26,9 +26,9 @@ const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
 const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
 // Social Fingerprint "anything else" notes go to the team from a sender used for nothing else,
-// so an Outlook rule (From contains notesSFI@gatewayforgood.com) can file them. notesSFI@ needs no mailbox; other tools can follow the same pattern (notes<TOOL>@).
+// so an Outlook rule (From contains Notes-SFI@gatewayforgood.com) can file them. Notes-SFI@ needs no mailbox; other tools can follow the same pattern (Notes-<TOOL>@).
 // Reply-To is the person who wrote the note, and replies come from whoever answers.
-const NOTES_FROM = "Social Fingerprint Notes <notesSFI@gatewayforgood.com>";
+const NOTES_FROM = "Social Fingerprint Notes <Notes-SFI@gatewayforgood.com>";
 const NOTES_TO = "team@gatewayforgood.com";
 const KAJABI_SITE_ID = "2148521347";
 const ICON_URL = "https://tools.gatewayforgood.com/givinglens/img/icons/";
