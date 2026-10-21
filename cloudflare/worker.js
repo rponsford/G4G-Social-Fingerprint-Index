@@ -25,6 +25,11 @@ const SFI_MIN_SECONDS = 60;           // finishing faster than this is flagged "
 const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
 const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
+// Social Fingerprint "anything else" notes go to the team from a sender used for nothing else,
+// so an Outlook rule (From contains notes@gatewayforgood.com) can file them. notes@ needs no mailbox:
+// Reply-To is the person who wrote the note, and replies come from whoever answers.
+const NOTES_FROM = "Social Fingerprint Notes <notes@gatewayforgood.com>";
+const NOTES_TO = "team@gatewayforgood.com";
 const KAJABI_SITE_ID = "2148521347";
 const ICON_URL = "https://tools.gatewayforgood.com/givinglens/img/icons/";
 const LOGO_URL = "https://tools.gatewayforgood.com/givinglens/img/g4g-logo-email.png";
@@ -297,7 +302,7 @@ let sfiColumnsReady = false;
 async function ensureSfiColumns(env) {
   if (sfiColumnsReady) return;
   for (const col of ["age_range TEXT", "last_step TEXT", "completed INTEGER DEFAULT 0", "emailed_at TEXT", "updated_at TEXT",
-                     "created_at TEXT", "human_check TEXT", "quality_flags TEXT"]) {
+                     "created_at TEXT", "human_check TEXT", "quality_flags TEXT", "note_sent_at TEXT"]) {
     try { await env.DB.prepare(`ALTER TABLE sfi_responses ADD COLUMN ${col}`).run(); } catch {} // already there
   }
   sfiColumnsReady = true;
@@ -357,6 +362,14 @@ async function saveSfi(b, request, env, ctx, cors) {
   ).bind(rid, clip(b.submitted_at, 40), clip(b.index, 40), clip(b.group, 80), clip(b.page, 300), clip(b.first_name, 80),
     email, clip(b.zip, 12), subscribe ? 1 : 0, causes.join("; "), strengths.join("; "), answers,
     age, clip(b.step, 40) || (completed ? "complete" : null), completed ? 1 : 0, nowIso, nowIso, human, qflags || null).run();
+
+  // Forward the "anything else" note to the team once per response (skipped for flagged rows).
+  const note = clip((b.answers || {}).comments, 4000);
+  if (completed && note && !suspect && env.RESEND_API_KEY) {
+    const nclaim = await env.DB.prepare("UPDATE sfi_responses SET note_sent_at = ? WHERE response_id = ? AND note_sent_at IS NULL")
+      .bind(nowIso, rid).run();
+    if (nclaim.meta && nclaim.meta.changes) ctx.waitUntil(sendSfiNote({ ...b, email }, note, age, env));
+  }
 
   // Bots get the same "ok" answer so they learn nothing; they just don't trigger email or Kajabi.
   if (!completed || !email || suspect) return json({ ok: true, stored: true }, 200, cors);
@@ -636,12 +649,46 @@ if (typeof module !== "undefined") module.exports = { buildSfiReport, sendSfiRep
 // ==================================================================
 
 // ---------- email (Resend) ----------
-async function sendEmail(env, to, subject, html, text, from = FROM) {
+// ---------- Social Fingerprint note to the team ----------
+async function sendSfiNote(p, note, age, env) {
+  const minor = age === "13-17";
+  const a = p.answers || {};
+  const name = clip(p.first_name, 80) || "someone";
+  const causes = list(p.top_causes, 5).map((c) => CAUSES[c] || c);
+  const strengths = list(p.top_strengths, 5).map((s) => STRENGTHS[s] || s);
+  const contact = minor ? "Not shared (13 to 17). Please don't reply one-to-one." : p.email ? p.email : "No email (skipped the report)";
+  const rows = [
+    ["Name", clip(p.first_name, 80) || "(not given)"],
+    ["Email", contact],
+    ["Age range", age || "(not given)"],
+    ["ZIP", clip(p.zip, 12) || "(blank)"],
+    ["Top causes", causes.join(", ")],
+    ["Top strengths", strengths.join(", ")],
+    ["Next steps (in their order)", (a.next_steps || []).join("; ")],
+    ["Open to", (a.open_to || []).join("; ")],
+    ["What gets in the way", (a.barriers || []).join("; ")],
+    ["Group", clip(p.group, 80)],
+    ["Response ID", clip(p.response_id, 80)],
+  ].filter(([, v]) => v);
+  const subject = `[Social Fingerprint note] from ${name}` + (causes.length ? " – " + causes.slice(0, 3).join(", ") : "");
+  const html = `<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1d2a1f;max-width:620px">
+    <p style="margin:0 0 6px;color:#5b6b5e;font-size:13px">${esc(name)} wrote, at the end of the Social Fingerprint:</p>
+    <div style="border-left:4px solid #2e7d32;background:#f3f5ef;padding:12px 16px;white-space:pre-wrap;margin:0 0 18px">${esc(note)}</div>
+    <table cellpadding="0" cellspacing="0" style="font-size:14px;border-collapse:collapse">
+    ${rows.map(([k, v]) => `<tr><td style="padding:4px 14px 4px 0;color:#5b6b5e;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0">${esc(v)}</td></tr>`).join("")}
+    </table>
+    <p style="margin:18px 0 0;color:#5b6b5e;font-size:13px">${!minor && p.email ? "Hit Reply to answer " + esc(name) + " directly." : "There is no address to reply to."}</p></div>`;
+  const text = `${name} wrote, at the end of the Social Fingerprint:\n\n${note}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n");
+  const replyTo = !minor && p.email ? p.email : NOTES_TO;
+  return sendEmail(env, NOTES_TO, subject, html, text, NOTES_FROM, replyTo);
+}
+
+async function sendEmail(env, to, subject, html, text, from = FROM, replyTo = REPLY_TO) {
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [to], reply_to: REPLY_TO, subject, html, text }),
+      body: JSON.stringify({ from, to: [to], reply_to: replyTo, subject, html, text }),
     });
     return r.ok;
   } catch { return false; }
