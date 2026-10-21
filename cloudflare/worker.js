@@ -26,9 +26,9 @@ const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
 const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
 // Social Fingerprint "anything else" notes go to the team from a sender used for nothing else,
-// so an Outlook rule (From contains notes@gatewayforgood.com) can file them. notes@ needs no mailbox:
+// so an Outlook rule (From contains notesSFI@gatewayforgood.com) can file them. notesSFI@ needs no mailbox; other tools can follow the same pattern (notes<TOOL>@).
 // Reply-To is the person who wrote the note, and replies come from whoever answers.
-const NOTES_FROM = "Social Fingerprint Notes <notes@gatewayforgood.com>";
+const NOTES_FROM = "Social Fingerprint Notes <notesSFI@gatewayforgood.com>";
 const NOTES_TO = "team@gatewayforgood.com";
 const KAJABI_SITE_ID = "2148521347";
 const ICON_URL = "https://tools.gatewayforgood.com/givinglens/img/icons/";
@@ -384,7 +384,7 @@ async function saveSfi(b, request, env, ctx, cors) {
   for (const c of causes) if (CAUSES[c]) tags.push("Cause: " + CAUSES[c]);
   for (const s of strengths) if (STRENGTHS[s]) tags.push("Strength: " + STRENGTHS[s]);
   if (b.group && !minor) tags.push("Group: " + clip(b.group, 60)); // 13-17: interest tags only
-  ctx.waitUntil(kajabiSync(env, { email, name: clip(b.first_name, 80), subscribed: subscribe, tags }));
+  ctx.waitUntil(kajabiSync(env, { email, name: clip(b.first_name, 80), subscribed: subscribe, tags, zip: minor ? "" : clip(b.zip, 12) }));
   return json({ ok: true, stored: true }, 200, cors);
 }
 
@@ -765,7 +765,7 @@ ${notes.length ? `<tr><td style="padding:20px 24px 0"><div style="font-weight:80
 }
 
 // ---------- Kajabi (Public API) ----------
-async function kajabiSync(env, { email, name, subscribed, tags }, log = []) {
+async function kajabiSync(env, { email, name, subscribed, tags, zip }, log = []) {
   if (!env.KAJABI_CLIENT_ID || !env.KAJABI_CLIENT_SECRET) { log.push("no Kajabi credentials"); return log; }
   try {
     const API = "https://api.kajabi.com/v1";
@@ -782,13 +782,26 @@ async function kajabiSync(env, { email, name, subscribed, tags }, log = []) {
     const match = (found.data || []).find((c) => (c.attributes?.email || "").toLowerCase() === email);
     log.push("lookup: " + (found.data ? found.data.length + " result(s)" : JSON.stringify(found).slice(0, 300)));
     if (match) contactId = match.id;
+    // Existing contact: a checked box opts them in; an unchecked box never unsubscribes anyone. Fill a missing ZIP.
+    if (match) {
+      const upd = {};
+      if (subscribed && !match.attributes?.subscribed) upd.subscribed = true;
+      if (zip && !match.attributes?.address_zip) upd.address_zip = zip;
+      if (Object.keys(upd).length) {
+        const ur = await fetch(`${API}/contacts/${contactId}`, { method: "PATCH", headers: H, body: JSON.stringify({ data: { type: "contacts", id: String(contactId), attributes: upd } }) });
+        log.push("update " + Object.keys(upd).join("+") + ": HTTP " + ur.status + (ur.ok ? "" : " " + (await ur.text()).slice(0, 300)));
+      }
+    }
     if (!contactId) {
       const attrs = { email, subscribed: !!subscribed };
       if (name) attrs.name = name;
-      const created = await fetch(API + "/contacts", {
+      if (zip) attrs.address_zip = zip;
+      const create = (at) => fetch(API + "/contacts", {
         method: "POST", headers: H,
-        body: JSON.stringify({ data: { type: "contacts", attributes: attrs, relationships: { site: { data: { type: "sites", id: KAJABI_SITE_ID } } } } }),
+        body: JSON.stringify({ data: { type: "contacts", attributes: at, relationships: { site: { data: { type: "sites", id: KAJABI_SITE_ID } } } } }),
       }).then(async (r) => { const t = await r.text(); log.push("create: HTTP " + r.status + (r.ok ? "" : " " + t.slice(0, 300))); try { return JSON.parse(t); } catch { return {}; } });
+      let created = await create(attrs);
+      if (!created.data?.id && attrs.address_zip) { delete attrs.address_zip; created = await create(attrs); } // never lose a contact over a ZIP Kajabi won't take
       contactId = created.data?.id || null;
     }
     log.push("contact id: " + contactId);
