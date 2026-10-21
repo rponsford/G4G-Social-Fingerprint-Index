@@ -399,7 +399,12 @@ const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
 
 // Buttons for the next steps people pick on the last screen.
 // Leave a url blank ("") and that step shows as a plain line with no button.
+// Keys are the next-step answers exactly as worded in content.json. Older wordings stay so earlier responses still render.
 const SFI_NEXT_LINKS = {
+  "Find organizations that align with my causes": { url: SFI_PURPOSELENS_URL, label: "Write my giving purpose statement",
+    note: "Start with PurposeLens. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for." },
+  "Explore a giving project with others": { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle on Grapevine" },
+  "Connect with a professional to talk about my own giving strategy": { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk" },
   "Talk with a professional about my own giving strategy": { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk" },
   "Get connected to organizations that match my causes": { url: SFI_PURPOSELENS_URL, label: "Write my giving purpose statement",
     note: "Start with PurposeLens. Your giving purpose statement turns your causes and strengths into clear criteria, so you know which organizations to look for." },

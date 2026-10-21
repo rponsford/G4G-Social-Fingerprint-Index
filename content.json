@@ -791,17 +791,8 @@
    "type": "multi",
    "prompt": "In the past 12 months, I have...",
    "help": "Check all that apply.",
-   "opts": [
-    "Donated money to a cause",
-    "Volunteered my time",
-    "Used my skills for a cause",
-    "Raised awareness or advocated for a cause",
-    "Helped out a friend, family member, or stranger",
-    "None of these yet"
-   ],
-   "excl": [
-    "None of these yet"
-   ]
+   "opts": ["Donated money to a cause", "Volunteered my time", "Used my skills for a cause", "Raised awareness or advocated for a cause", "Helped out a friend, family member, or stranger", "I've done one or more of these, just not in the last 12 months", "None of these yet"],
+   "excl": ["I've done one or more of these, just not in the last 12 months", "None of these yet"]
   },
   "why_causes": {
    "sec": "Part 1 · Your causes",
@@ -809,15 +800,7 @@
    "show": "cause",
    "prompt": "Why did you choose these three?",
    "help": "Check all that apply.",
-   "opts": [
-    "I see myself making an impact here",
-    "I've had personal experience with these causes",
-    "They align with my beliefs and values",
-    "I already support these areas",
-    "I felt I should choose them",
-    "I'm not sure, they just felt right",
-    "Another reason"
-   ]
+   "opts": ["I see myself making an impact here", "I've had personal experience with these causes", "They align with my beliefs and values", "I already support these areas", "I'm not sure, they just felt right", "Another reason"]
   },
   "giving_align": {
    "sec": "Part 1 · Your causes",
@@ -834,7 +817,7 @@
    "sec": "Part 2 · Your strengths",
    "type": "scale",
    "show": "strength",
-   "prompt": "How much does the way you volunteer today use these strengths?",
+   "prompt": "How much does the way you have volunteered use your strengths?",
    "opts": [
     "Not at all",
     "Some of the time",
@@ -866,16 +849,7 @@
    "type": "multi",
    "prompt": "Which kinds of opportunities are you open to?",
    "help": "Check all that apply.",
-   "opts": [
-    "One time volunteer events",
-    "Ongoing volunteer roles",
-    "Giving money or resources",
-    "Sharing my skills or expertise",
-    "Advocacy or raising awareness",
-    "Board or leadership roles",
-    "A group project with others",
-    "I'm not open to any opportunities"
-   ],
+   "opts": ["One-time volunteer events", "Ongoing volunteer roles", "Sharing my skills or experience", "Advocacy or raising awareness", "Giving money or resources", "A group project with others", "Board or leadership roles", "I'm not open to any opportunities"],
    "excl": [
     "I'm not open to any opportunities"
    ]
@@ -883,7 +857,7 @@
   "belief_post": {
    "sec": "Wrapping up",
    "type": "scale",
-   "prompt": "Now that you've been through it: I believe I have the ability to personally make a difference.",
+   "prompt": "I believe I have the ability to make a difference.",
    "opts": [
     "No way, not me",
     "Maybe, but you'd have to show me how",
@@ -944,14 +918,7 @@
    "eyebrow": "Gateway for Good®",
    "kajabi_tag": "Tool: Social Fingerprint Index",
    "subscribe_label": "Keep me informed about ways to make a difference with Gateway for Good.",
-   "next_steps": [
-    "Talk with a professional about my own giving strategy",
-    "Get connected to organizations that match my causes",
-    "Join a giving project with others who share my causes",
-    "Bring this experience to my family, friends, or organization",
-    "Join the Gateway for Good Community",
-    "I'm not ready to take action yet"
-   ]
+   "next_steps": ["Find organizations that align with my causes", "Explore a giving project with others", "Join the Gateway for Good Community", "Connect with a professional to talk about my own giving strategy", "I'm not ready to take action yet"]
   }
  },
  "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15.",
