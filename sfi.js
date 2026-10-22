@@ -403,7 +403,12 @@ async function fpRender(){
   const rr=(X,Y,W,H,R)=>{x.beginPath(); if(x.roundRect) x.roundRect(X,Y,W,H,R); else x.rect(X,Y,W,H)};
   const spaced=(t,X,Y,sp)=>{ let cx=X; for(const ch of t){ x.fillText(ch,cx,Y); cx+=x.measureText(ch).width+sp } return cx-X };
   const GREEN="#2e7d32", DARK="#1b5e20", INK="#1d2a1f";
-  // background + green banner
+  // white surround, then one rounded panel that holds everything (white, not transparent,
+  // so platforms that flatten PNGs don't turn the corners black)
+  const IN=24, RAD=44;
+  x.fillStyle="#ffffff"; x.fillRect(0,0,Z,Z);
+  x.save(); x.shadowColor="rgba(29,42,31,.16)"; x.shadowBlur=20; x.shadowOffsetY=4; x.fillStyle="#f3f5ef"; rr(IN,IN,Z-2*IN,Z-2*IN,RAD); x.fill(); x.restore();
+  x.save(); rr(IN,IN,Z-2*IN,Z-2*IN,RAD); x.clip();
   x.fillStyle="#f3f5ef"; x.fillRect(0,0,Z,Z);
   const g=x.createLinearGradient(0,0,Z,210); g.addColorStop(0,DARK); g.addColorStop(1,GREEN);
   x.fillStyle=g; x.fillRect(0,0,Z,210);
@@ -431,14 +436,16 @@ async function fpRender(){
     });
     if(imgs.some(im=>!im)) throw new Error("card image");
   }
-  await row("Causes I care about most",S.results.cause,262);
-  await row("Strengths I bring",S.results.strength,646);
+  await row("Causes I care about most",S.results.cause,268);
+  await row("Strengths I bring",S.results.strength,634);
   // footer band
-  x.fillStyle="#ffffff"; x.fillRect(0,968,Z,112); x.fillStyle="#d9e0d4"; x.fillRect(0,968,Z,3);
-  x.textAlign="left"; x.fillStyle=GREEN; x.font=F(800,26,"b"); x.fillText("Find yours",80,1018);
-  x.fillStyle=INK; x.font=F(600,26,"b"); x.fillText(FP_SHOW,80,1052);
+  x.fillStyle="#ffffff"; x.fillRect(0,950,Z,130); x.fillStyle="#d9e0d4"; x.fillRect(0,950,Z,3);
+  x.textAlign="left"; x.fillStyle=GREEN; x.font=F(800,26,"b"); x.fillText("Find yours",80,996);
+  x.fillStyle=INK; x.font=F(600,26,"b"); x.fillText(FP_SHOW,80,1030);
   const logo=await fpLoad(BASE+"purposelens/img/g4g-logo.png");
-  if(logo){ const w=200,h=Math.round(w*logo.height/logo.width); x.drawImage(logo,Z-80-w,1024-h/2,w,h) }
+  if(logo){ const w=200,h=Math.round(w*logo.height/logo.width); x.drawImage(logo,Z-80-w,1004-h/2,w,h) }
+  x.restore();
+  x.strokeStyle="#cfdcc9"; x.lineWidth=2; rr(IN,IN,Z-2*IN,Z-2*IN,RAD); x.stroke();
   fpBlob=await new Promise(r=>c.toBlob(r,"image/png")); // throws if a picture blocked cross-site use
   if(!fpBlob) throw new Error("no image");
   if(fpUrl) URL.revokeObjectURL(fpUrl); fpUrl=URL.createObjectURL(fpBlob);
