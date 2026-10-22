@@ -288,7 +288,7 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
     const who = whoLine();
     if (who) { x.fillStyle = "#1f2a22"; x.font = "600 32px system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"; x.fillText("— " + who, 100, Math.min(top + size + lines.length * lh + 40, 880)); }
     x.fillStyle = "#5d6a60"; x.font = "26px system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-    x.fillText("Discover yours at", 100, 952); x.fillText("mysocialfingerprint.com", 100, 988);
+    x.fillText("Discover yours at", 100, 952); x.fillText(SHARE_SHOW, 100, 988);
     const logo = await logoImg;
     if (logo) { const w = 300, h = Math.round(w * logo.height / logo.width); x.drawImage(logo, S - 90 - w, S - 80 - h, w, h); }
     try {
@@ -297,12 +297,13 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
       starUrl = URL.createObjectURL(starBlob); $("star-img").src = starUrl;
     } catch { starBlob = null; $("star-img").src = c.toDataURL("image/png"); }
   }
-  const SHARE_PAGE = "https://www.gatewayforgood.com/social-fingerprint";
+  const SHARE_PAGE = "https://www.gatewayforgood.com/social-fingerprint"; // hidden links (share buttons)
+  const SHARE_SHOW = "MySocialFingerprint.com"; // what people see and might type (image, captions)
   const caption = (max) => {
     let t = (wb.statements && wb.statements.combined) || "";
     const pre = st.group ? "Our giving statement: “" : "My giving statement: “", post = "” I discovered it with the Social Fingerprint® Index from Gateway for Good. Discover yours:";
-    if (max && (pre + t + post + SHARE_PAGE).length + 30 > max) t = t.slice(0, Math.max(40, max - (pre + post + SHARE_PAGE).length - 32)).replace(/\s+\S*$/, "") + "…";
-    return pre + t + post + " " + SHARE_PAGE + " #MakeADifference #GatewayForGood";
+    if (max && (pre + t + post + SHARE_SHOW).length + 30 > max) t = t.slice(0, Math.max(40, max - (pre + post + SHARE_SHOW).length - 32)).replace(/\s+\S*$/, "") + "…";
+    return pre + t + post + " " + SHARE_SHOW + " #MakeADifference #GatewayForGood";
   };
   const starNote = (t) => { $("star-note").textContent = t; $("star-note").hidden = !t; };
   const starFile = () => starBlob ? new File([starBlob], "my-giving-statement.png", { type: "image/png" }) : null;
@@ -329,7 +330,7 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
   const SITES = {
     facebook: () => "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(SHARE_PAGE),
     linkedin: () => "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(SHARE_PAGE),
-    x: () => "https://twitter.com/intent/tweet?text=" + encodeURIComponent(caption(280).replace(" " + SHARE_PAGE, "")) + "&url=" + encodeURIComponent(SHARE_PAGE),
+    x: () => "https://twitter.com/intent/tweet?text=" + encodeURIComponent(caption(280)),
   };
   $("star-share").closest(".starshare").querySelectorAll("[data-site]").forEach((b) => b.onclick = async () => {
     const site = b.dataset.site;
