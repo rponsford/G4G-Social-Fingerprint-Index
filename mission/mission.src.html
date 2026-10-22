@@ -70,14 +70,12 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
 .mic svg { flex: none; margin-top: 2px; }
 .resume { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--green-soft); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 
-details.fp { border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
-details.fp summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
-details.fp summary::-webkit-details-marker { display: none; }
-details.fp summary::after { content: "+"; color: var(--green); font-weight: 700; }
-details.fp[open] summary::after { content: "–"; }
-.fp-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 14px; }
-.fp-body a { color: var(--green-ink); font-weight: 600; }
-.picked { font-size: 14px; color: var(--green-ink); font-weight: 700; margin-bottom: 6px; }
+.fp { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.fp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.fp a { color: var(--green-ink); font-weight: 600; }
+.picked-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.picked { font-size: 14px; color: var(--green-ink); font-weight: 700; }
+.icons.three { grid-template-columns: repeat(3, minmax(0, 120px)); }
 .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
 .cz { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font: inherit; font-size: 11.5px; line-height: 1.2; color: var(--ink); text-align: center; }
 .cz img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
@@ -158,6 +156,7 @@ details.fp[open] summary::after { content: "–"; }
 .summary { display: grid; gap: 6px; font-size: 14px; }
 .summary div { display: flex; gap: 8px; }
 .summary b { min-width: 120px; color: var(--green-ink); }
+.websearch { display: flex; flex-direction: column; gap: 8px; }
 .disclaim { font-size: 13px; color: var(--muted); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
 
 .overlay { position: fixed; inset: 0; background: rgba(20,30,22,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 2147483000; }
@@ -196,6 +195,13 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     <div class="eyebrow">Social Fingerprint Index · Step 3: My Mission</div>
     <h1 id="h-s1">Discover Your Giving Mission</h1>
     <p class="lead">You know what you care about and the strengths you bring. Now let's put why into words. Jot down thoughts, phrases, or stories for each prompt. Gigi will shape them into your Giving Statement, and you choose the version that feels right.</p>
+    <div class="fp" id="fp">
+      <div class="fp-head"><h2>Your causes &amp; strengths</h2><span class="hint" id="fp-src">Pick three of each</span></div>
+      <p class="hint" id="fp-help">Tap your top three causes and top three giving strengths. Haven't done My Causes and My Strengths yet? <a id="fp-link" target="_top">Start with My Causes</a></p>
+      <div><div class="picked-row"><span class="picked">Causes</span><button class="linkish" type="button" id="chg-causes" hidden>Change</button></div><div class="icons" id="ic-causes"></div></div>
+      <div><div class="picked-row"><span class="picked">Giving strengths</span><button class="linkish" type="button" id="chg-strengths" hidden>Change</button></div><div class="icons" id="ic-strengths"></div></div>
+    </div>
+
     <div class="resume" id="resume" hidden>
       <span>You already have a Giving Statement saved on this device.</span>
       <button class="linkish" type="button" id="resume-go">Skip to How You Want to Get Involved →</button>
@@ -230,15 +236,6 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <ul><li>How will you use your time, strengths, or resources?</li><li>What steps will you take, alone or as a group?</li></ul>
       <textarea id="mission" aria-label="Mission notes" placeholder="e.g. Host a monthly food drive, use my network to recruit volunteers, donate a set amount each quarter…"></textarea>
     </div>
-
-    <details class="fp" id="fp">
-      <summary><span>Your causes &amp; strengths <span class="hint" id="fp-src">(up to 3 each)</span></span></summary>
-      <div class="fp-body">
-        <p class="hint" id="fp-help">If you've completed My Causes and My Strengths on this device, your top picks fill in here. Otherwise tap up to three of each. <a id="fp-link" target="_top">Start with My Causes</a></p>
-        <div><div class="picked">Causes</div><div class="icons" id="ic-causes"></div></div>
-        <div><div class="picked">Giving strengths</div><div class="icons" id="ic-strengths"></div></div>
-      </div>
-    </details>
 
     <p class="err" id="err1" hidden></p>
     <div class="actions">
@@ -343,7 +340,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     <p>Pick any that fit.</p>
     <div class="tiles" id="t-with"></div>
     <div class="followup" id="kids-age" hidden>
-      <h3>How old are the kids?</h3>
+      <h3>How old are the kids? <span class="hint" style="font-weight:400">Pick any that apply.</span></h3>
       <div class="seg" id="seg-kids"></div>
     </div>
     <div class="actions">
@@ -419,7 +416,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <section class="card" id="out" hidden aria-labelledby="h-out">
     <div class="eyebrow">Your Social Fingerprint is complete</div>
     <h1 id="h-out">Let's find where it fits.</h1>
-    <p>Here's a search prompt built from your Giving Statement, causes, strengths, and how you want to get involved. Paste it into any AI tool, like ChatGPT, Claude, Gemini, or Perplexity, and it will suggest organizations that match.</p>
+    <p>Here's a search prompt built from your Giving Statement, causes, strengths, and how you want to get involved. Paste it into any AI tool, like ChatGPT, Claude, Gemini, or Perplexity, and it will suggest organizations that match. You can also run quick web searches below.</p>
     <div class="summary" id="summary"></div>
     <div class="actions"><button class="linkish" type="button" id="edit-answers">Change my answers</button></div>
 
@@ -434,6 +431,11 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <a id="open-chatgpt" target="_blank" rel="noopener">ChatGPT</a>
       <a id="open-claude" target="_blank" rel="noopener">Claude</a>
       <a id="open-perplexity" target="_blank" rel="noopener">Perplexity</a>
+    </div>
+    <div class="websearch">
+      <h3>Or search the web</h3>
+      <p class="hint">Prefer a regular search? These ready-made searches use your causes, top way to get involved, and location.</p>
+      <div class="sites" id="web-links"></div>
     </div>
     <p class="star-note" id="prompt-note" hidden></p>
     <p class="disclaim">These results come from a search, not an endorsement by Gateway for Good. AI tools can make mistakes, so always check an organization yourself before you give or volunteer. Your prompt never includes your name or email.</p>
@@ -551,9 +553,9 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   ["purpose","vision","mission"].forEach((k) => { $(k).value = (wb.notes && wb.notes[k]) || ""; });
   const fromIndex = wb.fingerprint.source === "social-fingerprint" && (st.causes.length || st.strengths.length);
   if (fromIndex) {
-    $("fp-src").textContent = "(from My Causes and My Strengths)"; $("fp").open = true;
-    $("fp-help").textContent = "These came from your Social Fingerprint® Index. Change them if you like, up to three of each.";
-  } else { $("fp").open = true; }
+    $("fp-src").textContent = "From your Social Fingerprint®";
+    $("fp-help").textContent = "These came from My Causes and My Strengths. Tap Change if you'd like to swap one.";
+  }
   if (wb.statements && wb.statements.combined) $("resume").hidden = false;
 
   function setWho(group) {
@@ -566,17 +568,27 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   $("who-group").onclick = () => setWho(true);
   setWho(st.group);
 
+  const open = { causes: false, strengths: false };
   function iconGrid(box, list, kind, key) {
     box.innerHTML = "";
+    const full = open[key] || st[key].length < 3;
+    box.classList.toggle("three", !full);
+    const chg = $("chg-" + key); chg.hidden = full; chg.onclick = () => { open[key] = true; iconGrid(box, list, kind, key); };
     list.forEach(([id, name]) => {
       const sel = st[key], on = sel.includes(id);
+      if (!full && !on) return;
       const b = document.createElement("button");
       b.type = "button"; b.className = "cz";
       b.setAttribute("aria-pressed", String(on)); b.disabled = !on && sel.length >= 3;
       const img = document.createElement("img"); img.src = ICONS + kind + "/" + id + ".jpg"; img.alt = ""; img.loading = "lazy";
       const t = document.createElement("span"); t.textContent = name;
       b.append(img, t);
-      b.onclick = () => { st[key] = on ? sel.filter((x) => x !== id) : [...sel, id]; iconGrid(box, list, kind, key); };
+      b.onclick = () => {
+        if (!full) { open[key] = true; iconGrid(box, list, kind, key); return; }
+        st[key] = on ? sel.filter((x) => x !== id) : [...sel, id];
+        if (st[key].length >= 3) open[key] = false;
+        iconGrid(box, list, kind, key);
+      };
       box.appendChild(b);
     });
   }
@@ -749,7 +761,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const who = whoLine();
     if (who) { x.fillStyle = "#1f2a22"; x.font = "600 32px system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"; x.fillText("— " + who, 100, Math.min(top + size + lines.length * lh + 40, 880)); }
     x.fillStyle = "#5d6a60"; x.font = "26px system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-    x.fillText("Discover yours at", 100, 952); x.fillText("gatewayforgood.com/social-fingerprint", 100, 988);
+    x.fillText("Discover yours at", 100, 952); x.fillText("mysocialfingerprint.com", 100, 988);
     const logo = await logoImg;
     if (logo) { const w = 300, h = Math.round(w * logo.height / logo.width); x.drawImage(logo, S - 90 - w, S - 80 - h, w, h); }
     try {
@@ -883,7 +895,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     { id: "coworkers", ic: "coworkers", t: "With coworkers", q: "with coworkers" },
     { id: "groupclub", ic: "groupclub", t: "With a group I belong to", d: "Faith community, service club, school, team", q: "with a group I belong to (such as a faith community, service club, school or team)" },
   ];
-  const KIDS = [["under12","Under 12"],["teens","Teens"],["both","Both"]];
+  const KIDS = [["under12","Under 12"],["teens","Teens"],["adults","Adults"]];
   const WHERE = [
     { id: "near", ic: "near", t: "Close to home", d: "About 25 miles", q: "close to home (within about 25 miles)" },
     { id: "state", ic: "state", t: "My state or region", q: "in my state or region" },
@@ -912,10 +924,12 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     { id: "any", ic: "any", t: "No preference", q: "" },
   ];
   const TAX = [["yes","Matters to me"],["no","Doesn't matter"]];
-  const FAITH = [["welcome","Welcome"],["none","No preference"],["secular","Prefer secular"]];
+  const FAITH = [["none","No preference"],["preferred","Preferred"],["secular","Prefer secular"]];
 
   // Part 2 answers live in the shared workbook as wb.involvement.
-  const inv = wb.involvement = Object.assign({ how: [], stars: [], with: [], kids: "", where: [], place: "", zip: "", locMust: "flex", time: "", size: "", approach: "", tax: "", faith: "none", note: "", prefilled: false }, wb.involvement || {});
+  const inv = wb.involvement = Object.assign({ how: [], stars: [], with: [], kids: [], where: [], place: "", zip: "", locMust: "flex", time: "", size: "", approach: "", tax: "", faith: "none", note: "", prefilled: false }, wb.involvement || {});
+  if (!Array.isArray(inv.kids)) inv.kids = inv.kids === "both" ? ["under12","teens"] : inv.kids ? [inv.kids] : [];
+  if (inv.faith === "welcome") inv.faith = "preferred";
   const persistInv = () => { inv.updatedAt = new Date().toISOString(); save(wb); };
   const MAX_STARS = 2;
 
@@ -960,6 +974,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     });
   }
 
+  function segMulti(boxId, opts, key) {
+    const box = $(boxId); box.innerHTML = "";
+    opts.forEach(([id, t]) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-pressed", String(inv[key].includes(id)));
+      b.onclick = () => { inv[key] = inv[key].includes(id) ? inv[key].filter((x) => x !== id) : opts.map((o) => o[0]).filter((x) => x === id || inv[key].includes(x)); persistInv(); segMulti(boxId, opts, key); };
+      box.appendChild(b);
+    });
+  }
   function renderHow() {
     const box = $("t-how"); box.innerHTML = "";
     inv.stars = inv.stars.filter((s) => inv.how.includes(s));
@@ -990,7 +1012,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     $("zip-wrap").hidden = !(inv.where.includes("near") || inv.where.includes("state"));
     $("place-wrap").hidden = !inv.where.includes("place");
   };
-  $("zip").value = inv.zip || wb.person.zip || "";
+  if (!inv.zip && wb.person.zip) inv.zip = wb.person.zip;
+  $("zip").value = inv.zip || "";
   $("place").value = inv.place || "";
   $("note").value = inv.note || "";
   $("zip").oninput = () => { inv.zip = $("zip").value.trim(); persistInv(); };
@@ -999,7 +1022,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
   function renderPart2() {
     renderHow();
-    multi("t-with", WITH, "with", showKids); seg("seg-kids", KIDS, "kids"); showKids();
+    multi("t-with", WITH, "with", showKids); segMulti("seg-kids", KIDS, "kids"); showKids();
     multi("t-where", WHERE, "where", showWhere); seg("seg-locmust", LOCMUST, "locMust"); showWhere();
     single("t-time", TIME, "time");
     single("t-size", SIZE, "size"); single("t-approach", APPROACH, "approach");
@@ -1040,7 +1063,10 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     if (others.length) L.push((starred.length ? "I'm also open to: " : "How I want to get involved: ") + joinAnd(others));
     if (inv.with.length) {
       let w = joinAnd(inv.with.map((id) => pick(WITH, id).q));
-      if (inv.with.includes("kids") && inv.kids) w += " (kids " + ({ under12: "under 12", teens: "who are teens", both: "of all ages, under 12 and teens" }[inv.kids]) + "; please only suggest age-appropriate opportunities)";
+      if (inv.with.includes("kids") && inv.kids.length) {
+        const ages = joinAnd(inv.kids.map((k) => ({ under12: "under 12", teens: "teens", adults: "adults" }[k])));
+        w += " (my kids are " + ages + (inv.kids.some((k) => k !== "adults") ? "; please only suggest age-appropriate opportunities" : "") + ")";
+      }
       L.push("Who I'll do this with: " + w);
     }
     const wh = inv.where.map((id) => id === "place" ? (inv.place ? "in or for " + inv.place : "") : pick(WHERE, id).q).filter(Boolean);
@@ -1052,7 +1078,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const sz = pick(SIZE, inv.size).q, ap = pick(APPROACH, inv.approach).q;
     if (sz || ap) L.push("Kind of organization: " + [sz ? sz : "", ap ? "focused on " + ap : ""].filter(Boolean).join(", "));
     if (inv.tax === "yes") L.push("Tax-deductible giving matters to me, so please list registered 501(c)(3) public charities.");
-    if (inv.faith === "welcome") L.push("Faith-based organizations are welcome.");
+    if (inv.faith === "preferred") L.push("I prefer faith-based organizations.");
     if (inv.faith === "secular") L.push("I'd prefer organizations that are not faith-based.");
     if (inv.note) L.push("Anything else: " + inv.note);
     L.push("");
@@ -1077,6 +1103,20 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const box = $("summary"); box.innerHTML = "";
     rows.forEach(([k, v]) => { const d = document.createElement("div"); const b = document.createElement("b"); b.textContent = k; const s = document.createElement("span"); s.textContent = v; d.append(b, s); box.appendChild(d); });
   }
+  // Short keyword searches for regular search engines (one per cause).
+  const WEB_WORD = { money: "donate", inperson: "volunteer", home: "virtual volunteer", skills: "skills-based volunteer", fundraise: "fundraiser", items: "donation drop off", event: "events", share: "ambassador", mentor: "mentor", board: "board member", ownproj: "volunteer project", groupproj: "group volunteer" };
+  function webQueries() {
+    const top = inv.stars[0] || inv.how[0];
+    const verb = WEB_WORD[top] || "volunteer";
+    let where = "";
+    if ((inv.where.includes("near") || inv.where.includes("state")) && inv.zip) where = " near " + inv.zip;
+    else if (inv.where.includes("place") && inv.place) where = " " + inv.place;
+    else if (inv.where.includes("world") && !inv.where.includes("us")) where = " international";
+    return st.causes.map((c) => {
+      const t = CAUSE_TERMS[c].split(", ").slice(0, 2).join(" OR ");
+      return { label: label(CAUSES, c), q: t + " nonprofit " + verb + where };
+    });
+  }
   let promptText = "";
   const promptNote = (t) => { $("prompt-note").textContent = t; $("prompt-note").hidden = !t; };
   function showResult() {
@@ -1086,6 +1126,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     $("open-chatgpt").href = "https://chatgpt.com/?q=" + q;
     $("open-claude").href = "https://claude.ai/new?q=" + q;
     $("open-perplexity").href = "https://www.perplexity.ai/search?q=" + q;
+    const wl = $("web-links"); wl.innerHTML = "";
+    webQueries().forEach((w) => { const a = document.createElement("a"); a.target = "_blank"; a.rel = "noopener"; a.href = "https://www.google.com/search?q=" + encodeURIComponent(w.q); a.textContent = "Google: " + w.label; a.title = w.q; wl.appendChild(a); });
     renderSummary(); promptNote("");
     $("first").value = wb.person.first || ""; $("last").value = wb.person.last || ""; $("email").value = wb.person.email || ""; $("group").value = wb.person.groupName || "";
     go("out");
