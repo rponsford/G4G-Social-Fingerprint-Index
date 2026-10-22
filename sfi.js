@@ -68,6 +68,7 @@
         wb.person=wb.person||{};
         if(S.age!=="under13" && p.first_name && !wb.person.first) wb.person.first=p.first_name;
         if(p.email && !wb.person.email) wb.person.email=p.email;
+        if(p.zip && !wb.person.zip) wb.person.zip=p.zip;
         localStorage.setItem(KEY, JSON.stringify(wb));
       }catch(e){ /* storage blocked (private mode, etc.): results still show */ }
     }

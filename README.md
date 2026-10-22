@@ -72,3 +72,16 @@ Both tools show a "Make a Difference journey" strip (Social Fingerprint → Purp
 ## Cloudflare Worker
 
 `cloudflare/worker.js` is a copy of the code running at `g4gminion1.team-a92.workers.dev` (drafting, saving, emailed reports). It holds no keys; those live in Cloudflare Secrets. The Worker is connected to this repo through Cloudflare Workers Builds (root directory `cloudflare`, settings in `cloudflare/wrangler.jsonc`): every push to `main` redeploys it. Don't edit the Worker in the Cloudflare editor, because the next push overwrites it.
+
+## My Mission (Social Fingerprint Index, Step 3)
+
+My Mission replaces PurposeLens as Step 3 of the Social Fingerprint Index (My Causes → My Strengths → My Mission). Part 1 writes the Giving Statement (same drafting as PurposeLens, via the Worker's `/draft`). Part 2, "How you want to get involved," is six tile screens; the person's top strengths pre-select matching tiles (`STRENGTH_TILES`). The result screen builds the "Get My Search Prompt" text. Answers are kept in the shared workbook as `involvement`.
+
+```html
+<div id="mission"></div>
+<script src="https://tools.gatewayforgood.com/mission/mission.js" defer></script>
+```
+
+Edit `mission/mission.src.html`, then rebuild with `python3 givinglens/build.py mission/mission.src.html mission/mission.js mission "My Mission" mission`. Test page: `mission/index.html` (tools.gatewayforgood.com/mission/).
+
+Not yet in the Worker: `/statement` accepts the Mission email as-is but ignores `involvement` and `searchPrompt`, and the email still says PurposeLens.
