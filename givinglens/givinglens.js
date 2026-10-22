@@ -14,7 +14,7 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
   // ---------- The Make a Difference journey (guidebook order). Empty url = not live yet. ----------
   const JOURNEY = [
     { id: "sfi", name: "Social Fingerprint", sub: "Causes & strengths", url: "https://www.gatewayforgood.com/social-fingerprint" },
-    { id: "purpose", name: "PurposeLens", sub: "Purpose, vision, mission", url: "https://www.gatewayforgood.com/purposelens" },
+    { id: "purpose", name: "My Mission", sub: "Your Giving Statement", url: "https://www.gatewayforgood.com/social-fingerprint-mission" },
     { id: "profile", name: "MAD Profile", sub: "Your giving plan", url: "" },
     { id: "givinglens", name: "GivingLens", sub: "Research organizations", url: "https://www.gatewayforgood.com/givinglens" },
   ];

@@ -499,7 +499,7 @@ const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
 const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
 // My Mission (Index Step 3). Blank until its Kajabi page is live; until then "write my giving statement" buttons go to PurposeLens.
-const SFI_MISSION_URL = "";
+const SFI_MISSION_URL = SFI_SITE + "/social-fingerprint-mission"; // published Oct 22, 2026
 
 // Next steps people pick on the last screen. Each one gets a short "bridge" so the
 // button never feels abrupt: a warm opener, a sentence on what happens next, and the button.
