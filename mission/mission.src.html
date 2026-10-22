@@ -144,6 +144,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
 .parts { display: grid; gap: 12px; }
 .parts div { display: flex; flex-direction: column; gap: 2px; }
 .parts b { font-size: 13px; color: var(--green-ink); text-transform: uppercase; letter-spacing: .06em; }
+.namebox { display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: var(--bg); }
 .nextbox { display: flex; flex-direction: column; gap: 10px; background: var(--sky-soft); border-radius: 12px; padding: 16px; }
 .sendbox { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); padding-top: 18px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -293,6 +294,17 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <button class="linkish" id="back3" type="button">Edit again</button>
     </div>
 
+    <div class="namebox" id="namebox">
+      <h2>Put your name on it</h2>
+      <p class="hint" id="name-help">Your name appears after your statement on the image you share, like a quote.</p>
+      <div class="row2">
+        <label class="field" for="n-first">First name<input id="n-first" type="text" autocomplete="given-name" maxlength="40"></label>
+        <label class="field" for="n-last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="n-last" type="text" autocomplete="family-name" maxlength="40"></label>
+      </div>
+      <label class="field" for="n-group" id="n-group-wrap" hidden>Group or family name<input id="n-group" type="text" maxlength="60"></label>
+      <label class="check" id="n-adult-wrap"><input type="checkbox" id="n-adult"><span>Show my name on my shared statement. I'm 18 or older.</span></label>
+    </div>
+
     <div class="nextbox">
       <h2>Part 2: How You Want to Get Involved</h2>
       <p class="hint">Six quick questions, about two minutes. Your answers turn your Giving Statement into a search that finds organizations that fit you.</p>
@@ -313,6 +325,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
         <button type="button" data-site="instagram">Instagram</button>
         <button type="button" data-site="linkedin">LinkedIn</button>
         <button type="button" data-site="x">X</button>
+        <button type="button" data-site="community" id="site-community" hidden>Our community</button>
         <button type="button" data-site="copy">Copy caption</button>
       </div>
       <p class="star-note" id="star-note" hidden></p>
@@ -390,7 +403,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <section class="card" id="g5" hidden aria-labelledby="h-g5">
     <div class="eyebrow">How you want to get involved · 5 of 6</div>
     <h1 id="h-g5">What kind of organization fits you?</h1>
-    <div class="qrow"><h3>Size</h3><div class="tiles wide" id="t-size"></div></div>
+    <div class="qrow"><h3>Size <span class="hint" style="font-weight:400">Pick any that fit.</span></h3><div class="tiles wide" id="t-size"></div></div>
     <div class="qrow"><h3>Approach</h3><div class="tiles wide" id="t-approach"></div></div>
     <div class="actions">
       <button class="btn" type="button" data-next>Continue</button>
@@ -447,8 +460,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
 
     <div class="sendbox">
-      <h2>Keep a copy</h2>
-      <p class="hint">Your statement and answers are saved in this browser. Add your email and we'll send you a copy of your Giving Statement you can keep, print, or share.</p>
+      <h2>Get your updated Social Fingerprint report</h2>
+      <p class="hint">We'll email your full Social Fingerprint report, now with your Giving Statement at the top, your search prompt, and where you are on your giving path. Your answers are also saved in this browser.</p>
       <div class="row2">
         <label class="field" for="first">First name<input id="first" type="text" autocomplete="given-name"></label>
         <label class="field" for="last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="last" type="text" autocomplete="family-name"></label>
@@ -459,7 +472,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <label class="check" id="age-wrap"><input type="checkbox" id="age"><span>I'm 13 or older.</span></label>
       <p class="err" id="err4" hidden></p>
       <div class="actions">
-        <button class="btn" type="button" id="send">Email me my Giving Statement</button>
+        <button class="btn" type="button" id="send">Email my updated report</button>
       </div>
     </div>
     <p class="privacy">If you add your email, Gateway for Good keeps your statement with it so we can send your copy and connect it to later steps. We never sell or share what you write. Email copies are for people 13 and older.</p>
@@ -468,7 +481,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <div class="overlay" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="done-h">
     <div class="sheet">
       <div class="done-icon" id="done-icon">✓</div>
-      <h2 id="done-h">Your Giving Statement is on its way</h2>
+      <h2 id="done-h">Your updated report is on its way</h2>
       <ul class="done-list" id="done-list"></ul>
       <div class="actions done-actions">
         <button class="btn" type="button" id="keep">Back to my search prompt</button>
@@ -712,12 +725,32 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   };
   $("back2").onclick = () => go(st.manual ? "s1" : "s2");
 
-  const whoLine = () => st.group ? (wb.person.groupName || "") : [wb.person.first, wb.person.last].filter(Boolean).join(" ");
+  // Names are shown only for adults who opt in (same rule as the Index's share image: never for under 18).
+  const MINOR = ["under13", "13-17"].includes(wb.person.age);
+  const nameOK = () => !MINOR && !!wb.person.showName;
+  const whoLine = () => !nameOK() ? "" : st.group ? (wb.person.groupName || "") : [wb.person.first, wb.person.last].filter(Boolean).join(" ");
+  function setupName() {
+    $("namebox").hidden = MINOR;
+    $("n-group-wrap").hidden = !st.group;
+    $("n-first").value = wb.person.first || ""; $("n-last").value = wb.person.last || ""; $("n-group").value = wb.person.groupName || "";
+    const adultKnown = wb.person.age && !MINOR;
+    if (wb.person.showName === undefined) wb.person.showName = !!(adultKnown && wb.person.first);
+    $("n-adult").checked = !!wb.person.showName;
+    const upd = () => {
+      wb.person.first = $("n-first").value.trim(); wb.person.last = $("n-last").value.trim(); wb.person.groupName = $("n-group").value.trim();
+      wb.person.showName = $("n-adult").checked; save(wb);
+      const who = whoLine(); $("out-who").textContent = who ? "— " + who : ""; renderStarSoon();
+    };
+    ["n-first","n-last","n-group"].forEach((id) => { $(id).oninput = () => { if ($(id).value.trim() && !$("n-adult").checked && !wb.person.nameTouched) { $("n-adult").checked = true; wb.person.nameTouched = true; } upd(); }; });
+    $("n-adult").onchange = upd;
+  }
+  let starTimer = 0; const renderStarSoon = () => { clearTimeout(starTimer); starTimer = setTimeout(renderStar, 250); };
   function showStatement() {
     $("out-combined").textContent = wb.statements.combined;
     $("out-purpose").textContent = wb.statements.purpose || "—";
     $("out-vision").textContent = wb.statements.vision || "—";
     $("out-mission").textContent = wb.statements.mission || "—";
+    setupName();
     const who = whoLine(); $("out-who").textContent = who ? "— " + who : "";
     go("s4");
     starNote(""); renderStar();
@@ -800,6 +833,10 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     else if (r === "unsupported") { saveStar(); const ok = await copyCaption(); starNote("Your image is saved" + (ok ? " and your caption is copied" : "") + ". Pick a site below, or attach the image to a post or message" + (ok ? " and paste the caption." : ".")); }
   };
   $("star-dl").onclick = saveStar;
+  // Gateway for Good community (Kajabi). Members must be logged in; Kajabi can't post for them, so we save the image,
+  // copy the caption, and open the community. Leave blank to hide the button.
+  const COMMUNITY_URL = "";
+  if (COMMUNITY_URL) $("site-community").hidden = false;
   const SITES = {
     facebook: () => "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(SHARE_PAGE),
     linkedin: () => "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(SHARE_PAGE),
@@ -808,6 +845,12 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   $("star-share").closest(".starshare").querySelectorAll("[data-site]").forEach((b) => b.onclick = async () => {
     const site = b.dataset.site;
     if (site === "copy") { starNote((await copyCaption()) ? "Caption copied. Paste it with your image anywhere you post." : caption()); return; }
+    if (site === "community") {
+      window.open(COMMUNITY_URL, "_blank", "noopener");
+      saveStar(); const ok = await copyCaption();
+      starNote("We opened the Gateway for Good community in a new tab (log in if asked). Your image is saved" + (ok ? " and your caption is copied" : "") + ": start a new post, add the image" + (ok ? ", and paste the caption." : "."));
+      return;
+    }
     if (site === "instagram") {
       const r = await nativeShare();
       if (r === "shared" || r === "cancelled") { if (r === "shared") starNote("Shared! Your caption is copied too. Paste it into your post."); return; }
@@ -867,10 +910,10 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const STAR = I('<path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6L3.2 9.4l6.1-.8z"/>');
 
   const HOW = [
-    { id: "money", t: "Give money", d: "Make a donation, one time or ongoing", q: "giving money (donations)" },
+    { id: "skills", t: "Share my skills", d: "Use my professional skills, pro bono", q: "sharing my professional skills (skills-based or pro bono volunteering)" },
     { id: "inperson", t: "Volunteer in person", d: "Show up and help hands-on", q: "volunteering in person" },
     { id: "home", t: "Volunteer from home", d: "Help online or by phone", q: "volunteering from home (virtual or remote)" },
-    { id: "skills", t: "Share my skills", d: "Use my professional skills, pro bono", q: "sharing my professional skills (skills-based or pro bono volunteering)" },
+    { id: "money", t: "Give money", d: "Make a donation, one time or ongoing", q: "giving money (donations)" },
     { id: "fundraise", t: "Fundraise", d: "Raise money from friends and family", q: "fundraising from friends and family (peer-to-peer campaigns)" },
     { id: "items", t: "Donate items", d: "Give goods, food, clothing or supplies", q: "donating items (in-kind donations)" },
     { id: "event", t: "Attend an event", d: "Galas, runs, workshops, community days", q: "attending events" },
@@ -928,21 +971,40 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const FAITH = [["none","No preference"],["preferred","Preferred"],["secular","Prefer secular"]];
 
   // Part 2 answers live in the shared workbook as wb.involvement.
-  const inv = wb.involvement = Object.assign({ how: [], stars: [], with: [], kids: [], where: [], place: "", zip: "", locMust: "flex", time: "", size: "", approach: "", tax: "", faith: "none", note: "", prefilled: false }, wb.involvement || {});
+  const inv = wb.involvement = Object.assign({ how: [], stars: [], with: [], kids: [], where: [], place: "", zip: "", locMust: "flex", time: "", size: [], approach: "", tax: "", faith: "none", note: "", prefilled: false }, wb.involvement || {});
   if (!Array.isArray(inv.kids)) inv.kids = inv.kids === "both" ? ["under12","teens"] : inv.kids ? [inv.kids] : [];
   if (inv.faith === "welcome") inv.faith = "preferred";
+  if (!Array.isArray(inv.size)) inv.size = inv.size ? [inv.size] : [];
   const persistInv = () => { inv.updatedAt = new Date().toISOString(); save(wb); };
   const MAX_STARS = 2;
 
-  // Pre-select tiles from the person's strengths, once.
+  // Index answers ("Which kinds of opportunities are you open to?", "In the past 12 months, I have...", next steps) -> tiles.
+  const ANSWER_TILES = {
+    "One-time volunteer events": ["inperson","event"], "Ongoing volunteer roles": ["inperson"], "Sharing my skills or experience": ["skills","mentor"],
+    "Advocacy or raising awareness": ["share"], "Giving money or resources": ["money","items"], "A group project with others": ["groupproj"],
+    "Board or leadership roles": ["board"],
+    "Donated money to a cause": ["money"], "Volunteered my time": ["inperson"], "Used my skills for a cause": ["skills"], "Raised awareness or advocated for a cause": ["share"],
+    "Explore a giving project with others": ["groupproj"], "Join a giving project with others who share my causes": ["groupproj"],
+  };
+  const idxAnswers = () => { const a = wb.fingerprint.answers || {}; return [].concat(a.open_to || [], a.past12 || [], a.next_steps || []); };
+  // Pre-select tiles from the person's strengths and Index answers, once (v2 re-runs for anyone who tried the first draft).
   function prefillFromStrengths() {
-    if (inv.prefilled) return;
+    if (inv.prefilled === 2) return;
     const set = new Set(inv.how);
     st.strengths.forEach((s) => (STRENGTH_TILES[s] || []).forEach((t) => set.add(t)));
+    idxAnswers().forEach((a) => (ANSWER_TILES[a] || []).forEach((t) => set.add(t)));
+    if (!inv.time && (wb.fingerprint.answers || {}).open_to) {
+      const o = wb.fingerprint.answers.open_to;
+      if (o.includes("Ongoing volunteer roles")) inv.time = "monthly"; else if (o.includes("One-time volunteer events")) inv.time = "once";
+    }
     inv.how = HOW.map((h) => h.id).filter((id) => set.has(id));
-    inv.prefilled = true; persistInv();
+    inv.prefilled = 2; persistInv();
   }
-  const fromStrength = (tileId) => st.strengths.filter((s) => (STRENGTH_TILES[s] || []).includes(tileId)).map((s) => label(STRENGTHS, s));
+  const fromStrength = (tileId) => {
+    const out = st.strengths.filter((s) => (STRENGTH_TILES[s] || []).includes(tileId)).map((s) => label(STRENGTHS, s));
+    if (idxAnswers().some((a) => (ANSWER_TILES[a] || []).includes(tileId))) out.push("your answers");
+    return out;
+  };
 
   function tile(item, on, onClick, extra) {
     const wrapEl = document.createElement("div"); wrapEl.className = "tile";
@@ -951,7 +1013,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const tl = document.createElement("span"); tl.className = "tl"; tl.textContent = item.t;
     b.append(ic, tl);
     if (item.d) { const td = document.createElement("span"); td.className = "td"; td.textContent = item.d; b.appendChild(td); }
-    if (extra && extra.from) { const f = document.createElement("span"); f.className = "from"; f.textContent = "From your strengths: " + extra.from; b.appendChild(f); }
+    if (extra && extra.from) { const f = document.createElement("span"); f.className = "from"; f.textContent = "From your Social Fingerprint: " + extra.from; b.appendChild(f); }
     b.onclick = onClick; wrapEl.appendChild(b);
     return wrapEl;
   }
@@ -960,6 +1022,16 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     items.forEach((it) => box.appendChild(tile(it, inv[key].includes(it.id), () => {
       inv[key] = inv[key].includes(it.id) ? inv[key].filter((x) => x !== it.id) : items.map((x) => x.id).filter((id) => id === it.id || inv[key].includes(id));
       persistInv(); multi(boxId, items, key, after); if (after) after();
+    })));
+  }
+  // Multi-select where "any" (No preference) can't be combined with the others.
+  function multiAny(boxId, items, key) {
+    const box = $(boxId); box.innerHTML = "";
+    items.forEach((it) => box.appendChild(tile(it, inv[key].includes(it.id), () => {
+      const on = inv[key].includes(it.id);
+      if (it.id === "any") inv[key] = on ? [] : ["any"];
+      else inv[key] = on ? inv[key].filter((x) => x !== it.id) : items.map((x) => x.id).filter((id) => id !== "any" && (id === it.id || inv[key].includes(id)));
+      persistInv(); multiAny(boxId, items, key);
     })));
   }
   function single(boxId, items, key) {
@@ -1004,8 +1076,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     });
     const n = inv.how.length, k = inv.stars.length;
     $("star-count").textContent = n ? n + " picked · " + (k ? k + " starred as top" : "tap a star to mark your top one or two") : "";
-    $("g1-intro").textContent = st.strengths.length
-      ? "You just found your giving strengths. We've picked ways to get involved that use them. Add or remove any, then tap the star on your top one or two."
+    $("g1-intro").textContent = st.strengths.length || idxAnswers().length
+      ? "We've picked ways to get involved that match your strengths and what you told us in your Social Fingerprint. Add or remove any, then tap the star on your top one or two."
       : "Pick as many as you like, then tap the star on your top one or two.";
   }
   const showKids = () => { $("kids-age").hidden = !inv.with.includes("kids"); };
@@ -1026,7 +1098,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     multi("t-with", WITH, "with", showKids); segMulti("seg-kids", KIDS, "kids"); showKids();
     multi("t-where", WHERE, "where", showWhere); seg("seg-locmust", LOCMUST, "locMust"); showWhere();
     single("t-time", TIME, "time");
-    single("t-size", SIZE, "size"); single("t-approach", APPROACH, "approach");
+    multiAny("t-size", SIZE, "size"); single("t-approach", APPROACH, "approach");
     seg("seg-tax", TAX, "tax"); seg("seg-faith", FAITH, "faith");
   }
   function startPart2() { prefillFromStrengths(); renderPart2(); go("g1"); }
@@ -1076,7 +1148,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       L.push("Where: " + joinAnd(wh) + near + (inv.locMust === "must" ? ". Location is a must." : ". I'm flexible on location."));
     }
     const tm = pick(TIME, inv.time).q; if (tm) L.push("Time I can give: " + tm);
-    const sz = pick(SIZE, inv.size).q, ap = pick(APPROACH, inv.approach).q;
+    const szs = inv.size.map((id) => pick(SIZE, id).q).filter(Boolean);
+    const sz = szs.length <= 1 ? (szs[0] || "") : szs.slice(0, -1).join(", ") + " or " + szs[szs.length - 1], ap = pick(APPROACH, inv.approach).q;
     if (sz || ap) L.push("Kind of organization: " + [sz ? sz : "", ap ? "focused on " + ap : ""].filter(Boolean).join(", "));
     if (inv.tax === "yes") L.push("Tax-deductible giving matters to me, so please list registered 501(c)(3) public charities.");
     if (inv.faith === "preferred") L.push("I prefer faith-based organizations.");
@@ -1093,14 +1166,19 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     L.push("", "Only include organizations you can confirm are real and currently active. If you aren't sure an organization fits, leave it out. If my filters leave very few options, tell me which preference to loosen.");
     return L.join("\n");
   }
-  function renderSummary() {
+  function summaryRows() {
     const rows = [];
     if (st.causes.length) rows.push(["Causes", st.causes.map((c) => label(CAUSES, c)).join(", ")]);
     if (st.strengths.length) rows.push(["Strengths", st.strengths.map((s) => label(STRENGTHS, s)).join(", ")]);
     if (inv.how.length) rows.push(["Get involved", inv.how.map((id) => pick(HOW, id).t + (inv.stars.includes(id) ? " ★" : "")).join(", ")]);
     if (inv.with.length) rows.push(["With", inv.with.map((id) => pick(WITH, id).t).join(", ")]);
     if (inv.where.length) rows.push(["Where", inv.where.map((id) => id === "place" ? (inv.place || pick(WHERE, id).t) : pick(WHERE, id).t).join(", ")]);
-    if (inv.time) rows.push(["Time", pick(TIME, inv.time).t]);
+    if (inv.time && pick(TIME, inv.time).q) rows.push(["Time", pick(TIME, inv.time).t]);
+    if (inv.size.length) rows.push(["Size", inv.size.map((id) => pick(SIZE, id).t).join(", ")]);
+    return rows;
+  }
+  function renderSummary() {
+    const rows = summaryRows();
     const box = $("summary"); box.innerHTML = "";
     rows.forEach(([k, v]) => { const d = document.createElement("div"); const b = document.createElement("b"); b.textContent = k; const s = document.createElement("span"); s.textContent = v; d.append(b, s); box.appendChild(d); });
   }
@@ -1145,7 +1223,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   function done(ok, items) {
     $("done-icon").textContent = ok ? "✓" : "!";
     $("done-icon").className = ok ? "done-icon" : "done-icon warn";
-    $("done-h").textContent = ok ? "Your Giving Statement is on its way" : "Saved, but the email didn't go out";
+    $("done-h").textContent = ok ? "Your updated report is on its way" : "Saved, but the email didn't go out";
     const ul = $("done-list"); ul.innerHTML = "";
     items.forEach((t) => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
     $("done").hidden = false;
@@ -1161,23 +1239,24 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show($("err4"), "Enter an email address like name@example.com."); return; }
     if (!$("age").checked) { $("age-wrap").classList.add("need"); show($("err4"), "Please confirm you're 13 or older to get a copy by email. Your statement and answers stay saved in this browser either way."); return; }
     show($("err4"), "");
-    wb.person.first = $("first").value.trim(); wb.person.last = $("last").value.trim(); wb.person.email = email; wb.person.groupName = $("group").value.trim();
+    wb.person.first = $("first").value.trim() || wb.person.first || ""; wb.person.last = $("last").value.trim(); wb.person.email = email; wb.person.groupName = $("group").value.trim();
     save(wb);
     const btn = $("send"); btn.disabled = true; btn.textContent = "Sending…";
     let res = null;
     try {
-      const r = await fetch(API + "/statement", {
+      const r = await fetch(API + "/mission", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, first: wb.person.first, last: wb.person.last, groupName: wb.person.groupName, isGroup: st.group,
+        body: JSON.stringify({ email, first: wb.person.first, last: wb.person.last, groupName: wb.person.groupName, isGroup: st.group, showName: nameOK(),
           ...wb.statements, causes: st.causes, strengths: st.strengths, subscribe: $("subscribe").checked, age13: true,
-          tool: "mission", involvement: inv, searchPrompt: promptText }),
+          responseId: wb.fingerprint.response_id || "", involvement: inv, summary: summaryRows(), searchPrompt: promptText, webSearches: webQueries() }),
       });
       res = await r.json().catch(() => null);
       if (!r.ok) res = null;
     } catch {}
-    btn.disabled = false; btn.textContent = "Email me my Giving Statement";
-    if (res && res.emailed) done(true, ["We emailed your Giving Statement to " + email + ". If you don't see it in a few minutes, check your spam folder.", "Your statement, answers, and search prompt are also saved in this browser."]);
-    else if (res && res.ok) done(false, ["Your statement was saved, but the email couldn't be sent right now. Try again later, or reply to any Gateway for Good email and we'll help.", "Your statement and answers are also saved in this browser."]);
+    btn.disabled = false; btn.textContent = "Email my updated report";
+    if (res && res.emailed) done(true, ["We emailed your updated Social Fingerprint report to " + email + ". If you don't see it in a few minutes, check your spam or promotions folder.", "Your statement, answers, and search prompt are also saved in this browser."]);
+    else if (res && res.ok && res.email_status === "limited") done(false, ["Your statement and answers were saved. We've already sent several reports to this email address today, so we held this one to protect your inbox. Try again tomorrow.", "Your statement and answers are also saved in this browser."]);
+    else if (res && res.ok) done(false, ["Your statement and answers were saved, but the email couldn't be sent right now. Try again in a few minutes, or reply to any Gateway for Good email and we'll help.", "Your statement and answers are also saved in this browser."]);
     else done(false, ["We couldn't reach Gateway for Good just now, so nothing was sent.", "Your statement and answers are still saved in this browser. Try again in a minute."]);
   };
 

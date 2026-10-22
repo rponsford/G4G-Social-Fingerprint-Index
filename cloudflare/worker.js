@@ -9,6 +9,7 @@
 //   GET  /health
 //   POST /draft        AI-drafted Purpose/Vision/Mission options
 //   POST /statement    saves a PurposeLens statement, emails the copy, syncs Kajabi
+//   POST /mission      saves My Mission (Index Step 3: Giving Statement + how they want to get involved), emails the UPDATED Social Fingerprint report, syncs Kajabi
 //   POST /analysis     saves a GivingLens analysis, emails the report, syncs Kajabi
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
@@ -54,6 +55,7 @@ export default {
         if (!body) return json({ error: "bad_json" }, 400, cors);
         if (url.pathname === "/draft") return draft(body, request, env, cors);
         if (url.pathname === "/statement") return saveStatement(body, request, env, ctx, cors);
+        if (url.pathname === "/mission") return saveMission(body, request, env, ctx, cors);
         if (url.pathname === "/analysis") return saveAnalysis(body, request, env, ctx, cors);
         if (url.pathname === "/sfi") return saveSfi(body, request, env, ctx, cors);
         if (url.pathname === "/sfi/report") return sfiReportScreen(body, request, env, cors);
@@ -254,6 +256,88 @@ ${d.causes.length || d.strengths.length ? `<tr><td align="center" style="padding
   return { subject: "Your North Star: your PurposeLens statements", html, text };
 }
 
+// ---------- /mission (Social Fingerprint Index, Step 3: My Mission) ----------
+// Saves the Giving Statement and "how you want to get involved", then emails the person's
+// UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, giving path moved to Analyze.
+// If the browser has their Index response id, the report reuses those answers; otherwise it's built from this step alone.
+let missionColumnsReady = false;
+async function ensureMissionColumns(env) {
+  if (missionColumnsReady) return;
+  for (const [t, col] of [["statements", "tool TEXT"], ["statements", "involvement_json TEXT"], ["statements", "search_prompt TEXT"], ["statements", "response_id TEXT"],
+                          ["sfi_responses", "giving_statement TEXT"], ["sfi_responses", "mission_json TEXT"], ["sfi_responses", "mission_at TEXT"]]) {
+    try { await env.DB.prepare(`ALTER TABLE ${t} ADD COLUMN ${col}`).run(); } catch {} // already there
+  }
+  missionColumnsReady = true;
+}
+async function saveMission(b, request, env, ctx, cors) {
+  const combined = clip(b.combined, 2000);
+  if (!combined) return json({ error: "missing_combined" }, 400, cors);
+  const email = cleanEmail(b.email);
+  if (!email) return json({ error: "missing_email" }, 400, cors);
+  await ensureMissionColumns(env);
+  const ids = (v, map) => list(v, 3).map((x) => (map[x] ? x : Object.keys(map).find((k) => map[k].toLowerCase() === x.toLowerCase()))).filter(Boolean);
+  const causes = ids(b.causes, CAUSES), strengths = ids(b.strengths, STRENGTHS);
+  const first = clip(b.first, 80), last = clip(b.last, 80), groupName = clip(b.groupName, 120), isGroup = !!b.isGroup;
+  const st = { purpose: clip(b.purpose, 1000), vision: clip(b.vision, 1000), mission: clip(b.mission, 1000), combined };
+  let inv = "{}"; try { inv = JSON.stringify(b.involvement || {}).slice(0, 8000); } catch {}
+  const prompt = clip(b.searchPrompt, 6000);
+  const rid = clip(b.responseId, 80);
+
+  // Their Index response (same browser). Only reused when it has no email yet or the same email.
+  let row = null;
+  if (rid) {
+    try { row = await env.DB.prepare("SELECT * FROM sfi_responses WHERE response_id = ?").bind(rid).first(); } catch {}
+    if (row && row.email && row.email !== email) row = null;
+  }
+  const age = row && row.age_range;
+  const minor = age === "13-17";
+
+  await env.DB.prepare(`INSERT INTO statements (email, first_name, last_name, group_name, is_group, purpose, vision, mission, combined, causes, strengths, subscribe, tool, involvement_json, search_prompt, response_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(email, first, last, groupName, isGroup ? 1 : 0, st.purpose, st.vision, st.mission, combined,
+    causes.join("; "), strengths.join("; "), b.subscribe && !minor ? 1 : 0, "mission", inv, prompt, rid || null).run();
+
+  const nowIso = new Date().toISOString();
+  if (row) {
+    try {
+      await env.DB.prepare("UPDATE sfi_responses SET giving_statement = ?, mission_json = ?, mission_at = ?, updated_at = ? WHERE response_id = ?")
+        .bind(combined, JSON.stringify({ ...st, involvement: b.involvement || {} }).slice(0, 12000), nowIso, nowIso, rid).run();
+    } catch {}
+  }
+
+  let answers = {};
+  if (row) { try { answers = JSON.parse(row.answers_json || "{}"); } catch {} }
+  const who = b.showName && !minor ? (isGroup ? groupName : [first, last].filter(Boolean).join(" ")) : "";
+  const summary = (Array.isArray(b.summary) ? b.summary : []).slice(0, 10)
+    .map((r) => [clip(r && r[0], 40), clip(r && r[1], 400)]).filter((r) => r[0] && r[1] && r[0] !== "Causes" && r[0] !== "Strengths");
+  const webSearches = (Array.isArray(b.webSearches) ? b.webSearches : []).slice(0, 3).map((w) => ({ label: clip(w && w.label, 60), q: clip(w && w.q, 200) })).filter((w) => w.q);
+  const p = {
+    first_name: first || (row && row.first_name) || "", index: (row && row.index_id) || "g4g", submitted_at: nowIso,
+    top_causes: causes.length ? causes : list(row && row.top_causes ? row.top_causes.split("; ") : [], 3),
+    top_strengths: strengths.length ? strengths : list(row && row.top_strengths ? row.top_strengths.split("; ") : [], 3),
+    answers, mission: { ...st, who, isGroup, summary, prompt, webSearches },
+  };
+
+  let status = "not_configured";
+  if (env.RESEND_API_KEY) {
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    const okIp = (await bump(env, "rep-ip:" + ip + ":" + today())) <= REPORTS_PER_IP_PER_DAY;
+    const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
+    if (!okIp || !okTo) status = "limited";
+    else {
+      try {
+        const res = await fetch(SFI_BASE + "content.json", { cf: { cacheTtl: 600 } });
+        const m = buildSfiReport(p, await res.json());
+        status = (await sendEmail(env, email, m.subject, m.html, m.text, "Gateway for Good <team@gatewayforgood.com>")) ? "sent" : "failed";
+      } catch { status = "failed"; }
+    }
+  }
+  const tags = ["Tool: My Mission", "Tool: Social Fingerprint Index"];
+  for (const c of causes) tags.push("Cause: " + CAUSES[c]);
+  for (const x of strengths) tags.push("Strength: " + STRENGTHS[x]);
+  ctx.waitUntil(kajabiSync(env, { email, name: [first, last].filter(Boolean).join(" "), subscribed: !!b.subscribe && !minor, tags }));
+  return json({ ok: true, stored: true, emailed: status === "sent", email_status: status }, 200, cors);
+}
+
 // ---------- /analysis (GivingLens) ----------
 async function saveAnalysis(b, request, env, ctx, cors) {
   const name = clip(b.name, 200);
@@ -414,12 +498,14 @@ const SFI_GIVING_NAME = "GivingLens";
 const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
 const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
+// My Mission (Index Step 3). Blank until its Kajabi page is live; until then "write my giving statement" buttons go to PurposeLens.
+const SFI_MISSION_URL = "";
 
 // Next steps people pick on the last screen. Each one gets a short "bridge" so the
 // button never feels abrupt: a warm opener, a sentence on what happens next, and the button.
 // Leave a url blank ("") and that step shows the message with no button.
 // Keys are the next-step answers exactly as worded in content.json. Older wordings stay so earlier responses still render.
-const SFI_LINK_STATEMENT = { url: SFI_PURPOSELENS_URL, label: "Write my giving statement",
+const SFI_LINK_STATEMENT = { url: SFI_MISSION_URL || SFI_PURPOSELENS_URL, label: "Write my giving statement",
   body: "The best way to find the right organizations is to know exactly what you're looking for. Your next step is your giving statement: your mission, vision, and purpose, and how you want to get started. It becomes your guide for finding organizations that fit." };
 const SFI_LINK_CIRCLE = { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle",
   body: "Giving alongside others multiplies what each of us can do. Our Gateway for Good giving circle on Grapevine is a place to give together with people who care about the same things." };
@@ -427,6 +513,9 @@ const SFI_LINK_PRO = { url: "https://calendly.com/gatewayforgood/connect-with-ga
   body: "Here's a direct link to book time with our professional giving team. Bring your Social Fingerprint, and we'll talk through your own giving strategy." };
 const SFI_LINK_COMMUNITY = { url: "https://www.gatewayforgood.com/offers/R6CUkaMz/checkout", label: "Join the Community",
   body: "The Gateway for Good Community is where people share ideas, projects, and encouragement as they put their giving to work." };
+// After My Mission, "find organizations" points to the search prompt in the report and to GivingLens.
+const SFI_LINK_ANALYZE = { url: SFI_GIVINGLENS_URL, label: "Analyze an organization",
+  body: `Your giving statement is written. Use your search prompt (below) to find organizations that fit, then check each one's numbers with ${SFI_GIVING_NAME} before you give.` };
 const SFI_NEXT_LINKS = {
   "Find organizations that align with my causes": SFI_LINK_STATEMENT,
   "Explore a giving project with others": SFI_LINK_CIRCLE,
@@ -502,6 +591,8 @@ function buildSfiReport(p, content, opts = {}) {
   const date = new Date(p.submitted_at || Date.now()).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const s1 = strengths.find(s => (s.items || []).length) || strengths[0];
   const c1 = causes[0];
+  const M = p.mission && p.mission.combined ? p.mission : null; // My Mission finished: Giving Statement on top, path moves to Analyze
+  const link = n => (M && SFI_NEXT_LINKS[n] === SFI_LINK_STATEMENT) ? SFI_LINK_ANALYZE : SFI_NEXT_LINKS[n];
 
   // Colors match the experience.
   const GREEN = "#2e7d32", DARK = "#1b5e20", INK = "#1d2a1f", MUTED = "#5d6b5f", LINE = "#d9e0d4", SOFT = "#e3efe0", BG = "#f3f5ef", GREY = "#8a8f88";
@@ -520,7 +611,7 @@ function buildSfiReport(p, content, opts = {}) {
   // ---------- 1. Your next steps ----------
   const next = (ans.next_steps || []).filter(n => SFI_NEXT_LINKS[n]);
   const title = n => SFI_NEXT_TITLES[n] || n;
-  const featured = n => { const l = SFI_NEXT_LINKS[n];
+  const featured = n => { const l = link(n);
     return `<tr><td style="padding:6px 28px 4px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${GREEN};background-image:linear-gradient(135deg,${DARK},${GREEN});border-radius:16px"><tr><td style="padding:22px 22px 20px">
       <div style="${FONT}font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d7ecd5;font-weight:bold">${next.length > 1 ? "Your first step" : "Your next step"}</div>
@@ -528,7 +619,7 @@ function buildSfiReport(p, content, opts = {}) {
       <div style="${FONT}font-size:15px;line-height:1.55;color:#ffffff;margin-top:10px">${esc(l.body)}</div>
       ${l.url ? btn(l.url, l.label, true) : ""}
     </td></tr></table></td></tr>`; };
-  const more = (n, i) => { const l = SFI_NEXT_LINKS[n];
+  const more = (n, i) => { const l = link(n);
     return `<tr><td style="padding:8px 28px 4px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${LINE};border-radius:14px"><tr>
       <td width="38" valign="top" style="padding:18px 0 16px 16px"><div style="width:28px;height:28px;line-height:28px;border-radius:14px;background:${SOFT};color:${GREEN};text-align:center;${FONT}font-size:14px;font-weight:bold">${i + 2}</div></td>
@@ -571,13 +662,14 @@ function buildSfiReport(p, content, opts = {}) {
   // state: "done" | "next" | "open" (available now) | "soon"
   const DONE = "done", NEXT = "next", OPEN = "open", SOON = "soon";
   const PATH = [
-    { title: "Connect", here: true, blurb: "Know what you care about and what you bring.", steps: [
+    { title: "Connect", here: !M, blurb: "Know what you care about and what you bring.", steps: [
       { t: "Discover your causes", s: DONE },
       { t: "Identify your strengths", s: DONE },
-      { t: "Draft your giving statement and the ways you'll make a difference", s: NEXT, url: SFI_PURPOSELENS_URL, label: "Write my giving statement" },
+      { t: "Draft your giving statement and the ways you'll make a difference", s: M ? DONE : NEXT, url: SFI_MISSION_URL || SFI_PURPOSELENS_URL, label: "Write my giving statement" },
     ] },
-    { title: "Analyze", blurb: "Find organizations that fit, and see where you can make the most impact.", steps: [
-      { t: "Seek organizations that align with your giving statement", s: SOON },
+    { title: "Analyze", here: !!M, blurb: "Find organizations that fit, and see where you can make the most impact.", steps: [
+      M ? { t: "Seek organizations that align with your giving statement: use your search prompt above", s: NEXT }
+        : { t: "Seek organizations that align with your giving statement", s: SOON },
       { t: "Quantitative analysis: an organization's numbers", s: OPEN, url: SFI_GIVINGLENS_URL, label: SFI_GIVING_NAME },
       { t: "Qualitative analysis: an organization's culture", s: SOON },
     ], out: "The result: an assessment of how you can make an impact with each organization." },
@@ -616,7 +708,27 @@ function buildSfiReport(p, content, opts = {}) {
         ${st.out ? `<div style="${FONT}font-size:14px;line-height:1.45;color:${MUTED};font-style:italic;margin:6px 0 2px">${esc(st.out)}</div>` : ""}
       </td></tr></table></td></tr>`;
 
-  const preheader = next.length
+  // ---------- My Mission: Giving Statement (top) and Find organizations ----------
+  const statementBlock = M ? `<tr><td style="padding:18px 28px 4px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${GREEN};background-image:linear-gradient(135deg,${DARK},${GREEN});border-radius:16px"><tr><td style="padding:24px 22px">
+      <div style="${FONT}font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d7ecd5;font-weight:bold">${M.isGroup ? "Our" : "My"} Giving Statement</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.45;color:#ffffff;margin-top:8px">&ldquo;${esc(M.combined)}&rdquo;</div>
+      ${M.who ? `<div style="${FONT}font-size:15px;color:#ffffff;margin-top:10px;opacity:.9">&mdash; ${esc(M.who)}</div>` : ""}
+    </td></tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px">
+      ${[["Purpose", M.purpose], ["Vision", M.vision], ["Mission", M.mission]].filter(r => r[1]).map(([k, v]) => `<tr><td style="padding:10px 4px;border-bottom:1px solid ${LINE}"><div style="${FONT}font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:${GREEN}">${k}</div><div style="${FONT}font-size:15px;line-height:1.5;color:${INK};margin-top:2px">${esc(v)}</div></td></tr>`).join("")}
+    </table></td></tr>` : "";
+  const findBlock = M ? `${sectionHead("Analyze", "Find organizations that fit")}
+    ${M.summary && M.summary.length ? `<tr><td style="padding:0 28px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};margin:4px 0 6px">How you want to get involved</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${M.summary.map(([k, v]) => `<tr><td width="110" valign="top" style="${FONT}font-size:14px;font-weight:bold;color:${GREEN};padding:3px 0">${esc(k)}</td><td valign="top" style="${FONT}font-size:14px;line-height:1.45;color:${INK};padding:3px 0">${esc(v)}</td></tr>`).join("")}</table></td></tr>` : ""}
+    ${M.prompt ? `<tr><td style="padding:14px 28px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};margin-bottom:6px">Your search prompt</div>
+      <div style="${FONT}font-size:14px;line-height:1.5;color:${MUTED};margin-bottom:8px">Copy this into any AI tool, like ChatGPT, Claude, Gemini, or Perplexity, and it will suggest organizations that match.</div>
+      <div style="font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.5;color:${INK};background:${BG};border:1px solid ${LINE};border-radius:12px;padding:14px;white-space:pre-wrap">${esc(M.prompt)}</div></td></tr>` : ""}
+    ${M.webSearches && M.webSearches.length ? `<tr><td style="padding:12px 28px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};margin-bottom:4px">Or search the web</div>
+      ${M.webSearches.map(w => `<div style="${FONT}font-size:14px;margin:4px 0"><a href="https://www.google.com/search?q=${encodeURIComponent(w.q)}" target="_blank" style="color:${GREEN};font-weight:bold">Search: ${esc(w.label || w.q)} &rarr;</a></div>`).join("")}</td></tr>` : ""}
+    <tr><td style="padding:10px 28px 0">${P(`These are starting points from a search, not endorsements by Gateway for Good. Always check an organization yourself before you give, and use ${SFI_GIVING_NAME} to look at its numbers.`, `font-size:13px;color:${MUTED}`)}${btn(SFI_GIVINGLENS_URL, "Analyze an organization")}</td></tr>` : "";
+
+  const preheader = M ? `Your Giving Statement: ${M.combined.slice(0, 90)}` : next.length
     ? `Your next step: ${title(next[0])}. Plus your top causes and strengths.`
     : "Your Social Fingerprint, your causes and strengths, and your giving path.";
 
@@ -625,16 +737,19 @@ function buildSfiReport(p, content, opts = {}) {
   <tr><td align="center" style="padding:30px 28px 6px">
     <div style="${FONT}font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${GREEN};font-weight:bold">${esc(org)} · Social Fingerprint Index</div>
     <div style="${H}font-size:30px;line-height:1.15;margin-top:8px">${who} Social Fingerprint Report</div>
-    <div style="${FONT}font-size:14px;color:${MUTED};margin-top:6px">${esc(date)}</div>
+    <div style="${FONT}font-size:14px;color:${MUTED};margin-top:6px">${M ? "Updated " : ""}${esc(date)}</div>
   </td></tr>
+  ${statementBlock}
   <tr><td style="padding:14px 28px 0">
-    ${P(`<b>Congratulations, and thank you for taking the first step in your giving journey!</b> Based on your responses, here are your next steps, as well as the causes and strengths you've selected.`, "text-align:center")}
+    ${M ? P(`<b>Your Social Fingerprint is complete.</b> You know what you care about, the strengths you bring, and why you give. Here's how to find organizations that fit, plus your causes, strengths, and where you are on your giving path.`, "text-align:center")
+        : P(`<b>Congratulations, and thank you for taking the first step in your giving journey!</b> Based on your responses, here are your next steps, as well as the causes and strengths you've selected.`, "text-align:center")}
   </td></tr>
 
   ${next.length ? `${sectionHead("Your action plan", "Your next steps")}
   ${featured(next[0])}
   ${next.slice(1).map(more).join("")}` : ""}
   ${ideasBlock}
+  ${findBlock}
 
   ${sectionHead("Your Social Fingerprint", "The causes you care about most")}
   ${causes.map((c, i) => detail("cause", c, i)).join("")}
@@ -645,7 +760,7 @@ function buildSfiReport(p, content, opts = {}) {
   <!--SFI_SHARE-->
 
   ${sectionHead("Where you're headed", "Your giving path")}
-  <tr><td style="padding:0 28px 4px">${P(`Every giving journey moves through three stages. You've just finished the first two steps of <b>Connect</b>.`, `color:${MUTED};font-size:14px;margin:0`)}</td></tr>
+  <tr><td style="padding:0 28px 4px">${P(M ? `Every giving journey moves through three stages. You've finished <b>Connect</b>, and you're now in <b>Analyze</b>.` : `Every giving journey moves through three stages. You've just finished the first two steps of <b>Connect</b>.`, `color:${MUTED};font-size:14px;margin:0`)}</td></tr>
   ${PATH.map((st, i) => stageHtml(st, i + 1)).join("")}
 
   <tr><td align="center" style="padding:28px 28px 30px;background:#ffffff;border-top:1px solid ${LINE}">
@@ -666,16 +781,27 @@ ${body.replace("<!--SFI_SHARE-->", "")}
 
   // Plain text version (same order).
   const T = [];
-  T.push(`${name ? name + "'s" : "Your"} Social Fingerprint Report`, `${org} · ${date}`, "",
-    "Congratulations, and thank you for taking the first step in your giving journey! Based on your responses, here are your next steps, as well as the causes and strengths you've selected.", "");
+  T.push(`${name ? name + "'s" : "Your"} Social Fingerprint Report`, `${org} · ${M ? "Updated " : ""}${date}`, "");
+  if (M) {
+    T.push(`${M.isGroup ? "OUR" : "MY"} GIVING STATEMENT`, `"${M.combined}"${M.who ? " — " + M.who : ""}`);
+    if (M.purpose) T.push("Purpose: " + M.purpose); if (M.vision) T.push("Vision: " + M.vision); if (M.mission) T.push("Mission: " + M.mission);
+    T.push("", "Your Social Fingerprint is complete. Here's how to find organizations that fit, plus your causes, strengths, and where you are on your giving path.", "");
+  } else T.push("Congratulations, and thank you for taking the first step in your giving journey! Based on your responses, here are your next steps, as well as the causes and strengths you've selected.", "");
   if (next.length) {
     T.push("YOUR NEXT STEPS");
-    next.forEach((n, i) => { const l = SFI_NEXT_LINKS[n]; T.push(`${i + 1}. ${title(n)}`, `   ${l.body}`); if (l.url) T.push(`   ${l.label}: ${l.url}`); });
+    next.forEach((n, i) => { const l = link(n); T.push(`${i + 1}. ${title(n)}`, `   ${l.body}`); if (l.url) T.push(`   ${l.label}: ${l.url}`); });
     T.push("");
   }
   if (s1 && c1 && (s1.items || []).length) T.push(`A first idea: put your ${s1.name} strength to work for ${c1.name}.`);
   if (openTo.length) T.push(`You're open to: ${openTo.join(", ").toLowerCase()}.`);
   barriers.forEach(b => T.push(SFI_BARRIER_TIPS[b]));
+  if (M) {
+    T.push("", "FIND ORGANIZATIONS THAT FIT");
+    (M.summary || []).forEach(([k, v]) => T.push(`${k}: ${v}`));
+    if (M.prompt) T.push("", "Your search prompt (copy into any AI tool):", M.prompt);
+    (M.webSearches || []).forEach(w => T.push(`Search: https://www.google.com/search?q=${encodeURIComponent(w.q)}`));
+    T.push(`Analyze an organization: ${SFI_GIVINGLENS_URL}`);
+  }
   T.push("", "THE CAUSES YOU CARE ABOUT MOST");
   causes.forEach(c => { T.push(`${c.name}: ${c.tag}`); (c.items || []).forEach(x => T.push(`   - ${x}`)); if ((c.search || []).length) T.push(`   Search terms: ${c.search.slice(0, 5).join(", ")}`); });
   T.push("", "THE STRENGTHS YOU BRING");
@@ -689,7 +815,7 @@ ${body.replace("<!--SFI_SHARE-->", "")}
   T.push("", "Gateway for Good · Reuniting a divided world", screen ? "Questions? Email team@gatewayforgood.com." : "Questions? Just reply to this email.");
 
   return {
-    subject: name ? `${name}, here's your Social Fingerprint` : "Your Social Fingerprint",
+    subject: M ? (name ? `${name}, here's your updated Social Fingerprint` : "Your updated Social Fingerprint") : name ? `${name}, here's your Social Fingerprint` : "Your Social Fingerprint",
     html,
     // On screen the report already sits inside the tool's padded column, so the side padding is trimmed.
     body: screen ? body.replace(/(padding:\S+ )28px/g, "$114px") : body,

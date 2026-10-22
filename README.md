@@ -84,4 +84,4 @@ My Mission replaces PurposeLens as Step 3 of the Social Fingerprint Index (My Ca
 
 Edit `mission/mission.src.html`, then rebuild with `python3 givinglens/build.py mission/mission.src.html mission/mission.js mission "My Mission" mission`. Test page: `mission/index.html` (tools.gatewayforgood.com/mission/).
 
-Not yet in the Worker: `/statement` accepts the Mission email as-is but ignores `involvement` and `searchPrompt`, and the email still says PurposeLens.
+My Mission posts to the Worker's `/mission` route, which saves the statement and answers (statements table, plus the person's sfi_responses row when the browser has their Index response id) and emails their UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, and the giving path moved to Analyze. When the Kajabi page is live, set `SFI_MISSION_URL` in `cloudflare/worker.js` so the Index report's "Write my giving statement" buttons go to My Mission instead of PurposeLens. Set `COMMUNITY_URL` in `mission/mission.src.html` to show the community share button.

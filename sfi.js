@@ -64,11 +64,14 @@
         const KEY="gfg_workbook_v1"; let wb={};
         try{ wb=JSON.parse(localStorage.getItem(KEY))||{} }catch(e){ wb={} }
         wb.version=wb.version||1;
-        wb.fingerprint={ causes:p.top_causes, strengths:p.top_strengths, source:"social-fingerprint", response_id:p.response_id, saved_at:p.submitted_at };
+        const a=p.answers||{};
+        wb.fingerprint={ causes:p.top_causes, strengths:p.top_strengths, source:"social-fingerprint", response_id:p.response_id, saved_at:p.submitted_at,
+          answers:{ open_to:a.open_to||[], past12:a.past12||[], next_steps:a.next_steps||[] } };
         wb.person=wb.person||{};
         if(S.age!=="under13" && p.first_name && !wb.person.first) wb.person.first=p.first_name;
         if(p.email && !wb.person.email) wb.person.email=p.email;
         if(p.zip && !wb.person.zip) wb.person.zip=p.zip;
+        if(S.age) wb.person.age=S.age;
         localStorage.setItem(KEY, JSON.stringify(wb));
       }catch(e){ /* storage blocked (private mode, etc.): results still show */ }
     }
