@@ -420,29 +420,25 @@ const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
 // Leave a url blank ("") and that step shows the message with no button.
 // Keys are the next-step answers exactly as worded in content.json. Older wordings stay so earlier responses still render.
 const SFI_LINK_STATEMENT = { url: SFI_PURPOSELENS_URL, label: "Write my giving statement",
-  hi: "Great choice!",
   body: "The best way to find the right organizations is to know exactly what you're looking for. Your next step is your giving statement: your mission, vision, and purpose, and how you want to get started. It becomes your guide for finding organizations that fit." };
 const SFI_LINK_CIRCLE = { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle",
-  hi: "Wonderful!",
   body: "Giving alongside others multiplies what each of us can do. Our Gateway for Good giving circle on Grapevine is a place to give together with people who care about the same things." };
 const SFI_LINK_PRO = { url: "https://calendly.com/gatewayforgood/connect-with-gateway-for-good", label: "Book a time to talk",
-  hi: "Fantastic!",
   body: "Here's a direct link to book time with our professional giving team. Bring your Social Fingerprint, and we'll talk through your own giving strategy." };
 const SFI_LINK_COMMUNITY = { url: "https://www.gatewayforgood.com/offers/R6CUkaMz/checkout", label: "Join the Community",
-  hi: "We're excited to have you!",
   body: "The Gateway for Good Community is where people share ideas, projects, and encouragement as they put their giving to work." };
 const SFI_NEXT_LINKS = {
   "Find organizations that align with my causes": SFI_LINK_STATEMENT,
   "Explore a giving project with others": SFI_LINK_CIRCLE,
   "Join the Gateway for Good Community": SFI_LINK_COMMUNITY,
   "Connect with a professional to talk about my own giving strategy": SFI_LINK_PRO,
-  "I'm not ready to take action yet": { url: "", label: "", hi: "That's okay.",
+  "I'm not ready to take action yet": { url: "", label: "",
     body: "Your Social Fingerprint will keep. We'll send a few short ideas over the coming weeks, and you can pick it up whenever you're ready." },
   // earlier wordings
   "Talk with a professional about my own giving strategy": SFI_LINK_PRO,
   "Get connected to organizations that match my causes": SFI_LINK_STATEMENT,
   "Join a giving project with others who share my causes": SFI_LINK_CIRCLE,
-  "Bring this experience to my family, friends, or organization": { url: "", label: "", hi: "Wonderful!",
+  "Bring this experience to my family, friends, or organization": { url: "", label: "",
     body: "Reply to this email and tell us who you'd like to bring. We'll help you set up a group version with its own community report." },
 };
 // Short labels for the action cards (the full answer text is long for a heading).
@@ -529,7 +525,7 @@ function buildSfiReport(p, content, opts = {}) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${GREEN};background-image:linear-gradient(135deg,${DARK},${GREEN});border-radius:16px"><tr><td style="padding:22px 22px 20px">
       <div style="${FONT}font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d7ecd5;font-weight:bold">${next.length > 1 ? "Your first step" : "Your next step"}</div>
       <div style="${H}color:#ffffff;font-size:23px;line-height:1.25;margin-top:6px">${esc(title(n))}</div>
-      <div style="${FONT}font-size:15px;line-height:1.55;color:#ffffff;margin-top:10px"><b>${esc(l.hi)}</b> ${esc(l.body)}</div>
+      <div style="${FONT}font-size:15px;line-height:1.55;color:#ffffff;margin-top:10px">${esc(l.body)}</div>
       ${l.url ? btn(l.url, l.label, true) : ""}
     </td></tr></table></td></tr>`; };
   const more = (n, i) => { const l = SFI_NEXT_LINKS[n];
@@ -538,7 +534,7 @@ function buildSfiReport(p, content, opts = {}) {
       <td width="38" valign="top" style="padding:18px 0 16px 16px"><div style="width:28px;height:28px;line-height:28px;border-radius:14px;background:${SOFT};color:${GREEN};text-align:center;${FONT}font-size:14px;font-weight:bold">${i + 2}</div></td>
       <td valign="top" style="padding:16px 18px 16px 10px">
         <div style="${H}font-size:18px;line-height:1.25">${esc(title(n))}</div>
-        <div style="${FONT}font-size:15px;line-height:1.55;color:${INK};margin-top:6px"><b>${esc(l.hi)}</b> ${esc(l.body)}</div>
+        <div style="${FONT}font-size:15px;line-height:1.55;color:${INK};margin-top:6px">${esc(l.body)}</div>
         ${l.url ? btn(l.url, l.label) : ""}
       </td></tr></table></td></tr>`; };
 
@@ -674,7 +670,7 @@ ${body.replace("<!--SFI_SHARE-->", "")}
     "Congratulations, and thank you for taking the first step in your giving journey! Based on your responses, here are your next steps, as well as the causes and strengths you've selected.", "");
   if (next.length) {
     T.push("YOUR NEXT STEPS");
-    next.forEach((n, i) => { const l = SFI_NEXT_LINKS[n]; T.push(`${i + 1}. ${title(n)}`, `   ${l.hi} ${l.body}`); if (l.url) T.push(`   ${l.label}: ${l.url}`); });
+    next.forEach((n, i) => { const l = SFI_NEXT_LINKS[n]; T.push(`${i + 1}. ${title(n)}`, `   ${l.body}`); if (l.url) T.push(`   ${l.label}: ${l.url}`); });
     T.push("");
   }
   if (s1 && c1 && (s1.items || []).length) T.push(`A first idea: put your ${s1.name} strength to work for ${c1.name}.`);
