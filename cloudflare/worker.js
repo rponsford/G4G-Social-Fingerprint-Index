@@ -367,7 +367,7 @@ async function saveAnalysis(b, request, env, ctx, cors) {
     const okIp = (await bump(env, "rep-ip:" + ip + ":" + today())) <= REPORTS_PER_IP_PER_DAY;
     const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
     if (okIp && okTo && env.RESEND_API_KEY) {
-      const report = givingLensEmail({ name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
+      const report = givingLensEmail({ tool: b.tool === "charity-analyzer" ? ANALYZER : GIVINGLENS, name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
       emailed = await sendEmail(env, email, report.subject, report.html, report.text);
     }
     const tags = ["Tool: GivingLens"];
@@ -902,7 +902,10 @@ const BANDS = {
 const COLORS = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"] };
 const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
 
+const GIVINGLENS = { name: "GivingLens", url: "https://www.gatewayforgood.com/givinglens", addr: "gatewayforgood.com/givinglens", tag: " · Know before you give" };
+const ANALYZER = { name: "Charity Analyzer", url: "https://www.gatewayforgood.com/charity-analyzer", addr: "gatewayforgood.com/charity-analyzer", tag: " · by Gateway for Good" };
 function givingLensEmail(d) {
+  const T = d.tool || GIVINGLENS;
   const rows = [], flagged = [], textRows = [];
   for (const [id, cfg] of Object.entries(BANDS)) {
     const v = d.ratios[id];
@@ -928,33 +931,33 @@ function givingLensEmail(d) {
   const btn = (href, label, solid) => `<a href="${href}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px 4px 0;padding:11px 18px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none;${solid ? "background:#2e7d32;color:#ffffff" : "border:2px solid #2e7d32;color:#1b5e20"}">${label}</a>`;
 
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f5f3e6">
-<div style="display:none;max-height:0;overflow:hidden">Your GivingLens results for ${esc(d.name)}</div>
+<div style="display:none;max-height:0;overflow:hidden">Your ${T.name} results for ${esc(d.name)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3e6"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fffdf5;border:1px solid #ddd8c3;border-radius:14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2a22">
 <tr><td align="center" style="padding:24px 24px 8px;text-align:center">
-  <div style="font-size:14px;font-weight:800;color:#1b5e20;letter-spacing:.02em">GivingLens <span style="font-weight:400;color:#5d6a60">· Know before you give</span></div>
+  <div style="font-size:14px;font-weight:800;color:#1b5e20;letter-spacing:.02em">${T.name} <span style="font-weight:400;color:#5d6a60">${T.tag}</span></div>
   <h1 style="margin:14px 0 4px;font-size:24px;line-height:1.2;color:#1b5e20">${esc(d.name)}</h1>
   <div style="font-size:14px;color:#5d6a60">${esc(meta)}</div>
   ${d.analyst ? `<div style="font-size:14px;color:#5d6a60;margin-top:2px">Analyst: <b style="color:#1f2a22">${esc(d.analyst)}</b></div>` : ""}
   ${causeRow}
 </td></tr>
-<tr><td style="padding:8px 24px 0;font-size:15px;line-height:1.55">${hello} here are the results you saved in GivingLens. Use them to guide your conversation with the organization, not to replace it.</td></tr>
+<tr><td style="padding:8px 24px 0;font-size:15px;line-height:1.55">${hello} here are the results you saved in ${T.name}. Use them to guide your conversation with the organization, not to replace it.</td></tr>
 <tr><td style="padding:8px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows.join("")}</table></td></tr>
 ${net === null ? "" : `<tr><td style="padding:14px 24px 0;font-size:14px;color:#5d6a60">Revenue minus expenses: <b style="color:${net >= 0 ? "#2e7d32" : "#9a5b00"}">${money(net)}</b> (${net >= 0 ? "surplus" : "deficit"}). One year tells you less than a pattern over several.</td></tr>`}
 ${flagged.length ? `<tr><td style="padding:20px 24px 0"><div style="background:#fbecd0;border-radius:12px;padding:14px 16px"><div style="font-weight:800;color:#5c3700;font-size:14px;margin-bottom:6px">Questions worth asking</div><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.5;color:#5c3700">${flagged.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div></td></tr>` : ""}
 ${notes.length ? `<tr><td style="padding:20px 24px 0"><div style="font-weight:800;color:#1b5e20;font-size:15px;margin-bottom:6px">Your outreach notes</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.5">${notes.map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#5d6a60;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0">${esc(v)}</td></tr>`).join("")}</table></td></tr>` : ""}
-<tr><td style="padding:22px 24px 4px">${btn("https://www.gatewayforgood.com/givinglens", "Analyze another organization", true)}${btn("https://www.gatewayforgood.com/analyzing-organizations", "Go deeper: Analyzing Organizations", false)}</td></tr>
+<tr><td style="padding:22px 24px 4px">${btn(T.url, "Analyze another organization", true)}${btn("https://www.gatewayforgood.com/analyzing-organizations", "Go deeper: Analyzing Organizations", false)}</td></tr>
 <tr><td align="center" style="padding:18px 24px 4px;border-top:1px solid #ddd8c3"><a href="https://www.gatewayforgood.com" target="_blank" rel="noopener"><img src="${LOGO_URL}" width="160" alt="Gateway for Good" style="display:block;width:160px;max-width:60%;height:auto;border:0"></a></td></tr>
-<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">These ratios are one piece of the puzzle; different kinds of nonprofits run on different models. Numbers are as you entered them from the organization's Form 990.<br><br>You received this because you saved an analysis at gatewayforgood.com/givinglens. Reply to reach the Gateway for Good team.<br>GivingLens by Gateway for Good® · Reuniting a divided world</td></tr>
+<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">These ratios are one piece of the puzzle; different kinds of nonprofits run on different models. Numbers are as you entered them from the organization's Form 990.<br><br>You received this because you saved an analysis at ${T.addr}. Reply to reach the Gateway for Good team.<br>${T.name} by Gateway for Good® · Reuniting a divided world</td></tr>
 </table></td></tr></table></body></html>`;
 
-  const text = [`GivingLens report: ${d.name}`, meta, d.analyst ? "Analyst: " + d.analyst : "", causes.length ? "Causes: " + causes.map((c) => CAUSES[c]).join(", ") : "", "", ...textRows,
+  const text = [`${T.name} report: ${d.name}`, meta, d.analyst ? "Analyst: " + d.analyst : "", causes.length ? "Causes: " + causes.map((c) => CAUSES[c]).join(", ") : "", "", ...textRows,
     net === null ? "" : `Revenue minus expenses: ${money(net)}`,
     flagged.length ? "\nQuestions worth asking:\n- " + flagged.join("\n- ") : "",
     notes.length ? "\nYour outreach notes:\n" + notes.map(([k, v]) => `${k}: ${v}`).join("\n") : "",
-    "\nAnalyze another organization: https://www.gatewayforgood.com/givinglens",
+    "\nAnalyze another organization: " + T.url,
     "Go deeper: https://www.gatewayforgood.com/analyzing-organizations"].filter((x) => x !== "").join("\n");
-  return { subject: `Your GivingLens report: ${d.name}`, html, text };
+  return { subject: `Your ${T.name} report: ${d.name}`, html, text };
 }
 
 // ---------- Kajabi (Public API) ----------
