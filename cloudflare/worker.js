@@ -628,13 +628,13 @@ function buildSfiReport(p, content, opts = {}) {
     { title: "Connect", here: !M, blurb: "Know what you care about and what you bring.", steps: [
       { t: "Discover your causes", s: DONE },
       { t: "Identify your strengths", s: DONE },
-      { t: "Draft your giving statement and the ways you'll make a difference", s: M ? DONE : NEXT, url: SFI_MISSION_URL, label: "Write my giving statement" },
+      { t: "Draft your giving statement, how you'll get started, and a search prompt for finding organizations that fit", s: M ? DONE : NEXT, url: SFI_MISSION_URL, label: "Write my giving statement" },
     ] },
-    { title: "Analyze", here: !!M, blurb: "Find organizations that fit, and see where you can make the most impact.", steps: [
-      M ? { t: "Seek organizations that align with your giving statement: use your search prompt above", s: NEXT }
-        : { t: "Seek organizations that align with your giving statement", s: SOON },
-      { t: "The Numbers: check an organization's finances", s: OPEN, url: SFI_ANALYZER_URL, label: SFI_ANALYZER_NAME },
+    // Seeking organizations now happens at the end of My Mission (Connect, step 3), so Analyze starts with The Numbers.
+    { title: "Analyze", here: !!M, blurb: "Look closely at the organizations you've found, and see where you can make the most impact.", steps: [
+      { t: "The Numbers: check an organization's finances", s: M ? NEXT : OPEN, url: SFI_ANALYZER_URL, label: SFI_ANALYZER_NAME },
       { t: "The People: an organization's leadership and culture", s: SOON },
+      { t: "The Impact: where your giving will make the most difference", s: SOON },
     ], out: "The result: an assessment of how you can make an impact with each organization." },
     { title: "Invest", blurb: "Take action and measure what changes.", steps: [
       { t: "Invest your money", s: SOON },
