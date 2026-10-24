@@ -461,7 +461,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
     <div class="sendbox">
       <h2>Get your updated Social Fingerprint report</h2>
-      <p class="hint">We'll email your full Social Fingerprint report, now with your Giving Statement at the top, your search prompt, and where you are on your giving path. Your answers are also saved in this browser.</p>
+      <p class="hint">We'll email your full Social Fingerprint report, now with your Giving Statement at the top, your search prompt, and where you are on your giving path. Prefer a file? Download it as a PDF. Your answers are also saved in this browser.</p>
       <div class="row2">
         <label class="field" for="first">First name<input id="first" type="text" autocomplete="given-name"></label>
         <label class="field" for="last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="last" type="text" autocomplete="family-name"></label>
@@ -473,6 +473,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <p class="err" id="err4" hidden></p>
       <div class="actions">
         <button class="btn" type="button" id="send">Email my updated report</button>
+        <button class="btn ghost" type="button" id="pdf">Download my report (PDF)</button>
       </div>
     </div>
     <p class="privacy">If you add your email, Gateway for Good keeps your statement with it so we can send your copy and connect it to later steps. We never sell or share what you write. Email copies are for people 13 and older.</p>
@@ -1259,6 +1260,62 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     else if (res && res.ok) done(false, ["Your statement and answers were saved, but the email couldn't be sent right now. Try again in a few minutes, or reply to any Gateway for Good email and we'll help.", "Your statement and answers are also saved in this browser."]);
     else done(false, ["We couldn't reach Gateway for Good just now, so nothing was sent.", "Your statement and answers are still saved in this browser. Try again in a minute."]);
   };
+
+
+
+  // ---------- Download my report (PDF): the same updated report we email, built by the Worker's /mission/report ----------
+  $("pdf").onclick = async () => {
+    const win = window.open("", "_blank"); // open during the tap so pop-up blockers allow it
+    if (win) { try { win.document.write('<!doctype html><title>Preparing your report</title><p style="font-family:Helvetica,Arial,sans-serif;padding:24px;color:#1b5e20">Preparing your report…</p>'); } catch {} }
+    const btn = $("pdf"); btn.disabled = true; btn.textContent = "Preparing…";
+    const first = $("first").value.trim() || wb.person.first || "";
+    let html = "";
+    try {
+      const r = await fetch(API + "/mission/report", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: $("email").value.trim() || wb.person.email || "", first, last: $("last").value.trim(), groupName: $("group").value.trim(), isGroup: st.group, showName: nameOK(),
+          ...wb.statements, causes: st.causes, strengths: st.strengths, responseId: wb.fingerprint.response_id || "",
+          answers: (wb.fingerprint && wb.fingerprint.answers) || {}, summary: summaryRows(), searchPrompt: promptText, webSearches: webQueries() }),
+      });
+      const d = r.ok ? await r.json().catch(() => null) : null;
+      html = (d && d.html) || "";
+    } catch {}
+    btn.disabled = false; btn.textContent = "Download my report (PDF)";
+    if (!html) { if (win) try { win.close(); } catch {} show($("err4"), "We couldn't build your report just now. Try again in a minute, or email it to yourself instead."); return; }
+    show($("err4"), "");
+    const how = reportPdf(html, (st.group && $("group").value.trim() ? $("group").value.trim() + "'s " : first ? first + "'s " : "My ") + "Social Fingerprint Report", win);
+    try { if (typeof window.gtag === "function") window.gtag("event", "mission_pdf", { method: how }); } catch {}
+  };
+
+  // ---------- Download my report (PDF) ----------
+  // Opens the report as its own clean page and brings up the print window, where "Save as PDF" makes the file
+  // (Mac: Save as PDF in the print dialog; iPhone/iPad: Share, then Save to Files). Same helper as the Social Fingerprint results screen (sfi.js).
+  function pdfDoc(html,title){
+    const e=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(title)}</title>
+  <style>html,body{margin:0;background:#f3f5ef}body{font-family:Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+  .bar{position:sticky;top:0;z-index:2;background:#1b5e20;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px;line-height:1.4}
+  .bar button{font:inherit;font-weight:bold;font-size:15px;background:#fff;color:#1b5e20;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+  .wrap{max-width:680px;margin:0 auto;background:#fff}img{max-width:100%;height:auto}
+  @page{margin:12mm}
+  @media print{.bar{display:none}html,body{background:#fff}.wrap{max-width:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr,td>table{break-inside:avoid;page-break-inside:avoid}a{text-decoration:none}}
+  </style></head><body><div class="bar"><span>Choose <b>Save as PDF</b> in the print window. On iPhone or iPad, tap Share, then <b>Save to Files</b>.</span><button type="button" onclick="window.print()">Save as PDF</button></div>
+  <div class="wrap">${html}</div>
+  <script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},500)});<\/script></body></html>`;
+  }
+  // win: a window opened during the tap (My Mission opens it before it fetches). Returns how it opened.
+  function reportPdf(html,title,win){
+    const doc=pdfDoc(html,title);
+    win=win||window.open("","_blank");
+    if(win){ try{ win.document.open(); win.document.write(doc); win.document.close(); return "window" }catch(e){ try{win.close()}catch(_){} } }
+    // Pop-ups blocked: print from a hidden frame on this page instead.
+    const f=document.createElement("iframe"); f.setAttribute("aria-hidden","true");
+    f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    f.srcdoc=doc.replace(/<script>[\s\S]*?<\/script>/,"");
+    f.onload=()=>{ try{ f.contentWindow.focus(); f.contentWindow.print() }catch(e){} setTimeout(()=>f.remove(),60000) };
+    document.body.appendChild(f);
+    return "frame";
+  }
 
   go("s1", false);
 })();

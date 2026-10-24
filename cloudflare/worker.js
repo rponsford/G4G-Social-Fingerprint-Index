@@ -13,6 +13,7 @@
 //   GET  /org-search?q=   organization name search (ProPublica Nonprofit Explorer), for the Charity Analyzer
 //   GET  /org?ein=        latest filing for one organization: name, EIN, tax year, form type, 990 PDF link
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
+//   POST /mission/report returns My Mission's updated report HTML for the PDF download (stores nothing, sends nothing)
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
 //   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
 //        Retired once the g4g-admin Worker (Cloudflare Access) is live: delete ADMIN_KEY in the dashboard and this stops working.
@@ -61,6 +62,7 @@ export default {
         if (url.pathname === "/analysis") return saveAnalysis(body, request, env, ctx, cors);
         if (url.pathname === "/sfi") return saveSfi(body, request, env, ctx, cors);
         if (url.pathname === "/sfi/report") return sfiReportScreen(body, request, env, cors);
+        if (url.pathname === "/mission/report") return missionReportScreen(body, request, env, cors);
       }
       return json({ error: "not_found" }, 404, cors);
     } catch (e) {
@@ -803,6 +805,45 @@ async function sfiReportScreen(b, request, env, cors) {
     top_causes: list(b.top_causes, 5), top_strengths: list(b.top_strengths, 5), answers: b.answers || {} };
   const m = buildSfiReport(p, content, { screen: true });
   return json({ ok: true, html: m.body }, 200, cors);
+}
+
+// ---------- /mission/report: My Mission's updated report, for "Download my report (PDF)" ----------
+// Stateless like /sfi/report: builds the same updated report /mission emails, stores nothing, sends nothing.
+// Answers come from their Index response (same browser id; an email already on that row must match),
+// else from the answers My Mission posts from the shared workbook. The email is only used for that match.
+async function missionReportScreen(b, request, env, cors) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if ((await bump(env, "misrep:" + ip + ":" + today())) > SFI_REPORTS_SCREEN_PER_IP_PER_DAY) return json({ error: "rate_limited" }, 429, cors);
+  const combined = clip(b.combined, 2000);
+  if (!combined) return json({ error: "missing_combined" }, 400, cors);
+  await ensureMissionColumns(env);
+  const ids = (v, map) => list(v, 3).map((x) => (map[x] ? x : Object.keys(map).find((k) => map[k].toLowerCase() === x.toLowerCase()))).filter(Boolean);
+  const causes = ids(b.causes, CAUSES), strengths = ids(b.strengths, STRENGTHS);
+  const rid = clip(b.responseId, 80), email = cleanEmail(b.email);
+  let row = null;
+  if (rid) {
+    try { row = await env.DB.prepare("SELECT first_name, index_id, top_causes, top_strengths, answers_json, age_range, email FROM sfi_responses WHERE response_id = ?").bind(rid).first(); } catch {}
+    if (row && row.email && row.email !== email) row = null;
+  }
+  const minor = row && row.age_range === "13-17";
+  let answers = {};
+  if (row) { try { answers = JSON.parse(row.answers_json || "{}"); } catch {} }
+  else if (b.answers && typeof b.answers === "object") answers = b.answers;
+  const first = clip(b.first, 80), last = clip(b.last, 80), groupName = clip(b.groupName, 120), isGroup = !!b.isGroup;
+  const who = b.showName && !minor ? (isGroup ? groupName : [first, last].filter(Boolean).join(" ")) : "";
+  const summary = (Array.isArray(b.summary) ? b.summary : []).slice(0, 10)
+    .map((r) => [clip(r && r[0], 40), clip(r && r[1], 400)]).filter((r) => r[0] && r[1] && r[0] !== "Causes" && r[0] !== "Strengths");
+  const webSearches = (Array.isArray(b.webSearches) ? b.webSearches : []).slice(0, 3).map((w) => ({ label: clip(w && w.label, 60), q: clip(w && w.q, 200) })).filter((w) => w.q);
+  const p = {
+    first_name: first || (row && row.first_name) || "", index: (row && row.index_id) || "g4g", submitted_at: new Date().toISOString(),
+    top_causes: causes.length ? causes : list(row && row.top_causes ? row.top_causes.split("; ") : [], 3),
+    top_strengths: strengths.length ? strengths : list(row && row.top_strengths ? row.top_strengths.split("; ") : [], 3),
+    answers,
+    mission: { purpose: clip(b.purpose, 1000), vision: clip(b.vision, 1000), mission: clip(b.mission, 1000), combined, who, isGroup, summary, prompt: clip(b.searchPrompt, 6000), webSearches },
+  };
+  const res = await fetch(SFI_BASE + "content.json", { cf: { cacheTtl: 600 } });
+  const m = buildSfiReport(p, await res.json(), { screen: true });
+  return json({ ok: true, html: m.body, subject: m.subject }, 200, cors);
 }
 
 // ---------- Social Fingerprint note to the team ----------

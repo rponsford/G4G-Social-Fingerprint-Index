@@ -76,3 +76,11 @@ My Mission is Step 3 of the Social Fingerprint Index (My Causes → My Strengths
 Edit `mission/mission.src.html`, then rebuild with `python3 givinglens/build.py mission/mission.src.html mission/mission.js mission "My Mission" mission`. Test page: `mission/index.html` (tools.gatewayforgood.com/mission/).
 
 My Mission posts to the Worker's `/mission` route, which saves the statement and answers (statements table, plus the person's sfi_responses row when the browser has their Index response id) and emails their UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, and the giving path moved to Analyze. Set `COMMUNITY_URL` in `mission/mission.src.html` to show the community share button.
+
+## Download my report (PDF)
+
+Both the Social Fingerprint results screen and My Mission's last screen have a "Download my report (PDF)" button. It opens the report as its own clean page and brings up the print window, where "Save as PDF" makes the file (Mac: Save as PDF in the print dialog; iPhone/iPad: Share, then Save to Files). If pop-ups are blocked it prints from a hidden frame instead. The helper (`pdfDoc` / `reportPdf`) is copied in `sfi.js` and `mission/mission.src.html`; change both together.
+
+- Social Fingerprint: prints the on-screen report it already has (from `/sfi/report`). Not offered on the simple view (under 13, or if the report can't load).
+- My Mission: calls the Worker's `/mission/report`, which builds the same updated report `/mission` emails but stores and sends nothing.
+- GA4 events: `sfi_pdf`, `mission_pdf`.

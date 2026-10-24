@@ -399,11 +399,45 @@ function resultsReport(){
   const parts=REPORT.split("<!--SFI_SHARE-->"), fp=fpShareHTML();
   app.innerHTML=`${S.contact&&S.contact.email?`<p class="muted reportnote">A copy of this report is on its way to <b>${esc(S.contact.email)}</b>.</p>`:""}
   <div class="report">${parts[0]}${fp?`<tr><td style="padding:14px 22px 4px">${fp}</td></tr>`:""}${parts[1]||""}</div>
+  <button class="secondary" id="pdf">Download my report (PDF)</button>
   ${shareHTML()}
   ${DEBUG?recordHTML():""}
   <button class="primary" id="again">Start over</button>`;
   wireShare(); wireFpShare();
+  $("#pdf").onclick=()=>{
+    const ok=reportPdf(REPORT.replace("<!--SFI_SHARE-->",""),(S.name?S.name+"'s ":"My ")+"Social Fingerprint Report");
+    try{ if(typeof window.gtag==="function") window.gtag("event","sfi_pdf",{index:idxId,method:ok}) }catch(e){}
+  };
   $("#again").onclick=()=>{startOver()};
+}
+// ---------- Download my report (PDF) ----------
+// Opens the report as its own clean page and brings up the print window, where "Save as PDF" makes the file
+// (Mac: Save as PDF in the print dialog; iPhone/iPad: Share, then Save to Files). Same helper as My Mission.
+function pdfDoc(html,title){
+  const e=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(title)}</title>
+<style>html,body{margin:0;background:#f3f5ef}body{font-family:Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.bar{position:sticky;top:0;z-index:2;background:#1b5e20;color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px;line-height:1.4}
+.bar button{font:inherit;font-weight:bold;font-size:15px;background:#fff;color:#1b5e20;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+.wrap{max-width:680px;margin:0 auto;background:#fff}img{max-width:100%;height:auto}
+@page{margin:12mm}
+@media print{.bar{display:none}html,body{background:#fff}.wrap{max-width:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr,td>table{break-inside:avoid;page-break-inside:avoid}a{text-decoration:none}}
+</style></head><body><div class="bar"><span>Choose <b>Save as PDF</b> in the print window. On iPhone or iPad, tap Share, then <b>Save to Files</b>.</span><button type="button" onclick="window.print()">Save as PDF</button></div>
+<div class="wrap">${html}</div>
+<script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},500)});<\/script></body></html>`;
+}
+// win: a window opened during the tap (My Mission opens it before it fetches). Returns how it opened.
+function reportPdf(html,title,win){
+  const doc=pdfDoc(html,title);
+  win=win||window.open("","_blank");
+  if(win){ try{ win.document.open(); win.document.write(doc); win.document.close(); return "window" }catch(e){ try{win.close()}catch(_){} } }
+  // Pop-ups blocked: print from a hidden frame on this page instead.
+  const f=document.createElement("iframe"); f.setAttribute("aria-hidden","true");
+  f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+  f.srcdoc=doc.replace(/<script>[\s\S]*?<\/script>/,"");
+  f.onload=()=>{ try{ f.contentWindow.focus(); f.contentWindow.print() }catch(e){} setTimeout(()=>f.remove(),60000) };
+  document.body.appendChild(f);
+  return "frame";
 }
 // Share my Social Fingerprint: a 1080 x 1080 image of their top 3 causes and strengths
 // (first name on it unless they opt out; never for under 18), shared through the phone's
