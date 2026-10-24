@@ -205,6 +205,8 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 .ratio.na-card .meterwrap, .ratio.na-card .ticks { display: none !important; }
 .ratio.na-card { background: var(--panel); }
 [data-mode] [hidden] { display: none !important; }
+.getit { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.getit h3 { color: var(--green-ink); }
 </style>
 
 <div class="wrap">
@@ -324,8 +326,15 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
         <p class="hint" style="margin:0">Every number has a story. These come from ratios outside the typical range and help you hear it. Save the organization and they'll be in your report.</p>
         <ul id="num-qs"></ul>
       </div>
-      <div class="actions">
-        <button class="btn ghost" type="button" id="copy">Copy results</button>
+      <div class="getit">
+        <h3>Keep a copy</h3>
+        <p class="hint">Save a branded report as a PDF, or add your email when you save this organization and we'll send it to you.</p>
+        <div class="actions">
+          <button class="btn" type="button" id="pdf">Save as PDF</button>
+          <button class="btn ghost" type="button" id="email-me">Email me the report</button>
+          <button class="linkish" type="button" id="copy">Copy results</button>
+        </div>
+        <span class="hint" id="pdf-msg" hidden></span>
       </div>
     </section>
   </div>
@@ -781,6 +790,115 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     lines.push("", "Charity Analyzer by Gateway for Good · gatewayforgood.com/charity-analyzer");
     return lines.join("\n");
   }
+  // ---------- Save as PDF: a branded report in its own window, printed with the system dialog (Save as PDF) ----------
+  const LOGO = "https://tools.gatewayforgood.com/givinglens/img/g4g-logo-email.png";
+  const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function reportHTML() {
+    const org = $("org").value.trim() || "Your organization";
+    const meta = [isEZ() && "Form 990-EZ", $("year").value.trim() && "Tax year " + $("year").value.trim(), $("ein").value.trim() && "EIN " + $("ein").value.trim()].filter(Boolean).join(" · ");
+    const analyst = $("o-first").value.trim();
+    const causes = selectedCauses.map(id => (CAUSE_LIST.find(c => c[0] === id) || [])[1]).filter(Boolean);
+    const COL = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"], none: ["#f5f3e6", "#5d6a60"] };
+    const rows = RATIOS.map(r => {
+      const x = results[r.id];
+      if (isEZ() && r.ez === false) return `<tr><td>${esc(r.name)}</td><td class="v">—</td><td><span class="pill" style="background:${COL.none[0]};color:${COL.none[1]}">Not reported on Form 990-EZ</span></td></tr>`;
+      if (!x) return `<tr><td>${esc(r.name)}</td><td class="v">—</td><td><span class="pill" style="background:${COL.none[0]};color:${COL.none[1]}">Not enough numbers</span></td></tr>`;
+      const b = band(x.value, r), c = COL[b[1]];
+      return `<tr><td>${esc(r.name)}<div class="f">${esc(r.formula)}</div></td><td class="v">${esc(show(x.value, r))}</td><td><span class="pill" style="background:${c[0]};color:${c[1]}">${esc(b[2])}</span></td></tr>`;
+    }).join("");
+    const ids = isEZ() ? ["rev","contrib","exp","ezprog","ezliq"] : ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec"];
+    const inputs = ids.map(id => {
+      const v = num(id); const lab = (ROOT.querySelector(`label[for="${id}"]`) || {}).textContent || id;
+      const fw = $(id).closest(".f"), wh = fw && fw.querySelector(".where");
+      const PRE = isEZ() ? {} : { prog: "Page 10, Part IX line 25, ", mgmt: "Page 10, Part IX line 25, ", fund: "Page 10, Part IX line 25, ", cash: "Page 11, Part X ", sav: "Page 11, Part X ", sec: "Page 11, Part X " };
+      const where = (PRE[id] || "") + (wh ? wh.textContent : "");
+      return `<tr><td>${esc(lab)}<div class="f">${esc(where)}</div></td><td class="v">${v === null ? "—" : esc(fmt$(v))}</td></tr>`;
+    }).join("");
+    const qs = [...$("num-qs").children].map(li => `<li>${esc(li.textContent)}</li>`).join("");
+    const net = results.net;
+    const pdfUrl = $("pdf-box").hidden ? "" : $("pdf-link").href;
+    const date = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(org)} · Charity Analyzer report</title>
+<style>
+@page { size: letter; margin: 0.6in; }
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2a22; margin: 0; font-size: 11.5pt; line-height: 1.45; }
+.wrap { max-width: 7.3in; margin: 0 auto; padding: 0.3in 0; }
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2e7d32; padding-bottom: 10px; }
+header img { height: 46px; }
+.brand { text-align: right; font-size: 10pt; color: #5d6a60; }
+.brand b { display: block; color: #1b5e20; font-size: 13pt; }
+h1 { margin: 18px 0 2px; font-size: 21pt; color: #1b5e20; line-height: 1.15; }
+.meta { color: #5d6a60; font-size: 10.5pt; }
+h2 { font-size: 12.5pt; color: #1b5e20; margin: 20px 0 6px; }
+.convo { border-left: 4px solid #00a8e8; background: #f4fbfe; padding: 10px 14px; margin-top: 14px; border-radius: 0 8px 8px 0; font-size: 10.5pt; }
+.convo b { color: #1b5e20; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 8px 6px; border-bottom: 1px solid #ddd8c3; vertical-align: top; }
+td.v { text-align: right; font-weight: 800; font-size: 13pt; white-space: nowrap; width: 1.2in; }
+.inputs td.v { font-size: 11pt; font-weight: 600; }
+.f { font-size: 9pt; color: #5d6a60; font-weight: 400; }
+.pill { display: inline-block; font-size: 9pt; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+td:last-child:not(.v) { width: 2in; text-align: right; }
+.qs { background: #fffaf0; border: 1px solid #fbecd0; border-radius: 8px; padding: 10px 14px; }
+.qs ul { margin: 6px 0 0; padding-left: 18px; }
+.note { font-size: 9.5pt; color: #5d6a60; }
+footer { margin-top: 22px; border-top: 1px solid #ddd8c3; padding-top: 10px; font-size: 9pt; color: #5d6a60; display: flex; justify-content: space-between; gap: 12px; }
+a { color: #1b5e20; }
+.bar { display: none; }
+@media screen { body { background: #f5f3e6; } .wrap { background: #fff; padding: 0.5in; margin: 20px auto; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+  .bar { display: flex; gap: 10px; justify-content: center; padding: 14px; font-size: 14px; }
+  .bar button { font: inherit; font-weight: 700; border-radius: 999px; padding: 9px 18px; border: 2px solid #2e7d32; background: #2e7d32; color: #fff; cursor: pointer; } }
+.keep { break-inside: avoid; }
+</style></head><body>
+<div class="bar"><button onclick="window.print()">Save as PDF / Print</button></div>
+<div class="wrap">
+<header><img src="${LOGO}" alt="Gateway for Good"><div class="brand"><b>Charity Analyzer</b>Know before you give</div></header>
+<h1>${esc(org)}</h1>
+<div class="meta">${esc(meta)}${meta ? " · " : ""}Prepared ${esc(date)}${analyst ? " by " + esc(analyst) : ""}</div>
+${causes.length ? `<div class="meta">Causes: ${esc(causes.join(", "))}</div>` : ""}
+<div class="convo"><b>Ratios start a conversation. They don't give a grade.</b> Low overhead doesn't mean high impact. A charity that invests in good people, strong systems, and fundraising may be the one growing its impact the fastest. Use these numbers to decide what to ask, not whether to give.</div>
+<h2>Results</h2>
+<table class="keep">${rows}</table>
+${net !== undefined ? `<p class="note">Revenue minus expenses: <b>${esc(fmt$(net))}</b> (${net >= 0 ? "surplus" : "deficit"}). One year tells you less than a pattern over several.</p>` : ""}
+${isEZ() ? `<p class="note">Form 990-EZ doesn't break out management or fundraising costs, and it combines cash, savings, and investments on one line, so months of liquid assets may look higher than what's truly available.</p>` : ""}
+${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a story. These help you hear it.<ul>${qs}</ul></div>` : ""}
+<h2>Numbers entered</h2>
+<table class="inputs keep">${inputs}</table>
+<p class="note">Numbers are as entered from the organization's IRS Form ${isEZ() ? "990-EZ" : "990"}.${pdfUrl ? ` Filing: <a href="${esc(pdfUrl)}">${esc(pdfUrl)}</a>` : ""}</p>
+<h2>Next steps</h2>
+<p class="note" style="font-size:10.5pt">Talk with the organization's leaders, read its impact reports, and visit a program if you can. Go deeper at <a href="https://www.gatewayforgood.com/analyzing-organizations">gatewayforgood.com/analyzing-organizations</a>.</p>
+<footer><span>Charity Analyzer by Gateway for Good® · Reuniting a divided world</span><span>gatewayforgood.com/charity-analyzer</span></footer>
+</div>
+<script>
+(function () {
+  var imgs = Array.prototype.slice.call(document.images), left = imgs.length, done = false;
+  function go() { if (done) return; done = true; setTimeout(function () { try { window.focus(); window.print(); } catch (e) {} }, 250); }
+  if (!left) go();
+  imgs.forEach(function (im) { if (im.complete) { if (--left <= 0) go(); } else { im.onload = im.onerror = function () { if (--left <= 0) go(); }; } });
+  setTimeout(go, 2500);
+})();
+<\/script>
+</body></html>`;
+  }
+  $("pdf").onclick = () => {
+    const note = t => { $("pdf-msg").textContent = t; $("pdf-msg").hidden = !t; };
+    if (!Object.keys(results).some(k => k !== "net")) { note("Enter some numbers first, or try the sample, so there's a report to save."); return; }
+    note("");
+    const html = reportHTML();
+    const w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(html); w.document.close(); note("Your report opened in a new tab. Choose \"Save as PDF\" in the print window."); return; }
+    // Pop-up blocked: print from a hidden frame instead
+    const fr = document.createElement("iframe");
+    fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(fr);
+    fr.contentWindow.document.open(); fr.contentWindow.document.write(html); fr.contentWindow.document.close();
+    setTimeout(() => fr.remove(), 60000);
+  };
+  $("email-me").onclick = () => {
+    $("savecard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    setTimeout(() => $("o-email").focus({ preventScroll: true }), 450);
+  };
   $("copy").onclick = async () => {
     try { await navigator.clipboard.writeText(summary()); $("copy").textContent = "Copied"; }
     catch { $("copy").textContent = "Copy not available here"; }
