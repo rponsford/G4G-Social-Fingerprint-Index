@@ -181,6 +181,30 @@ a { color: var(--green-ink); }
 .stepc .s { font-size: 12px; font-weight: 700; color: var(--muted); }
 .stepc.here .s { color: var(--green-ink); }
 .stepc p { font-size: 14px; }
+.find { position: relative; }
+input[type=search] { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; }
+.find-list { position: absolute; z-index: 20; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(46,60,40,.14); max-height: 320px; overflow: auto; }
+.find-list[hidden] { display: none; }
+.find-list li { padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.find-list li[aria-selected="true"], .find-list li:hover { background: var(--green-soft); }
+.find-list .nm { font-weight: 600; font-size: 14.5px; }
+.find-list .loc { font-size: 12.5px; color: var(--muted); }
+.find-list li.msg { cursor: default; color: var(--muted); font-size: 14px; }
+.find-list li.msg:hover { background: none; }
+.pp { font-size: 12px; color: var(--muted); }
+.pdf { display: flex; flex-direction: column; gap: 4px; background: var(--sky-soft); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; }
+.pdf[hidden] { display: none; }
+.pdf a { font-weight: 700; }
+.seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; width: fit-content; }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.seg button[aria-checked="true"] { background: var(--green); color: #fff; }
+.convo { border: 1px solid var(--line); border-left: 4px solid var(--sky); background: #fff; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.convo h3 { color: var(--green-ink); font-size: 16px; }
+.convo p { font-size: 14.5px; }
+.convo .links { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; font-weight: 600; }
+.ratio.na-card .meterwrap, .ratio.na-card .ticks { display: none !important; }
+.ratio.na-card { background: var(--panel); }
+[data-mode] [hidden] { display: none !important; }
 </style>
 
 <div class="wrap">
@@ -208,15 +232,34 @@ a { color: var(--green-ink); }
 
   <div class="grid">
     <!-- INPUTS -->
-    <form class="card inputs" id="form" novalidate autocomplete="off">
+    <form class="card inputs" id="form" novalidate autocomplete="off" data-mode="990">
       <fieldset>
         <legend>Organization</legend>
+        <div class="f find">
+          <label for="find">Find the organization</label>
+          <input id="find" type="search" placeholder="Type a name, e.g. Habitat for Humanity" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="find-list" aria-expanded="false">
+          <ul class="find-list" id="find-list" role="listbox" aria-label="Matching organizations" hidden></ul>
+          <span class="where">We'll fill in the name, tax ID, and latest tax year, and link you to its 990. Or type them in yourself below. <span class="pp">Search by <a href="https://projects.propublica.org/nonprofits/" target="_blank" rel="noopener">ProPublica Nonprofit Explorer</a>.</span></span>
+        </div>
+        <div class="pdf" id="pdf-box" hidden>
+          <a id="pdf-link" href="#" target="_blank" rel="noopener">Open its Form 990 (PDF)</a>
+          <span class="where" id="pdf-note">Keep it open in another tab and copy the numbers below.</span>
+        </div>
+        <div class="alert" id="find-msg" data-kind="info" hidden></div>
         <div class="f"><label for="org">Organization name</label><input id="org" type="text" placeholder="e.g. Riverside Community Pantry"></div>
         <div class="row2">
           <div class="f"><label for="year">Tax year</label><input id="year" type="text" inputmode="numeric" placeholder="2024"></div>
           <div class="f"><label for="ein">Tax ID (EIN)</label><input id="ein" type="text" inputmode="numeric" placeholder="12-3456789"></div>
         </div>
         <p class="where">EIN is at the top right of page 1.</p>
+        <div class="f">
+          <span class="lbl" id="form-lbl">Which form did they file?</span>
+          <div class="seg" id="formtype" role="radiogroup" aria-labelledby="form-lbl">
+            <button type="button" role="radio" data-form="990" aria-checked="true">Form 990</button>
+            <button type="button" role="radio" data-form="990-EZ" aria-checked="false">Form 990-EZ</button>
+          </div>
+          <span class="where">It's printed at the top of page 1. Smaller organizations file the shorter 990-EZ.</span>
+        </div>
         <div class="f">
           <div class="picked-row"><span class="lbl">Cause areas</span><button class="linkish" type="button" id="chg-causes" hidden>Change</button></div>
           <p class="where" id="cause-help">Which cause or causes does this organization serve? Choose up to 3.</p>
@@ -226,20 +269,20 @@ a { color: var(--green-ink); }
       </fieldset>
       <hr>
       <fieldset>
-        <legend>Page 1 · Summary</legend>
-        <div class="f"><label for="rev">Total revenue</label><div class="money"><span>$</span><input id="rev" type="text" inputmode="decimal"></div><div class="where"><b>Page 1</b>, line 12</div></div>
-        <div class="f"><label for="contrib">Contributions and grants</label><div class="money"><span>$</span><input id="contrib" type="text" inputmode="decimal"></div><div class="where"><b>Page 1</b>, line 8 · the donations used for Cost to Raise $1</div></div>
-        <div class="f"><label for="exp">Total expenses</label><div class="money"><span>$</span><input id="exp" type="text" inputmode="decimal"></div><div class="where"><b>Page 1</b>, line 18</div></div>
+        <legend id="p1-legend">Page 1 · Summary</legend>
+        <div class="f"><label for="rev">Total revenue</label><div class="money"><span>$</span><input id="rev" type="text" inputmode="decimal"></div><div class="where" data-990="<b>Page 1</b>, line 12" data-ez="<b>Part I</b>, line 9"><b>Page 1</b>, line 12</div></div>
+        <div class="f"><label for="contrib">Contributions and grants</label><div class="money"><span>$</span><input id="contrib" type="text" inputmode="decimal"></div><div class="where" data-990="<b>Page 1</b>, line 8 · the donations used for Cost to Raise $1" data-ez="<b>Part I</b>, line 1"><b>Page 1</b>, line 8 · the donations used for Cost to Raise $1</div></div>
+        <div class="f"><label for="exp">Total expenses</label><div class="money"><span>$</span><input id="exp" type="text" inputmode="decimal"></div><div class="where" data-990="<b>Page 1</b>, line 18" data-ez="<b>Part I</b>, line 17"><b>Page 1</b>, line 18</div></div>
       </fieldset>
-      <hr>
-      <fieldset>
+      <hr class="f990">
+      <fieldset class="f990">
         <legend>Page 10 · Part IX, line 25</legend>
         <div class="f"><label for="prog">Program service expenses</label><div class="money"><span>$</span><input id="prog" type="text" inputmode="decimal"></div><div class="where"><b>Column B</b></div></div>
         <div class="f"><label for="mgmt">Management &amp; general expenses</label><div class="money"><span>$</span><input id="mgmt" type="text" inputmode="decimal"></div><div class="where"><b>Column C</b></div></div>
         <div class="f"><label for="fund">Fundraising expenses</label><div class="money"><span>$</span><input id="fund" type="text" inputmode="decimal"></div><div class="where"><b>Column D</b></div></div>
       </fieldset>
-      <hr>
-      <fieldset>
+      <hr class="f990">
+      <fieldset class="f990">
         <legend>Page 11 · Part X, end of year</legend>
         <div class="sub">
           <div class="f"><label for="cash">Cash, non-interest-bearing</label><div class="money"><span>$</span><input id="cash" type="text" inputmode="decimal"></div><div class="where"><b>Line 1</b>, column B</div></div>
@@ -248,10 +291,16 @@ a { color: var(--green-ink); }
           <div class="sum"><span>Total liquid assets</span><span id="liq-total">$0</span></div>
         </div>
       </fieldset>
+      <fieldset class="fez" hidden>
+        <legend>Parts II and III</legend>
+        <div class="f"><label for="ezprog">Total program service expenses</label><div class="money"><span>$</span><input id="ezprog" type="text" inputmode="decimal"></div><div class="where"><b>Part III</b>, line 32</div></div>
+        <div class="f"><label for="ezliq">Cash, savings, and investments</label><div class="money"><span>$</span><input id="ezliq" type="text" inputmode="decimal"></div><div class="where"><b>Part II</b>, line 22, column B (end of year)</div></div>
+        <p class="hint">The 990-EZ doesn't split out management or fundraising costs, so those ratios won't show. They're good questions to ask the organization.</p>
+      </fieldset>
       <div class="actions">
         <button class="linkish" type="button" id="clear">Clear all numbers</button>
       </div>
-      <p class="hint">Smaller organizations file Form 990-EZ, which uses different line numbers and doesn't split expenses into columns B–D. The smallest file only a 990-N postcard with no financials.</p>
+      <p class="hint">The smallest organizations file only a 990-N postcard, with no financial numbers to analyze. Private foundations file a 990-PF, which these ratios aren't built for.</p>
     </form>
 
     <!-- RESULTS -->
@@ -262,12 +311,17 @@ a { color: var(--green-ink); }
       </div>
       <div class="alert" id="sample-note" data-kind="info" hidden>These are sample numbers for a fictional organization. Clear them and enter your own.</div>
       <div class="alert" id="check" hidden></div>
-      <p class="note">These ratios are one piece of the puzzle. Arts organizations, food banks, schools, and advocacy groups run on very different models, so always weigh results against the organization's type and mission.</p>
+      <div class="convo">
+        <h3>Ratios start a conversation. They don't give a grade.</h3>
+        <p>Low overhead doesn't mean high impact. A charity that invests in good people, strong systems, and fundraising may be the one growing its impact the fastest. Food banks, arts groups, schools, and advocacy organizations also run on very different models. Use these numbers to decide what to ask, not whether to give.</p>
+        <div class="links"><a href="https://www.ted.com/talks/dan_pallotta_the_way_we_think_about_charity_is_dead_wrong" target="_blank" rel="noopener">Why overhead is the wrong question (Dan Pallotta, TED) →</a><a href="https://www.gatewayforgood.com/analyzing-organizations" target="_blank" rel="noopener">Go deeper: Analyzing Organizations →</a></div>
+      </div>
+      <div class="alert" id="ez-note" data-kind="info" hidden>Form 990-EZ combines cash, savings, and all investments on one line, so months of liquid assets may look higher than what's truly available to spend.</div>
       <div class="ratios" id="ratios"></div>
       <div class="statusline" id="surplus"></div>
       <div class="flagged" id="from-numbers" hidden>
-        <h3>Questions to ask this organization</h3>
-        <p class="hint" style="margin:0">From the ratios above that may warrant a closer look. Save the organization and they'll be in your report.</p>
+        <h3>Questions worth asking</h3>
+        <p class="hint" style="margin:0">Every number has a story. These come from ratios outside the typical range and help you hear it. Save the organization and they'll be in your report.</p>
         <ul id="num-qs"></ul>
       </div>
       <div class="actions">
@@ -307,7 +361,7 @@ a { color: var(--green-ink); }
     <h2 id="save-h">Save this organization</h2>
     <label class="share">
       <input type="checkbox" id="share" checked>
-      <span><b>Add my findings to the Gateway for Good research library.</b> Most people can't easily find out how a charity really operates. When you share what you found, the next giver researching this organization starts where you left off. Your name is never shown with your findings.</span>
+      <span><b>Share my findings with Gateway for Good to help future givers.</b> Most people can't easily find out how a charity really operates. Sharing what you found helps us build a library so the next giver researching this organization starts where you left off. Your name is never shown with your findings.</span>
     </label>
     <div class="row2">
       <div class="f"><label for="o-first">Your name <span class="hint" style="font-weight:400">(optional)</span></label><input id="o-first" type="text" autocomplete="name" placeholder="Shown as the analyst on your report"></div>
@@ -333,7 +387,7 @@ a { color: var(--green-ink); }
       <div class="eyebrow">Your research progress</div>
       <div class="badges" id="badges"></div>
     </div>
-    <p class="privacy">Saved organizations stay in this browser so you can compare them and add them to your profile. If you share, your findings go to the Gateway for Good research library without your name. If you add your email, we use it only to keep your record of organizations you've analyzed. We never sell or share your email. Sharing and email are for people 13 and older.</p>
+    <p class="privacy">Saved organizations stay in this browser so you can compare them and add them to your profile. If you share, your findings go to Gateway for Good without your name. If you add your email, we use it only to keep your record of organizations you've analyzed. We never sell or share your email. Sharing and email are for people 13 and older.</p>
   </section>
 
 
@@ -461,7 +515,21 @@ a { color: var(--green-ink); }
     }
   }
   renderCauses();
-  const MONEY = ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec"];
+  const MONEY = ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec","ezprog","ezliq"];
+  let formType = "990";
+  const isEZ = () => formType === "990-EZ";
+  function setForm(f) {
+    formType = f === "990-EZ" ? "990-EZ" : "990";
+    $("form").dataset.mode = formType;
+    ROOT.querySelectorAll("#formtype button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.form === formType)));
+    ROOT.querySelectorAll(".f990").forEach(el => { el.hidden = isEZ(); });
+    ROOT.querySelectorAll(".fez").forEach(el => { el.hidden = !isEZ(); });
+    ROOT.querySelectorAll(".where[data-ez]").forEach(el => { el.innerHTML = isEZ() ? el.dataset.ez : el.dataset["990"]; });
+    $("p1-legend").textContent = isEZ() ? "Part I · Revenue and expenses" : "Page 1 · Summary";
+    $("ez-note").hidden = !isEZ();
+    update();
+  }
+  ROOT.querySelectorAll("#formtype button").forEach(b => b.onclick = () => setForm(b.dataset.form));
   const num = id => { const v = parseFloat(String($(id).value).replace(/[$,\s]/g, "")); return isFinite(v) ? v : null; };
   const fmt$ = n => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
 
@@ -469,49 +537,49 @@ a { color: var(--green-ink); }
   const RATIOS = [
     { id: "program", name: "Program Expense Ratio", unit: "%", min: 0, max: 100,
       calc: d => d.exp ? d.prog / d.exp * 100 : null,
-      bands: [[60, "look", "Might warrant a closer look"], [70, "ok", "Typical and acceptable"], [Infinity, "good", "Strong"]],
+      bands: [[60, "look", "Worth asking about"], [70, "ok", "Typical"], [Infinity, "good", "Strong program focus"]],
       ticks: ["0%", "60%", "70%", "100%"], tickAt: [0, 60, 70, 100],
       what: "The percentage of total expenses that go directly to programs and services, the mission-driven work.",
       formula: "Program expenses ÷ Total expenses",
-      ranges: ["70% or more is generally considered strong.", "60–70% is typical and acceptable.", "Below 60% might warrant a closer look."],
-      why: "A high program ratio suggests the nonprofit is focused on delivering its mission rather than being bogged down by administrative or fundraising costs.",
-      ask: ["Are program expenses consistent year over year?", "Are they investing enough in infrastructure to sustain growth?", "Could a lower ratio be due to strategic long-term investments or a one-time event?"] },
-    { id: "mgmt", name: "Management & General Ratio", unit: "%", min: 0, max: 40,
+      ranges: ["70% or more shows a strong focus on programs.", "60–70% is typical.", "Below 60% is worth asking about. A new program, a building investment, or a one-time event can explain it."],
+      why: "It shows how much of the budget goes straight to mission work. But higher isn't automatically better: an organization that never invests in its people and systems can struggle to grow its impact.",
+      ask: ["How has this changed over the past few years, and why?", "What investments in people or systems are you making to grow your impact?", "Was there a one-time event or long-term project that affected this year?"] },
+    { id: "mgmt", name: "Management & General Ratio", unit: "%", min: 0, max: 40, ez: false,
       calc: d => d.exp ? d.mgmt / d.exp * 100 : null,
-      bands: [[10, "ok", "Lean"], [20, "good", "Typical"], [25, "ok", "On the high side"], [Infinity, "look", "May suggest inefficiency"]],
+      bands: [[10, "ok", "Lean"], [20, "good", "Typical"], [25, "ok", "On the higher side"], [Infinity, "look", "Worth asking about"]],
       ticks: ["0%", "10%", "20%", "25%", "40%+"], tickAt: [0, 10, 20, 25, 40],
-      what: "The percentage of total expenses used for administrative functions such as accounting, HR, and governance.",
+      what: "The percentage of total expenses used for running the organization, such as accounting, HR, technology, and governance.",
       formula: "Management & general expenses ÷ Total expenses",
-      ranges: ["10–20% is typical.", "Over 25% may suggest inefficiencies, unless justified.", "Under 10% is lean; ask whether they invest enough in operations.", "20–25% is on the high side."],
-      why: "Administrative expenses are necessary to run any organization well. Too much may signal bloated overhead or lack of focus.",
-      ask: ["Does the organization clearly explain its management costs?", "Has the ratio changed significantly year over year?", "Is the size of the organization appropriate for its administrative structure?"] },
-    { id: "fund", name: "Fundraising Ratio", unit: "%", min: 0, max: 40,
+      ranges: ["10–20% is typical.", "20–25% is on the higher side.", "Above 25% is worth asking about. It can reflect smart investment in staff, technology, or compliance.", "Under 10% is lean. Ask whether they invest enough in operations to sustain their work."],
+      why: "Strong management, finance, and governance help a mission succeed. Too little can leave staff stretched and systems fragile; a lot is worth understanding, not judging.",
+      ask: ["What do your management and operations costs make possible?", "Has this changed recently, and what drove it?", "Do you have the staff and systems you need to deliver your mission well?"] },
+    { id: "fund", name: "Fundraising Ratio", unit: "%", min: 0, max: 40, ez: false,
       calc: d => d.exp ? d.fund / d.exp * 100 : null,
-      bands: [[15, "good", "Usually seen as efficient"], [25, "ok", "May be appropriate for their model"], [Infinity, "look", "May warrant scrutiny"]],
+      bands: [[15, "good", "Efficient"], [25, "ok", "May fit their model"], [Infinity, "look", "Worth asking about"]],
       ticks: ["0%", "15%", "25%", "40%+"], tickAt: [0, 15, 25, 40],
       what: "The percentage of expenses used specifically to raise money, such as events, donor outreach, and marketing.",
       formula: "Fundraising expenses ÷ Total expenses",
-      ranges: ["Under 15% is usually seen as efficient.", "15–25% may be appropriate depending on the fundraising model.", "Over 25% may warrant scrutiny unless it's a growth-stage organization."],
-      why: "Fundraising is essential, but excessive costs without returns might be a red flag.",
-      ask: ["Are fundraising costs paying off in revenue growth?", "Is the nonprofit investing in new donors or campaigns?", "Are major capital campaigns skewing the numbers?"] },
-    { id: "cost", name: "Cost to Raise $1", unit: "$", min: 0, max: 0.5,
+      ranges: ["Under 15% is generally efficient.", "15–25% can be appropriate, depending on how they raise money.", "Above 25% is worth asking about. Organizations building a new donor base often spend more up front."],
+      why: "Fundraising is how a nonprofit grows. Spending more can be a smart investment when it brings in more support over time. What matters is whether it's paying off.",
+      ask: ["How is your fundraising investment paying off over time?", "Are you investing in new donors, campaigns, or a capital project?", "What's your plan to grow and diversify your support?"] },
+    { id: "cost", name: "Cost to Raise $1", unit: "$", min: 0, max: 0.5, ez: false,
       calc: d => d.contrib ? d.fund / d.contrib : null,
-      bands: [[0.25, "good", "Strong"], [0.35, "ok", "Acceptable"], [Infinity, "look", "May be cause for concern"]],
+      bands: [[0.25, "good", "Efficient"], [0.35, "ok", "Acceptable"], [Infinity, "look", "Worth asking about"]],
       ticks: ["$0", "$0.25", "$0.35", "$0.50+"], tickAt: [0, 0.25, 0.35, 0.5],
       what: "How much the organization spends to bring in one dollar of donations.",
       formula: "Fundraising expenses ÷ Contributions and grants",
-      ranges: ["$0.25 or less per dollar raised is strong.", "$0.25 to $0.35 is acceptable.", "Over $0.35 may be cause for concern."],
-      why: "It measures fundraising efficiency. Lower numbers mean a better return on fundraising efforts.",
-      ask: ["Are certain years skewed by one-time events or gifts?", "What's the trend over 3–5 years?", "Are contributions expected to grow as a result of this investment?"] },
+      ranges: ["$0.25 or less per dollar raised is efficient.", "$0.25 to $0.35 is acceptable.", "Above $0.35 is worth asking about. One year can be skewed by a new campaign or event."],
+      why: "It shows the return on fundraising. Look at the trend over several years rather than a single year.",
+      ask: ["What has this looked like over the past 3–5 years?", "Was this year affected by a new campaign, event, or one-time gift?", "What do you expect this investment to bring in over time?"] },
     { id: "months", name: "Months of Liquid Assets", unit: "mo", min: 0, max: 18,
       calc: d => d.exp ? d.liquid / (d.exp / 12) : null,
-      bands: [[3, "look", "Could signal risk"], [6, "good", "A good buffer"], [12, "good", "A comfortable reserve"], [Infinity, "ok", "Might raise questions about unused funds"]],
+      bands: [[3, "look", "Thin cushion"], [6, "good", "A good buffer"], [12, "good", "A comfortable reserve"], [Infinity, "ok", "Worth asking about plans"]],
       ticks: ["0", "3", "6", "12", "18+"], tickAt: [0, 3, 6, 12, 18],
       what: "How many months the organization could keep operating if all income stopped, based on its liquid assets.",
       formula: "Liquid assets ÷ (Total expenses ÷ 12)",
-      ranges: ["3–6 months is a good buffer.", "Under 3 months could signal risk.", "Over 12 months might raise questions about underused funds.", "6–12 months is a comfortable reserve."],
-      why: "It shows financial stability and preparedness for surprises like a recession or a drop in funding. Some securities may be restricted to a specific purpose, so the true number can be lower. Reserves are only half the picture: where the money comes from matters too. An organization that relies on a few large donors or one major grant can lose a big share of its funding overnight, so it needs a larger cushion than one supported by many smaller, varied sources.",
-      ask: ["Does the nonprofit have a reserve policy?", "Is a large reserve intentional, for example for a future capital project?", "If reserves are low, what's the backup plan?", "How diversified is their funding? What share comes from their largest donors or grants? (Schedule B lists major contributors; Schedule A shows public support.)", "What would happen if their biggest funder stepped away, and how are they broadening their base?"] },
+      ranges: ["3–6 months is a good buffer.", "6–12 months is a comfortable reserve.", "Under 3 months is a thin cushion if funding drops.", "Over 12 months may be intentional, such as saving for a building. Ask about their plans."],
+      why: "It shows financial stability and preparedness for surprises like a recession or a drop in funding. Some funds may be set aside for a specific purpose, so the true number can be lower. Where the money comes from matters too: an organization that relies on a few large donors or one major grant needs a bigger cushion than one supported by many smaller, varied sources.",
+      ask: ["Do you have a reserve policy?", "Are you saving toward something specific, such as a building or new program?", "If funding dropped, what's your backup plan?", "How diversified is your funding? What share comes from your largest donors or grants? (Schedule B lists major contributors; Schedule A shows public support.)", "What would happen if your biggest funder stepped away, and how are you broadening your base?"] },
   ];
 
   const show = (v, r) => r.unit === "%" ? v.toFixed(1) + "%" : r.unit === "$" ? "$" + v.toFixed(2) : v.toFixed(1) + " mo";
@@ -545,30 +613,37 @@ a { color: var(--green-ink); }
     const add = (label, html) => { const d = document.createElement("div"); d.innerHTML = `<b>${label}</b>`; d.append(html); mb.appendChild(d); };
     add("What it is", document.createTextNode(r.what));
     const code = document.createElement("code"); code.textContent = r.formula; add("Formula", code);
-    const ul1 = document.createElement("ul"); r.ranges.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul1.appendChild(li); }); add("What's considered healthy", ul1);
+    const ul1 = document.createElement("ul"); r.ranges.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul1.appendChild(li); }); add("What's typical", ul1);
     add("Why it matters", document.createTextNode(r.why));
     const ul2 = document.createElement("ul"); r.ask.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul2.appendChild(li); }); add("Questions to ask", ul2);
     box.appendChild(c);
-    els[r.id] = { val: c.querySelector(".val"), pill: c.querySelector(".pill"), marker: c.querySelector(".marker") };
+    els[r.id] = { card: c, val: c.querySelector(".val"), pill: c.querySelector(".pill"), marker: c.querySelector(".marker") };
   });
 
   let results = {};
   function update() {
     const d = {}; MONEY.forEach(k => d[k] = num(k));
-    d.liquid = (d.cash || 0) + (d.sav || 0) + (d.sec || 0);
+    if (isEZ()) { d.prog = d.ezprog; d.mgmt = d.fund = d.cash = d.sav = d.sec = null; d.liquid = d.ezliq || 0; }
+    else d.liquid = (d.cash || 0) + (d.sav || 0) + (d.sec || 0);
     $("liq-total").textContent = fmt$(d.liquid);
 
     const org = $("org").value.trim();
     $("r-org").textContent = org || "Your organization";
-    const meta = [$("year").value.trim() && "Tax year " + $("year").value.trim(), $("ein").value.trim() && "EIN " + $("ein").value.trim()].filter(Boolean).join(" · ");
+    const meta = [isEZ() && "Form 990-EZ", $("year").value.trim() && "Tax year " + $("year").value.trim(), $("ein").value.trim() && "EIN " + $("ein").value.trim()].filter(Boolean).join(" · ");
     $("r-meta").textContent = meta || "Enter numbers to see ratios";
 
     results = {};
     RATIOS.forEach(r => {
       const needs = { program: ["exp","prog"], mgmt: ["exp","mgmt"], fund: ["exp","fund"], cost: ["contrib","fund"], months: ["exp"] }[r.id];
-      const ready = needs.every(k => d[k] !== null) && (r.id !== "months" || ["cash","sav","sec"].some(k => d[k] !== null));
+      const ready = needs.every(k => d[k] !== null) && (r.id !== "months" || (isEZ() ? d.ezliq !== null : ["cash","sav","sec"].some(k => d[k] !== null)));
       const v = ready ? r.calc(d) : null;
       const e = els[r.id];
+      e.card.classList.toggle("na-card", isEZ() && r.ez === false);
+      if (isEZ() && r.ez === false) {
+        e.val.textContent = "—"; e.val.classList.add("empty");
+        e.pill.className = "pill none"; e.pill.textContent = "Not reported on Form 990-EZ";
+        e.marker.hidden = true; return;
+      }
       if (v === null || !isFinite(v)) {
         e.val.textContent = "—"; e.val.classList.add("empty");
         e.pill.className = "pill none"; e.pill.textContent = r.id === "cost" && d.contrib === 0 ? "No contributions reported" : "Waiting for numbers";
@@ -617,14 +692,85 @@ a { color: var(--green-ink); }
   });
   ["org","year","ein"].forEach(k => $(k).addEventListener("input", update));
 
+  // ---------- Find the organization (ProPublica, through our Worker) ----------
+  const titleCase = t => /[a-z]/.test(t) ? t : t.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\b(Of|And|For|The|In|On|At|To)\b/g, w => w.toLowerCase()).replace(/^./, c => c.toUpperCase()).replace(/\b(Inc|Llc|Usa|Ymca|Ywca)\b/gi, w => w.length <= 3 && w.toLowerCase() !== "inc" ? w.toUpperCase() : w);
+  let findTimer = 0, findSeq = 0, findItems = [], findActive = -1;
+  function closeList() { $("find-list").hidden = true; $("find").setAttribute("aria-expanded", "false"); findActive = -1; }
+  function listMsg(t) { const ul = $("find-list"); ul.innerHTML = ""; const li = document.createElement("li"); li.className = "msg"; li.textContent = t; ul.appendChild(li); ul.hidden = false; $("find").setAttribute("aria-expanded", "true"); }
+  function renderList() {
+    const ul = $("find-list"); ul.innerHTML = "";
+    if (!findItems.length) { listMsg("No matches. Try fewer words, or type the details in below."); return; }
+    findItems.forEach((o, i) => {
+      const li = document.createElement("li"); li.setAttribute("role", "option"); li.id = "find-opt-" + i;
+      li.setAttribute("aria-selected", String(i === findActive));
+      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = titleCase(o.name);
+      const loc = document.createElement("span"); loc.className = "loc"; loc.textContent = [o.city && titleCase(o.city), o.state].filter(Boolean).join(", ") + (o.strein ? " · EIN " + o.strein : "");
+      li.append(nm, loc);
+      li.onmousedown = e => { e.preventDefault(); pickOrg(o); };
+      ul.appendChild(li);
+    });
+    ul.hidden = false; $("find").setAttribute("aria-expanded", "true");
+  }
+  $("find").addEventListener("input", () => {
+    clearTimeout(findTimer);
+    const q = $("find").value.trim();
+    if (q.length < 3) { closeList(); return; }
+    findTimer = setTimeout(async () => {
+      const seq = ++findSeq; listMsg("Searching…");
+      try {
+        const r = await fetch(API + "/org-search?q=" + encodeURIComponent(q));
+        const j = await r.json(); if (seq !== findSeq) return;
+        if (!r.ok) throw 0;
+        findItems = j.results || []; findActive = -1; renderList();
+      } catch { if (seq === findSeq) listMsg("Search isn't available right now. Type the details in below."); }
+    }, 350);
+  });
+  $("find").addEventListener("keydown", e => {
+    if ($("find-list").hidden || !findItems.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); findActive = (findActive + (e.key === "ArrowDown" ? 1 : -1) + findItems.length) % findItems.length; renderList(); $("find").setAttribute("aria-activedescendant", "find-opt-" + findActive); }
+    else if (e.key === "Enter" && findActive >= 0) { e.preventDefault(); pickOrg(findItems[findActive]); }
+    else if (e.key === "Escape") closeList();
+  });
+  $("find").addEventListener("blur", () => setTimeout(closeList, 150));
+  async function pickOrg(o) {
+    closeList(); $("find").value = titleCase(o.name);
+    $("org").value = titleCase(o.name); $("ein").value = o.strein || o.ein; $("year").value = "";
+    const msg = t => { $("find-msg").textContent = t; $("find-msg").hidden = !t; };
+    msg("Looking up its latest 990…"); $("pdf-box").hidden = true; update();
+    try {
+      const r = await fetch(API + "/org?ein=" + encodeURIComponent(o.ein));
+      const j = await r.json(); if (!r.ok) throw r.status;
+      const f = j.pdfFiling || j.latest;
+      if (!f) { msg("We couldn't find a 990 on file for this organization. Very small organizations file only a 990-N postcard, which has no financial numbers."); return; }
+      $("year").value = f.year;
+      if (f.pdf) {
+        $("pdf-link").href = f.pdf;
+        $("pdf-link").textContent = "Open its Form " + (f.form || "990") + " for tax year " + f.year + " (PDF)";
+        $("pdf-note").textContent = "Keep it open in another tab and copy the numbers below. Want a different year? See all filings on ProPublica.";
+        $("pdf-box").hidden = false;
+      }
+      const notes = [];
+      if (f.form === "990-EZ") { setForm("990-EZ"); notes.push("This organization files the shorter Form 990-EZ, so we've switched the boxes below to match."); }
+      else if (f.form === "990-PF") notes.push("This is a private foundation (Form 990-PF). These ratios are built for public charities, so results may not fit.");
+      else setForm("990");
+      if (!f.pdf) notes.push("ProPublica doesn't have a PDF of this filing yet. Try the organization's website or Candid (GuideStar), or ask the organization for a copy.");
+      msg(notes.join(" "));
+      if (!f.pdf && j.explorer) { $("pdf-link").href = j.explorer; $("pdf-link").textContent = "See its filings on ProPublica"; $("pdf-note").textContent = ""; $("pdf-box").hidden = false; }
+      else if (j.explorer) { const a = document.createElement("a"); a.href = j.explorer; a.target = "_blank"; a.rel = "noopener"; a.textContent = "See all filings on ProPublica"; $("pdf-note").textContent = "Keep it open in another tab and copy the numbers below. Want a different year? "; $("pdf-note").appendChild(a); }
+      update();
+    } catch { msg("We filled in the name and tax ID, but couldn't look up its 990 just now. Find it on ProPublica, Candid, or the organization's website."); }
+  }
+
   const SAMPLE = { org: "Riverside Community Pantry (sample)", year: "2024", ein: "00-0000000", rev: 1240000, contrib: 1020000, exp: 1180000, prog: 920000, mgmt: 165000, fund: 95000, cash: 140000, sav: 210000, sec: 60000 };
+  function resetFind() { $("find").value = ""; closeList(); $("pdf-box").hidden = true; $("find-msg").hidden = true; }
   $("sample").onclick = () => {
+    resetFind(); setForm("990");
     Object.entries(SAMPLE).forEach(([k, v]) => { $(k).value = typeof v === "number" ? v.toLocaleString("en-US") : v; });
     selectedCauses = ["hunger"]; causeView = "picked"; renderCauses();
     update(); $("sample-note").hidden = false;
     try { $("r-org").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); } catch {}
   };
-  $("clear").onclick = () => { selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses(); $("form").reset(); $("sample-note").hidden = true; update(); };
+  $("clear").onclick = () => { resetFind(); selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses(); $("form").reset(); $("sample-note").hidden = true; update(); };
 
   function summary() {
     const lines = [`${$("r-org").textContent}${$("r-meta").textContent.startsWith("Enter") ? "" : " — " + $("r-meta").textContent}`, ""];
@@ -680,7 +826,7 @@ a { color: var(--green-ink); }
   $("done").addEventListener("click", e => { if (e.target === $("done")) $("done").hidden = true; });
   $("another").onclick = () => {
     $("done").hidden = true;
-    $("form").reset(); selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses();
+    $("form").reset(); resetFind(); setForm("990"); selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses();
     $("sample-note").hidden = true; $("saved").hidden = true; update();
     HOST.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => $("org").focus({ preventScroll: true }), 400);
@@ -705,7 +851,9 @@ a { color: var(--green-ink); }
     if ($("o-first").value.trim()) wb.person.first = $("o-first").value.trim();
     const rec = {
       name, year: $("year").value.trim(), ein: $("ein").value.trim(),
-      inputs: Object.fromEntries(MONEY.map(k => [k, num(k)])),
+      form: formType,
+      inputs: Object.fromEntries((isEZ() ? ["rev","contrib","exp","ezprog","ezliq"] : ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec"]).map(k => [k, num(k)])),
+      pdf: $("pdf-box").hidden ? "" : $("pdf-link").href,
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       tool: "charity-analyzer",
       shareWithLibrary: $("share").checked,
@@ -732,11 +880,11 @@ a { color: var(--green-ink); }
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(r => {
         const items = [];
-        if (rec.shareWithLibrary) items.push("Added to the Gateway for Good research library. Thank you!");
+        if (rec.shareWithLibrary) items.push("Shared with Gateway for Good to help future givers. Thank you!");
         if (email) items.push(r && r.emailed ? `Your report is on its way to ${email}.` : `Saved, but the report email didn't go out. Check the address (${email}) and try again later.`);
         showDone(true, `${name} saved`, [...items, ...extras]);
       })
-      .catch(() => showDone(false, "Not saved to the library yet", [(savedLocal ? "Your analysis is saved in this browser, but " : "") + "we couldn't reach the research library just now.", "Close this and click Save again in a moment."]))
+      .catch(() => showDone(false, "Not shared yet", [(savedLocal ? "Your analysis is saved in this browser, but " : "") + "we couldn't reach Gateway for Good just now.", "Close this and click Save again in a moment."]))
       .finally(() => { btn.disabled = false; btn.textContent = "Save organization"; });
   };
   try { const p = loadWB().person; if (p && p.email) $("o-email").value = p.email; if (p && p.first) $("o-first").value = p.first; } catch {}

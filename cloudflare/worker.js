@@ -10,7 +10,9 @@
 //   POST /draft        AI-drafted Purpose/Vision/Mission options
 //   POST /statement    saves a PurposeLens statement, emails the copy, syncs Kajabi
 //   POST /mission      saves My Mission (Index Step 3: Giving Statement + how they want to get involved), emails the UPDATED Social Fingerprint report, syncs Kajabi
-//   POST /analysis     saves a GivingLens analysis, emails the report, syncs Kajabi
+//   POST /analysis     saves a Charity Analyzer / GivingLens analysis, emails the report, syncs Kajabi
+//   GET  /org-search?q=   organization name search (ProPublica Nonprofit Explorer), for the Charity Analyzer
+//   GET  /org?ein=        latest filing for one organization: name, EIN, tax year, form type, 990 PDF link
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
 //   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
@@ -49,6 +51,8 @@ export default {
       if (url.pathname === "/health" && request.method === "GET") return health(env, cors);
       if (url.pathname === "/admin/export" && request.method === "GET") return exportData(url, env);
       if (url.pathname === "/admin/kajabi-test" && request.method === "GET") return kajabiTest(url, env);
+      if (url.pathname === "/org-search" && request.method === "GET") return orgSearch(url, request, env, cors);
+      if (url.pathname === "/org" && request.method === "GET") return orgLatest(url, request, env, cors);
       if (request.method === "POST") {
         if (!isAllowedOrigin(origin)) return json({ error: "origin_not_allowed" }, 403, cors);
         const body = await readJson(request);
@@ -338,7 +342,52 @@ async function saveMission(b, request, env, ctx, cors) {
   return json({ ok: true, stored: true, emailed: status === "sent", email_status: status }, 200, cors);
 }
 
-// ---------- /analysis (GivingLens) ----------
+// ---------- /org-search and /org (ProPublica Nonprofit Explorer; free, credit ProPublica on the page) ----------
+const PP = "https://projects.propublica.org/nonprofits/api/v2/";
+const ORG_LOOKUPS_PER_IP_PER_DAY = 300;
+async function ppGet(path) {
+  const r = await fetch(PP + path, { headers: { "User-Agent": "GatewayForGood-CharityAnalyzer (team@gatewayforgood.com)", Accept: "application/json" }, cf: { cacheTtl: 86400, cacheEverything: true } });
+  if (!r.ok) return { status: r.status, data: null };
+  return { status: 200, data: await r.json() };
+}
+async function orgGuard(request, env) {
+  if (!isAllowedOrigin(request.headers.get("Origin") || "")) return "origin_not_allowed";
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if ((await bump(env, "org-ip:" + ip + ":" + today())) > ORG_LOOKUPS_PER_IP_PER_DAY) return "rate_limited";
+  return "";
+}
+async function orgSearch(url, request, env, cors) {
+  const q = clip(url.searchParams.get("q"), 80);
+  if (q.length < 3) return json({ results: [] }, 200, cors);
+  const bad = await orgGuard(request, env); if (bad) return json({ error: bad }, bad === "rate_limited" ? 429 : 403, cors);
+  const { status, data } = await ppGet("search.json?q=" + encodeURIComponent(q));
+  if (status === 404) return json({ results: [] }, 200, cors);
+  if (!data) return json({ error: "lookup_unavailable" }, 502, cors);
+  const results = (data.organizations || []).slice(0, 10).map((o) => ({ ein: String(o.ein), strein: o.strein || "", name: o.name || "", city: o.city || "", state: o.state || "" }));
+  return json({ results, total: data.total_results || results.length }, 200, cors);
+}
+const FORM = (t) => { const s = String(t == null ? "" : t).toUpperCase().replace(/[^0-9A-Z]/g, ""); return s === "1" || s === "990EZ" ? "990-EZ" : s === "2" || s === "990PF" ? "990-PF" : s === "0" || s === "990" ? "990" : s ? s : ""; };
+async function orgLatest(url, request, env, cors) {
+  const ein = clip(url.searchParams.get("ein"), 12).replace(/\D/g, "");
+  if (ein.length < 8) return json({ error: "bad_ein" }, 400, cors);
+  const bad = await orgGuard(request, env); if (bad) return json({ error: bad }, bad === "rate_limited" ? 429 : 403, cors);
+  const { status, data } = await ppGet("organizations/" + ein + ".json");
+  if (status === 404) return json({ error: "not_found" }, 404, cors);
+  if (!data) return json({ error: "lookup_unavailable" }, 502, cors);
+  const o = data.organization || {};
+  const filings = [...(data.filings_with_data || []), ...(data.filings_without_data || [])]
+    .map((f) => ({ year: String(f.tax_prd_yr || String(f.tax_prd || "").slice(0, 4) || ""), period: Number(f.tax_prd) || 0, form: FORM(f.formtype != null ? f.formtype : f.formtype_str), pdf: f.pdf_url || "" }))
+    .filter((f) => f.year)
+    .sort((a, b) => b.period - a.period || (b.pdf ? 1 : 0) - (a.pdf ? 1 : 0));
+  const withPdf = filings.find((f) => f.pdf);
+  const latest = filings[0] || null;
+  const strein = String(o.ein || ein).padStart(9, "0").replace(/^(\d{2})(\d{7})$/, "$1-$2");
+  return json({ name: o.name || "", ein: strein, city: o.city || "", state: o.state || "",
+    latest, pdfFiling: withPdf || null,
+    explorer: "https://projects.propublica.org/nonprofits/organizations/" + ein }, 200, cors);
+}
+
+// ---------- /analysis (Charity Analyzer / GivingLens) ----------
 async function saveAnalysis(b, request, env, ctx, cors) {
   const name = clip(b.name, 200);
   if (!name) return json({ error: "missing_name" }, 400, cors);
@@ -354,7 +403,7 @@ async function saveAnalysis(b, request, env, ctx, cors) {
   const firstName = analyst.split(/\s+/)[0] || "";
 
   // cause stored inside outreach_json to avoid a schema change on older databases
-  const meta = { ...outreach, causes: causes.join("; "), analyst, subscribe: b.subscribe ? "yes" : "no" };
+  const meta = { ...outreach, causes: causes.join("; "), analyst, subscribe: b.subscribe ? "yes" : "no", form: clip(b.form, 10) || "990", tool: clip(b.tool, 30) };
   await env.DB.prepare(
     `INSERT INTO analyses (org_name, ein, tax_year, inputs_json, ratios_json, outreach_json, shared, email)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
@@ -367,7 +416,7 @@ async function saveAnalysis(b, request, env, ctx, cors) {
     const okIp = (await bump(env, "rep-ip:" + ip + ":" + today())) <= REPORTS_PER_IP_PER_DAY;
     const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
     if (okIp && okTo && env.RESEND_API_KEY) {
-      const report = givingLensEmail({ tool: b.tool === "charity-analyzer" ? ANALYZER : GIVINGLENS, name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
+      const report = givingLensEmail({ tool: b.tool === "charity-analyzer" ? ANALYZER : GIVINGLENS, form: clip(b.form, 10), name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
       emailed = await sendEmail(env, email, report.subject, report.html, report.text);
     }
     const tags = ["Tool: GivingLens"];
@@ -888,16 +937,16 @@ async function sendEmail(env, to, subject, html, text, from = FROM, replyTo = RE
 }
 
 const BANDS = {
-  program: { name: "Program Expense Ratio", fmt: "pct", bands: [[60, "look", "Might warrant a closer look"], [70, "ok", "Typical and acceptable"], [Infinity, "good", "Strong"]],
-    ask: ["Are program expenses consistent year over year?", "Are they investing enough in infrastructure to sustain growth?", "Could a lower ratio be due to strategic long-term investments or a one-time event?"] },
-  mgmt: { name: "Management & General Ratio", fmt: "pct", bands: [[10, "ok", "Lean"], [20, "good", "Typical"], [25, "ok", "On the high side"], [Infinity, "look", "May suggest inefficiency"]],
-    ask: ["Does the organization clearly explain its management costs?", "Has the ratio changed significantly year over year?", "Is the size of the organization appropriate for its administrative structure?"] },
-  fund: { name: "Fundraising Ratio", fmt: "pct", bands: [[15, "good", "Usually seen as efficient"], [25, "ok", "May be appropriate for their model"], [Infinity, "look", "May warrant scrutiny"]],
-    ask: ["Are fundraising costs paying off in revenue growth?", "Is the nonprofit investing in new donors or campaigns?", "Are major capital campaigns skewing the numbers?"] },
-  cost: { name: "Cost to Raise $1", fmt: "usd", bands: [[0.25, "good", "Strong"], [0.35, "ok", "Acceptable"], [Infinity, "look", "May be cause for concern"]],
-    ask: ["Are certain years skewed by one-time events or gifts?", "What's the trend over 3–5 years?", "Are contributions expected to grow as a result of this investment?"] },
-  months: { name: "Months of Liquid Assets", fmt: "mo", bands: [[3, "look", "Could signal risk"], [6, "good", "A good buffer"], [12, "good", "A comfortable reserve"], [Infinity, "ok", "Might raise questions about unused funds"]],
-    ask: ["Does the nonprofit have a reserve policy?", "How diversified is their funding? What share comes from their largest donors or grants?", "What would happen if their biggest funder stepped away?"] },
+  program: { name: "Program Expense Ratio", fmt: "pct", bands: [[60, "look", "Worth asking about"], [70, "ok", "Typical"], [Infinity, "good", "Strong program focus"]],
+    ask: ["How has this changed over the past few years, and why?", "What investments in people or systems are you making to grow your impact?", "Was there a one-time event or long-term project that affected this year?"] },
+  mgmt: { name: "Management & General Ratio", fmt: "pct", bands: [[10, "ok", "Lean"], [20, "good", "Typical"], [25, "ok", "On the higher side"], [Infinity, "look", "Worth asking about"]],
+    ask: ["What do your management and operations costs make possible?", "Has this changed recently, and what drove it?", "Do you have the staff and systems you need to deliver your mission well?"] },
+  fund: { name: "Fundraising Ratio", fmt: "pct", bands: [[15, "good", "Efficient"], [25, "ok", "May fit their model"], [Infinity, "look", "Worth asking about"]],
+    ask: ["How is your fundraising investment paying off over time?", "Are you investing in new donors, campaigns, or a capital project?", "What's your plan to grow and diversify your support?"] },
+  cost: { name: "Cost to Raise $1", fmt: "usd", bands: [[0.25, "good", "Efficient"], [0.35, "ok", "Acceptable"], [Infinity, "look", "Worth asking about"]],
+    ask: ["What has this looked like over the past 3–5 years?", "Was this year affected by a new campaign, event, or one-time gift?", "What do you expect this investment to bring in over time?"] },
+  months: { name: "Months of Liquid Assets", fmt: "mo", bands: [[3, "look", "Thin cushion"], [6, "good", "A good buffer"], [12, "good", "A comfortable reserve"], [Infinity, "ok", "Worth asking about plans"]],
+    ask: ["Do you have a reserve policy?", "If funding dropped, what's your backup plan?", "How diversified is your funding? What would happen if your biggest funder stepped away?"] },
 };
 const COLORS = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"] };
 const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
@@ -923,7 +972,7 @@ function givingLensEmail(d) {
   const o = d.outreach || {};
   const notes = [["Date of contact", o.date], ["Spoke with", o.contact], ["Responsiveness", o.responsiveness], ["Volunteer opportunities", o.volunteer],
     ["What stood out", o.stoodOut], ["Questions still open", o.openQuestions], ["Where you landed", o.outcome]].filter(([, v]) => v);
-  const meta = [d.year && "Tax year " + d.year, d.ein && "EIN " + d.ein].filter(Boolean).join(" · ");
+  const meta = [d.form && d.form !== "990" && "Form " + d.form, d.year && "Tax year " + d.year, d.ein && "EIN " + d.ein].filter(Boolean).join(" · ");
   const causes = d.causes || [];
   const causeRow = causes.length ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:12px auto 0"><tr>${causes.map((c) => `<td style="padding:0 7px;vertical-align:top;text-align:center;width:72px"><img src="${ICON_URL}cause/${c}.jpg" width="48" height="48" alt="" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:8px;border:0"><div style="font-size:11px;line-height:1.25;color:#5d6a60;margin-top:4px">${esc(CAUSES[c])}</div></td>`).join("")}</tr></table>` : "";
   const first = (d.analyst || "").split(/\s+/)[0];
@@ -941,14 +990,14 @@ function givingLensEmail(d) {
   ${d.analyst ? `<div style="font-size:14px;color:#5d6a60;margin-top:2px">Analyst: <b style="color:#1f2a22">${esc(d.analyst)}</b></div>` : ""}
   ${causeRow}
 </td></tr>
-<tr><td style="padding:8px 24px 0;font-size:15px;line-height:1.55">${hello} here are the results you saved in ${T.name}. Use them to guide your conversation with the organization, not to replace it.</td></tr>
+<tr><td style="padding:8px 24px 0;font-size:15px;line-height:1.55">${hello} here are the results you saved in ${T.name}. Ratios start a conversation; they don't give a grade. Low overhead doesn't mean high impact, so use these numbers to decide what to ask, not whether to give.</td></tr>
 <tr><td style="padding:8px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows.join("")}</table></td></tr>
 ${net === null ? "" : `<tr><td style="padding:14px 24px 0;font-size:14px;color:#5d6a60">Revenue minus expenses: <b style="color:${net >= 0 ? "#2e7d32" : "#9a5b00"}">${money(net)}</b> (${net >= 0 ? "surplus" : "deficit"}). One year tells you less than a pattern over several.</td></tr>`}
-${flagged.length ? `<tr><td style="padding:20px 24px 0"><div style="background:#fbecd0;border-radius:12px;padding:14px 16px"><div style="font-weight:800;color:#5c3700;font-size:14px;margin-bottom:6px">Questions worth asking</div><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.5;color:#5c3700">${flagged.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div></td></tr>` : ""}
+${flagged.length ? `<tr><td style="padding:20px 24px 0"><div style="background:#fbecd0;border-radius:12px;padding:14px 16px"><div style="font-weight:800;color:#5c3700;font-size:14px;margin-bottom:6px">Questions worth asking</div><div style="font-size:13px;color:#5c3700;margin-bottom:6px">Every number has a story. These help you hear it.</div><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.5;color:#5c3700">${flagged.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div></td></tr>` : ""}
 ${notes.length ? `<tr><td style="padding:20px 24px 0"><div style="font-weight:800;color:#1b5e20;font-size:15px;margin-bottom:6px">Your outreach notes</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.5">${notes.map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#5d6a60;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:4px 0">${esc(v)}</td></tr>`).join("")}</table></td></tr>` : ""}
 <tr><td style="padding:22px 24px 4px">${btn(T.url, "Analyze another organization", true)}${btn("https://www.gatewayforgood.com/analyzing-organizations", "Go deeper: Analyzing Organizations", false)}</td></tr>
 <tr><td align="center" style="padding:18px 24px 4px;border-top:1px solid #ddd8c3"><a href="https://www.gatewayforgood.com" target="_blank" rel="noopener"><img src="${LOGO_URL}" width="160" alt="Gateway for Good" style="display:block;width:160px;max-width:60%;height:auto;border:0"></a></td></tr>
-<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">These ratios are one piece of the puzzle; different kinds of nonprofits run on different models. Numbers are as you entered them from the organization's Form 990.<br><br>You received this because you saved an analysis at ${T.addr}. Reply to reach the Gateway for Good team.<br>${T.name} by Gateway for Good® · Reuniting a divided world</td></tr>
+<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">These ratios are one piece of the puzzle; different kinds of nonprofits run on different models. ${d.form === "990-EZ" ? "Form 990-EZ doesn't break out management or fundraising costs, so those ratios aren't shown. " : ""} Numbers are as you entered them from the organization's Form 990.<br><br>You received this because you saved an analysis at ${T.addr}. Reply to reach the Gateway for Good team.<br>${T.name} by Gateway for Good® · Reuniting a divided world</td></tr>
 </table></td></tr></table></body></html>`;
 
   const text = [`${T.name} report: ${d.name}`, meta, d.analyst ? "Analyst: " + d.analyst : "", causes.length ? "Causes: " + causes.map((c) => CAUSES[c]).join(", ") : "", "", ...textRows,
