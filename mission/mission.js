@@ -11,7 +11,7 @@ ROOT.innerHTML = "<style>:host {\n  display: block;\n  color-scheme: light;\n  -
   const $ = (id) => ROOT.getElementById(id);
   const API = "https://g4gminion1.team-a92.workers.dev";
   const PAGE = "https://www.gatewayforgood.com/social-fingerprint-mission";
-  const ANALYZE_URL = "https://www.gatewayforgood.com/givinglens";
+  const ANALYZE_URL = "https://www.gatewayforgood.com/charity-analyzer";
 
   // ---------- Social Fingerprint Index steps ----------
   const STEPS = [

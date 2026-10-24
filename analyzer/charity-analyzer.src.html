@@ -147,7 +147,9 @@ a { color: var(--green-ink); }
 .journey li { counter-increment: j; margin: 0; display: flex; flex-direction: column; }
 .journey li > * { flex: 1; }
 .journey a, .journey span.j { display: flex; flex-direction: column; gap: 2px; height: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel); text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.25; }
-.journey a::before, .journey span.j::before { content: counter(j); font-size: 11px; color: var(--muted); font-weight: 700; }
+.journey small.ph { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--sky); }
+.journey span.j.here small.ph { color: #cfe8d0; }
+.journey .jt b { color: var(--green-ink); }
 .journey a:hover { border-color: var(--sky); }
 .journey span.j.here { background: var(--green); border-color: var(--green); color: #fff; }
 .journey span.j.here::before { color: #cfe8d0; }
@@ -211,7 +213,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 
 <div class="wrap">
   <nav class="journey" aria-label="Make a Difference journey">
-    <span class="jt">Your Make a Difference journey</span>
+    <span class="jt">Your Make a Difference journey · <b>Analyze</b></span>
     <ol id="journey"></ol>
   </nav>
 
@@ -311,7 +313,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
         <div><div class="eyebrow">Results</div><div class="org" id="r-org">Your organization</div></div>
         <div class="meta" id="r-meta">Enter numbers to see ratios</div>
       </div>
-      <div class="alert" id="sample-note" data-kind="info" hidden>These are sample numbers for a fictional organization. Clear them and enter your own.</div>
+      <div class="alert" id="sample-note" data-kind="info" hidden>These are sample numbers for a fictional food pantry, chosen to show the full range of results, including a few worth asking about. Open "What it means and questions to ask" on any ratio, then clear the numbers and enter your own.</div>
       <div class="alert" id="check" hidden></div>
       <div class="convo">
         <h3>Ratios start a conversation. They don't give a grade.</h3>
@@ -434,10 +436,10 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
   const API = "https://g4gminion1.team-a92.workers.dev";
   // ---------- The Make a Difference journey (guidebook order). Empty url = not live yet. ----------
   const JOURNEY = [
-    { id: "sfi", name: "Social Fingerprint", sub: "Causes & strengths", url: "https://www.gatewayforgood.com/social-fingerprint" },
-    { id: "purpose", name: "My Mission", sub: "Your Giving Statement", url: "https://www.gatewayforgood.com/social-fingerprint-mission" },
-    { id: "profile", name: "MAD Profile", sub: "Your giving plan", url: "" },
-    { id: "analyze", name: "Charity Analyzer", sub: "Check the numbers", url: "https://www.gatewayforgood.com/charity-analyzer" },
+    { id: "connect", phase: "Connect", name: "Social Fingerprint® Report", sub: "Your causes, strengths & mission", url: "https://www.gatewayforgood.com/social-fingerprint" },
+    { id: "analyze", phase: "Analyze · Step 1", name: "The Numbers", sub: "Charity Analyzer", url: "https://www.gatewayforgood.com/charity-analyzer" },
+    { id: "people", phase: "Analyze · Step 2", name: "The People", sub: "Leadership & culture", url: "" },
+    { id: "impact", phase: "Analyze · Step 3", name: "My Impact", sub: "Where you'll make a difference", url: "" },
   ];
   const HERE = "analyze";
   (function renderJourney() {
@@ -448,7 +450,8 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
       el.className = s.id === HERE ? "j here" : s.url ? "" : "j soon";
       if (s.id === HERE) el.setAttribute("aria-current", "step");
       if (el.tagName === "A") { el.href = s.url; el.target = "_top"; }
-      el.append(s.name);
+      const ph = document.createElement("small"); ph.className = "ph"; ph.textContent = s.phase;
+      el.append(ph, s.name);
       const sm = document.createElement("small"); sm.textContent = s.url || s.id === HERE ? s.sub : "Coming soon";
       el.appendChild(sm); li.appendChild(el); ol.appendChild(li);
     });
@@ -770,7 +773,8 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     } catch { msg("We filled in the name and tax ID, but couldn't look up its 990 just now. Find it on ProPublica, Candid, or the organization's website."); }
   }
 
-  const SAMPLE = { org: "Riverside Community Pantry (sample)", year: "2024", ein: "00-0000000", rev: 1240000, contrib: 1020000, exp: 1180000, prog: 920000, mgmt: 165000, fund: 95000, cash: 140000, sav: 210000, sec: 60000 };
+  // Sample shows the full range: two "worth asking about" (program, months), two in-between (management, fundraising), one strong (cost to raise $1).
+  const SAMPLE = { org: "Riverside Community Pantry (sample)", year: "2024", ein: "00-0000000", rev: 1240000, contrib: 1020000, exp: 1180000, prog: 690000, mgmt: 260000, fund: 230000, cash: 60000, sav: 110000, sec: 20000 };
   function resetFind() { $("find").value = ""; closeList(); $("pdf-box").hidden = true; $("find-msg").hidden = true; }
   $("sample").onclick = () => {
     resetFind(); setForm("990");

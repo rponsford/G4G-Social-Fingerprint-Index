@@ -243,8 +243,8 @@ function purposeLensEmail(d) {
 ${d.causes.length || d.strengths.length ? `<tr><td align="center" style="padding:6px 24px 0;text-align:center">${iconBlock("Causes you care about", d.causes, "cause", CAUSES)}${iconBlock("Strengths you bring", d.strengths, "strength", STRENGTHS)}</td></tr>` : ""}
 <tr><td style="padding:22px 24px 4px">
   <div style="font-weight:800;color:#1b5e20;font-size:15px;margin-bottom:4px">What's next</div>
-  <div style="font-size:14px;line-height:1.55;color:#1f2a22;margin-bottom:10px">Use your statements to choose organizations that fit. GivingLens helps you check an organization's finances and plan your outreach before you give.</div>
-  ${btn("https://www.gatewayforgood.com/givinglens", "Research an organization with GivingLens", true)}${btn("https://www.gatewayforgood.com/purposelens", "Revisit PurposeLens", false)}
+  <div style="font-size:14px;line-height:1.55;color:#1f2a22;margin-bottom:10px">Use your statements to choose organizations that fit. The Charity Analyzer helps you check an organization's finances before you give.</div>
+  ${btn("https://www.gatewayforgood.com/charity-analyzer", "Analyze an organization", true)}${btn("https://www.gatewayforgood.com/purposelens", "Revisit PurposeLens", false)}
 </td></tr>
 <tr><td align="center" style="padding:18px 24px 4px;border-top:1px solid #ddd8c3"><a href="https://www.gatewayforgood.com" target="_blank" rel="noopener"><img src="${LOGO_URL}" width="160" alt="Gateway for Good" style="display:block;width:160px;max-width:60%;height:auto;border:0"></a></td></tr>
 <tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain<br><br>You received this because you asked for a copy of your statements at gatewayforgood.com/purposelens. Reply to reach the Gateway for Good team.<br>PurposeLens by Gateway for Good® · Reuniting a divided world</td></tr>
@@ -255,7 +255,7 @@ ${d.causes.length || d.strengths.length ? `<tr><td align="center" style="padding
     d.purpose ? "Purpose: " + d.purpose : "", d.vision ? "Vision: " + d.vision : "", d.mission ? "Mission: " + d.mission : "",
     d.causes.length ? "\nCauses: " + d.causes.map((c) => CAUSES[c]).join(", ") : "",
     d.strengths.length ? "Strengths: " + d.strengths.map((x) => STRENGTHS[x]).join(", ") : "",
-    "\nNext: research an organization with GivingLens: https://www.gatewayforgood.com/givinglens",
+    "\nNext: analyze an organization with the Charity Analyzer: https://www.gatewayforgood.com/charity-analyzer",
     "Revisit PurposeLens: https://www.gatewayforgood.com/purposelens"].filter((x) => x !== "").join("\n");
   return { subject: "Your North Star: your PurposeLens statements", html, text };
 }
@@ -417,7 +417,7 @@ async function saveAnalysis(b, request, env, ctx, cors) {
     const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
     if (okIp && okTo && env.RESEND_API_KEY) {
       const report = givingLensEmail({ tool: b.tool === "charity-analyzer" ? ANALYZER : GIVINGLENS, form: clip(b.form, 10), name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
-      emailed = await sendEmail(env, email, report.subject, report.html, report.text);
+      emailed = await sendEmail(env, email, report.subject, report.html, report.text, b.tool === "charity-analyzer" ? "Charity Analyzer by Gateway for Good <team@gatewayforgood.com>" : FROM);
     }
     const tags = ["Tool: GivingLens"];
     for (const c of causes) tags.push("Cause: " + CAUSES[c]);
@@ -543,10 +543,10 @@ const SFI_SITE = "https://www.gatewayforgood.com";
 // "Write my giving purpose statement" buttons appear. Blank = no button.
 // Tool names as people see them in the report. Renaming a tool = change the name here (and the URL if the page moves).
 const SFI_PURPOSE_NAME = "PurposeLens";
-const SFI_GIVING_NAME = "GivingLens";
+const SFI_GIVING_NAME = "Charity Analyzer";
 const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
-const SFI_GIVINGLENS_URL = SFI_SITE + "/givinglens";
+const SFI_GIVINGLENS_URL = SFI_SITE + "/charity-analyzer"; // Charity Analyzer (was GivingLens), published Oct 24, 2026
 // My Mission (Index Step 3). Blank until its Kajabi page is live; until then "write my giving statement" buttons go to PurposeLens.
 const SFI_MISSION_URL = SFI_SITE + "/social-fingerprint-mission"; // published Oct 22, 2026
 
@@ -562,7 +562,7 @@ const SFI_LINK_PRO = { url: "https://calendly.com/gatewayforgood/connect-with-ga
   body: "Here's a direct link to book time with our professional giving team. Bring your Social Fingerprint, and we'll talk through your own giving strategy." };
 const SFI_LINK_COMMUNITY = { url: "https://www.gatewayforgood.com/offers/R6CUkaMz/checkout", label: "Join the Community",
   body: "The Gateway for Good Community is where people share ideas, projects, and encouragement as they put their giving to work." };
-// After My Mission, "find organizations" points to the search prompt in the report and to GivingLens.
+// After My Mission, "find organizations" points to the search prompt in the report and to the Charity Analyzer.
 const SFI_LINK_ANALYZE = { url: SFI_GIVINGLENS_URL, label: "Analyze an organization",
   body: `Your giving statement is written. Use your search prompt (below) to find organizations that fit, then check each one's numbers with ${SFI_GIVING_NAME} before you give.` };
 const SFI_NEXT_LINKS = {
@@ -719,8 +719,8 @@ function buildSfiReport(p, content, opts = {}) {
     { title: "Analyze", here: !!M, blurb: "Find organizations that fit, and see where you can make the most impact.", steps: [
       M ? { t: "Seek organizations that align with your giving statement: use your search prompt above", s: NEXT }
         : { t: "Seek organizations that align with your giving statement", s: SOON },
-      { t: "Quantitative analysis: an organization's numbers", s: OPEN, url: SFI_GIVINGLENS_URL, label: SFI_GIVING_NAME },
-      { t: "Qualitative analysis: an organization's culture", s: SOON },
+      { t: "The Numbers: check an organization's finances", s: OPEN, url: SFI_GIVINGLENS_URL, label: SFI_GIVING_NAME },
+      { t: "The People: an organization's leadership and culture", s: SOON },
     ], out: "The result: an assessment of how you can make an impact with each organization." },
     { title: "Invest", blurb: "Take action and measure what changes.", steps: [
       { t: "Invest your money", s: SOON },
@@ -951,7 +951,7 @@ const BANDS = {
 const COLORS = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"] };
 const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
 
-const GIVINGLENS = { name: "GivingLens", url: "https://www.gatewayforgood.com/givinglens", addr: "gatewayforgood.com/givinglens", tag: " · Know before you give" };
+const GIVINGLENS = { name: "GivingLens", url: "https://www.gatewayforgood.com/charity-analyzer", addr: "gatewayforgood.com/givinglens", tag: " · Know before you give" };
 const ANALYZER = { name: "Charity Analyzer", url: "https://www.gatewayforgood.com/charity-analyzer", addr: "gatewayforgood.com/charity-analyzer", tag: " · by Gateway for Good" };
 function givingLensEmail(d) {
   const T = d.tool || GIVINGLENS;
