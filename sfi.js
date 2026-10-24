@@ -58,7 +58,7 @@
         elapsed_s: S.started_at ? Math.round((Date.now()-S.started_at)/1000) : null, hp: S.hp||"",
         top_causes: ids("cause"), top_strengths: ids("strength"), answers: Object.assign({}, S.ans, {_v: CONTENT.content_version||1, _consent_at: S.consent_at||""}) };
     }
-    // Shared workbook used by the other Gateway for Good tools (GivingLens reads the same key).
+    // Shared workbook used by the other Gateway for Good tools (My Mission and the Charity Analyzer read the same key).
     function remember(p){
       try{
         const KEY="gfg_workbook_v1"; let wb={};

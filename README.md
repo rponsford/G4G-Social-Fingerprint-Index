@@ -39,35 +39,26 @@ Optional extras:
 
 Changes reach live pages within about 10 minutes.
 
-## GivingLens
+## Charity Analyzer (Analyze, Step 1: The Numbers)
 
-GivingLens (the nonprofit 990 ratio calculator, outreach notes and research library) lives in the `givinglens/` folder and is added to a page the same way:
-
-```html
-<div id="givinglens"></div>
-<script src="https://tools.gatewayforgood.com/givinglens/givinglens.js" defer></script>
-```
-
-| File | What it is |
-|---|---|
-| `givinglens/givinglens.src.html` | The editable source: text, ratios, ranges and questions. |
-| `givinglens/givinglens.js` | The built script pages load. Rebuild after editing the source with `python3 givinglens/build.py givinglens/givinglens.src.html givinglens/givinglens.js`. |
-| `givinglens/index.html` | A test page. |
-
-Saved and shared analyses go to the Gateway for Good Cloudflare Worker (`g4gminion1.team-a92.workers.dev`).
-
-## PurposeLens
-
-PurposeLens (guidebook Step 2: Purpose, Vision and Mission statements with AI drafting) lives in the `purposelens/` folder:
+The Charity Analyzer (nonprofit 990 ratios, organization search, Form 990-EZ, PDF report) lives in the `analyzer/` folder. It replaced GivingLens in October 2026. Kajabi page: gatewayforgood.com/charity-analyzer.
 
 ```html
-<div id="purposelens"></div>
-<script src="https://tools.gatewayforgood.com/purposelens/purposelens.js" defer></script>
+<div id="charity-analyzer"></div>
+<script src="https://tools.gatewayforgood.com/analyzer/charity-analyzer.js" defer></script>
 ```
 
-Edit `purposelens/purposelens.src.html`, then rebuild with `python3 givinglens/build.py purposelens/purposelens.src.html purposelens/purposelens.js purposelens "PurposeLens" purposelens`.
+Edit `analyzer/charity-analyzer.src.html`, then rebuild with `python3 givinglens/build.py analyzer/charity-analyzer.src.html analyzer/charity-analyzer.js charity-analyzer "Charity Analyzer" analyzer`. Test page: `analyzer/index.html` (the organization search only answers on gatewayforgood.com).
 
-Both tools show a "Make a Difference journey" strip (Social Fingerprint → PurposeLens → MAD Profile → GivingLens). The links are in the `JOURNEY` list near the top of each tool's script; a blank `url` shows "Coming soon".
+Saves go to the Worker's `/analysis` route (emailed report); the organization search uses `/org-search` and `/org`. Keep the ratio labels and questions in sync between the tool's `RATIOS` list and the Worker's `BANDS`.
+
+## Shared files kept from retired tools
+
+GivingLens and PurposeLens were retired in October 2026 (replaced by the Charity Analyzer and My Mission). Their scripts were removed, but these stay because live tools and already-sent emails use them:
+
+- `givinglens/build.py`: the build script every tool uses.
+- `givinglens/img/`: card icons and the email logo (report emails, Social Fingerprint report).
+- `purposelens/img/g4g-logo.png`: logo used by the Social Fingerprint share image.
 
 ## Cloudflare Worker
 
@@ -75,7 +66,7 @@ Both tools show a "Make a Difference journey" strip (Social Fingerprint → Purp
 
 ## My Mission (Social Fingerprint Index, Step 3)
 
-My Mission replaces PurposeLens as Step 3 of the Social Fingerprint Index (My Causes → My Strengths → My Mission). Part 1 writes the Giving Statement (same drafting as PurposeLens, via the Worker's `/draft`). Part 2, "How you want to get involved," is six tile screens; the person's top strengths pre-select matching tiles (`STRENGTH_TILES`). The result screen builds the "Get My Search Prompt" text. Answers are kept in the shared workbook as `involvement`.
+My Mission is Step 3 of the Social Fingerprint Index (My Causes → My Strengths → My Mission). Part 1 writes the Giving Statement (AI drafting via the Worker's `/draft`). Part 2, "How you want to get involved," is six tile screens; the person's top strengths pre-select matching tiles (`STRENGTH_TILES`). The result screen builds the "Get My Search Prompt" text. Answers are kept in the shared workbook as `involvement`.
 
 ```html
 <div id="mission"></div>
@@ -84,4 +75,4 @@ My Mission replaces PurposeLens as Step 3 of the Social Fingerprint Index (My Ca
 
 Edit `mission/mission.src.html`, then rebuild with `python3 givinglens/build.py mission/mission.src.html mission/mission.js mission "My Mission" mission`. Test page: `mission/index.html` (tools.gatewayforgood.com/mission/).
 
-My Mission posts to the Worker's `/mission` route, which saves the statement and answers (statements table, plus the person's sfi_responses row when the browser has their Index response id) and emails their UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, and the giving path moved to Analyze. When the Kajabi page is live, set `SFI_MISSION_URL` in `cloudflare/worker.js` so the Index report's "Write my giving statement" buttons go to My Mission instead of PurposeLens. Set `COMMUNITY_URL` in `mission/mission.src.html` to show the community share button.
+My Mission posts to the Worker's `/mission` route, which saves the statement and answers (statements table, plus the person's sfi_responses row when the browser has their Index response id) and emails their UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, and the giving path moved to Analyze. Set `COMMUNITY_URL` in `mission/mission.src.html` to show the community share button.

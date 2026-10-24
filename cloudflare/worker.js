@@ -8,9 +8,8 @@
 // Routes
 //   GET  /health
 //   POST /draft        AI-drafted Purpose/Vision/Mission options
-//   POST /statement    saves a PurposeLens statement, emails the copy, syncs Kajabi
 //   POST /mission      saves My Mission (Index Step 3: Giving Statement + how they want to get involved), emails the UPDATED Social Fingerprint report, syncs Kajabi
-//   POST /analysis     saves a Charity Analyzer / GivingLens analysis, emails the report, syncs Kajabi
+//   POST /analysis     saves a Charity Analyzer analysis, emails the report, syncs Kajabi
 //   GET  /org-search?q=   organization name search (ProPublica Nonprofit Explorer), for the Charity Analyzer
 //   GET  /org?ein=        latest filing for one organization: name, EIN, tax year, form type, 990 PDF link
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
@@ -26,8 +25,8 @@ const REPORTS_PER_EMAIL_PER_DAY = 10;
 const SFI_SAVES_PER_IP_PER_DAY = 400;   // ~4 saves per person, so ~100 people on one connection (a group event on shared wifi)
 const SFI_REPORTS_PER_EMAIL_PER_DAY = 5;
 const SFI_MIN_SECONDS = 60;           // finishing faster than this is flagged "too_fast"
-const FROM = "GivingLens by Gateway for Good <team@gatewayforgood.com>";
-const FROM_PURPOSE = "PurposeLens by Gateway for Good <team@gatewayforgood.com>";
+const FROM = "Gateway for Good <team@gatewayforgood.com>";
+const FROM_ANALYZER = "Charity Analyzer by Gateway for Good <team@gatewayforgood.com>";
 const REPLY_TO = "team@gatewayforgood.com";
 // Social Fingerprint "anything else" notes go to the team from a sender used for nothing else,
 // so an Outlook rule (From contains Notes-SFI@gatewayforgood.com) can file them. Notes-SFI@ needs no mailbox; other tools can follow the same pattern (Notes-<TOOL>@).
@@ -58,7 +57,6 @@ export default {
         const body = await readJson(request);
         if (!body) return json({ error: "bad_json" }, 400, cors);
         if (url.pathname === "/draft") return draft(body, request, env, cors);
-        if (url.pathname === "/statement") return saveStatement(body, request, env, ctx, cors);
         if (url.pathname === "/mission") return saveMission(body, request, env, ctx, cors);
         if (url.pathname === "/analysis") return saveAnalysis(body, request, env, ctx, cors);
         if (url.pathname === "/sfi") return saveSfi(body, request, env, ctx, cors);
@@ -179,85 +177,6 @@ function parseJson(t) {
   const a = t.indexOf("{"), b = t.lastIndexOf("}");
   if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
   return null;
-}
-
-// ---------- /statement (PurposeLens) ----------
-async function saveStatement(b, request, env, ctx, cors) {
-  const combined = clip(b.combined, 2000);
-  if (!combined) return json({ error: "missing_combined" }, 400, cors);
-  const email = cleanEmail(b.email);
-  if (!email) return json({ error: "missing_email" }, 400, cors);
-  const ids = (v, map) => list(v, 3).map((x) => (map[x] ? x : Object.keys(map).find((k) => map[k].toLowerCase() === x.toLowerCase()))).filter(Boolean);
-  const causes = ids(b.causes, CAUSES), strengths = ids(b.strengths, STRENGTHS);
-  const d = {
-    email, first: clip(b.first, 80), last: clip(b.last, 80), groupName: clip(b.groupName, 120), isGroup: !!b.isGroup,
-    purpose: clip(b.purpose, 1000), vision: clip(b.vision, 1000), mission: clip(b.mission, 1000), combined, causes, strengths,
-  };
-  const vals = [email, d.first, d.last, d.groupName, d.isGroup ? 1 : 0, d.purpose, d.vision, d.mission, combined, causes.join("; "), strengths.join("; ")];
-  try { // with the subscribe column (added in v3)
-    await env.DB.prepare(`INSERT INTO statements (email, first_name, last_name, group_name, is_group, purpose, vision, mission, combined, causes, strengths, subscribe)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(...vals, b.subscribe ? 1 : 0).run();
-  } catch {
-    await env.DB.prepare(`INSERT INTO statements (email, first_name, last_name, group_name, is_group, purpose, vision, mission, combined, causes, strengths)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(...vals).run();
-  }
-
-  let emailed = false;
-  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const okIp = (await bump(env, "rep-ip:" + ip + ":" + today())) <= REPORTS_PER_IP_PER_DAY;
-  const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
-  if (okIp && okTo && env.RESEND_API_KEY) {
-    const report = purposeLensEmail(d);
-    emailed = await sendEmail(env, email, report.subject, report.html, report.text, FROM_PURPOSE);
-  }
-  const tags = ["Tool: PurposeLens"];
-  for (const c of causes) tags.push("Cause: " + CAUSES[c]);
-  for (const x of strengths) tags.push("Strength: " + STRENGTHS[x]);
-  ctx.waitUntil(kajabiSync(env, { email, name: [d.first, d.last].filter(Boolean).join(" "), subscribed: !!b.subscribe, tags }));
-  return json({ ok: true, stored: true, emailed }, 200, cors);
-}
-
-function purposeLensEmail(d) {
-  const who = d.isGroup ? d.groupName : [d.first, d.last].filter(Boolean).join(" ");
-  const hello = d.first ? `Hi ${esc(d.first)},` : "Hello,";
-  const icons = (arr, kind, map) => arr.map((c) => `<td style="padding:0 6px;vertical-align:top;text-align:center;width:70px"><img src="${ICON_URL}${kind}/${c}.jpg" width="44" height="44" alt="" style="display:block;margin:0 auto;width:44px;height:44px;border-radius:8px;border:0"><div style="font-size:11px;line-height:1.25;color:#5d6a60;margin-top:4px">${esc(map[c])}</div></td>`).join("");
-  const iconBlock = (title, arr, kind, map) => arr.length ? `<div style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#1b5e20;margin:14px 0 6px">${title}</div><table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>${icons(arr, kind, map)}</tr></table>` : "";
-  const part = (k, v) => v ? `<tr><td style="padding:10px 0;border-bottom:1px solid #ddd8c3"><div style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#1b5e20">${k}</div><div style="font-size:15px;line-height:1.55;color:#1f2a22;margin-top:2px">${esc(v)}</div></td></tr>` : "";
-  const btn = (href, label, solid) => `<a href="${href}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px 4px 0;padding:11px 18px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none;${solid ? "background:#2e7d32;color:#ffffff" : "border:2px solid #2e7d32;color:#1b5e20"}">${label}</a>`;
-
-  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f5f3e6">
-<div style="display:none;max-height:0;overflow:hidden">Your North Star: ${esc(d.combined.slice(0, 90))}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3e6"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fffdf5;border:1px solid #ddd8c3;border-radius:14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2a22">
-<tr><td align="center" style="padding:24px 24px 6px;text-align:center">
-  <div style="font-size:14px;font-weight:800;color:#1b5e20;letter-spacing:.02em">PurposeLens <span style="font-weight:400;color:#5d6a60">· Find your why</span></div>
-  <h1 style="margin:14px 0 4px;font-size:24px;line-height:1.2;color:#1b5e20">Your Make a Difference statements</h1>
-  ${who ? `<div style="font-size:14px;color:#5d6a60">${esc(who)}</div>` : ""}
-</td></tr>
-<tr><td style="padding:10px 24px 0;font-size:15px;line-height:1.55">${hello} here are the statements you crafted with PurposeLens. Keep your Combined Statement somewhere you'll see it; it's your North Star for the rest of the guidebook.</td></tr>
-<tr><td style="padding:16px 24px 0"><div style="background:#2e7d32;border-radius:14px;padding:22px 20px;color:#ffffff">
-  <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#bfe9fa">Your Combined Statement</div>
-  <div style="font-family:Georgia,'Iowan Old Style',serif;font-size:21px;line-height:1.45;margin-top:8px">${esc(d.combined)}</div>
-</div></td></tr>
-<tr><td style="padding:8px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${part("Purpose · why we care", d.purpose)}${part("Vision · what success looks like", d.vision)}${part("Mission · how we'll make it happen", d.mission)}</table></td></tr>
-${d.causes.length || d.strengths.length ? `<tr><td align="center" style="padding:6px 24px 0;text-align:center">${iconBlock("Causes you care about", d.causes, "cause", CAUSES)}${iconBlock("Strengths you bring", d.strengths, "strength", STRENGTHS)}</td></tr>` : ""}
-<tr><td style="padding:22px 24px 4px">
-  <div style="font-weight:800;color:#1b5e20;font-size:15px;margin-bottom:4px">What's next</div>
-  <div style="font-size:14px;line-height:1.55;color:#1f2a22;margin-bottom:10px">Use your statements to choose organizations that fit. The Charity Analyzer helps you check an organization's finances before you give.</div>
-  ${btn("https://www.gatewayforgood.com/charity-analyzer", "Analyze an organization", true)}${btn("https://www.gatewayforgood.com/purposelens", "Revisit PurposeLens", false)}
-</td></tr>
-<tr><td align="center" style="padding:18px 24px 4px;border-top:1px solid #ddd8c3"><a href="https://www.gatewayforgood.com" target="_blank" rel="noopener"><img src="${LOGO_URL}" width="160" alt="Gateway for Good" style="display:block;width:160px;max-width:60%;height:auto;border:0"></a></td></tr>
-<tr><td style="padding:8px 24px 24px;font-size:12.5px;line-height:1.5;color:#5d6a60;text-align:center">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain<br><br>You received this because you asked for a copy of your statements at gatewayforgood.com/purposelens. Reply to reach the Gateway for Good team.<br>PurposeLens by Gateway for Good® · Reuniting a divided world</td></tr>
-</table></td></tr></table></body></html>`;
-
-  const text = ["Your Make a Difference statements (PurposeLens)", who, "",
-    "YOUR COMBINED STATEMENT", d.combined, "",
-    d.purpose ? "Purpose: " + d.purpose : "", d.vision ? "Vision: " + d.vision : "", d.mission ? "Mission: " + d.mission : "",
-    d.causes.length ? "\nCauses: " + d.causes.map((c) => CAUSES[c]).join(", ") : "",
-    d.strengths.length ? "Strengths: " + d.strengths.map((x) => STRENGTHS[x]).join(", ") : "",
-    "\nNext: analyze an organization with the Charity Analyzer: https://www.gatewayforgood.com/charity-analyzer",
-    "Revisit PurposeLens: https://www.gatewayforgood.com/purposelens"].filter((x) => x !== "").join("\n");
-  return { subject: "Your North Star: your PurposeLens statements", html, text };
 }
 
 // ---------- /mission (Social Fingerprint Index, Step 3: My Mission) ----------
@@ -387,7 +306,7 @@ async function orgLatest(url, request, env, cors) {
     explorer: "https://projects.propublica.org/nonprofits/organizations/" + ein }, 200, cors);
 }
 
-// ---------- /analysis (Charity Analyzer / GivingLens) ----------
+// ---------- /analysis (Charity Analyzer) ----------
 async function saveAnalysis(b, request, env, ctx, cors) {
   const name = clip(b.name, 200);
   if (!name) return json({ error: "missing_name" }, 400, cors);
@@ -416,10 +335,10 @@ async function saveAnalysis(b, request, env, ctx, cors) {
     const okIp = (await bump(env, "rep-ip:" + ip + ":" + today())) <= REPORTS_PER_IP_PER_DAY;
     const okTo = (await bump(env, "rep-to:" + email + ":" + today())) <= REPORTS_PER_EMAIL_PER_DAY;
     if (okIp && okTo && env.RESEND_API_KEY) {
-      const report = givingLensEmail({ tool: b.tool === "charity-analyzer" ? ANALYZER : GIVINGLENS, form: clip(b.form, 10), name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
-      emailed = await sendEmail(env, email, report.subject, report.html, report.text, b.tool === "charity-analyzer" ? "Charity Analyzer by Gateway for Good <team@gatewayforgood.com>" : FROM);
+      const report = analyzerEmail({ form: clip(b.form, 10), name, year: clip(b.year, 10), ein: clip(b.ein, 20), inputs, ratios, outreach, causes, analyst, badges: b.badges });
+      emailed = await sendEmail(env, email, report.subject, report.html, report.text, FROM_ANALYZER);
     }
-    const tags = ["Tool: GivingLens"];
+    const tags = ["Tool: Charity Analyzer"];
     for (const c of causes) tags.push("Cause: " + CAUSES[c]);
     for (const bd of list(b.badges, 4)) tags.push("Badge: " + bd);
     ctx.waitUntil(kajabiSync(env, { email, name: analyst, subscribed: !!b.subscribe, tags }));
@@ -538,23 +457,18 @@ async function saveSfi(b, request, env, ctx, cors) {
 const SFI_BASE = "https://tools.gatewayforgood.com/";
 const SFI_SITE = "https://www.gatewayforgood.com";
 
-// PurposeLens: where people write their giving purpose statement (mission,
-// vision, purpose). Put the page address here once it's live, and the
-// "Write my giving purpose statement" buttons appear. Blank = no button.
 // Tool names as people see them in the report. Renaming a tool = change the name here (and the URL if the page moves).
-const SFI_PURPOSE_NAME = "PurposeLens";
-const SFI_GIVING_NAME = "Charity Analyzer";
-const SFI_PURPOSELENS_URL = SFI_SITE + "/purposelens";
+const SFI_ANALYZER_NAME = "Charity Analyzer";
 const SFI_FIND_GUIDE_URL = SFI_SITE + "/blog/finding-non-profit-organizations";
-const SFI_GIVINGLENS_URL = SFI_SITE + "/charity-analyzer"; // Charity Analyzer (was GivingLens), published Oct 24, 2026
-// My Mission (Index Step 3). Blank until its Kajabi page is live; until then "write my giving statement" buttons go to PurposeLens.
+const SFI_ANALYZER_URL = SFI_SITE + "/charity-analyzer"; // published Oct 24, 2026
+// My Mission (Index Step 3).
 const SFI_MISSION_URL = SFI_SITE + "/social-fingerprint-mission"; // published Oct 22, 2026
 
 // Next steps people pick on the last screen. Each one gets a short "bridge" so the
 // button never feels abrupt: a warm opener, a sentence on what happens next, and the button.
 // Leave a url blank ("") and that step shows the message with no button.
 // Keys are the next-step answers exactly as worded in content.json. Older wordings stay so earlier responses still render.
-const SFI_LINK_STATEMENT = { url: SFI_MISSION_URL || SFI_PURPOSELENS_URL, label: "Write my giving statement",
+const SFI_LINK_STATEMENT = { url: SFI_MISSION_URL, label: "Write my giving statement",
   body: "The best way to find the right organizations is to know exactly what you're looking for. Your next step is your giving statement: your mission, vision, and purpose, and how you want to get started. It becomes your guide for finding organizations that fit." };
 const SFI_LINK_CIRCLE = { url: "https://www.grapevine.org/giving-circle/JXjhgpQ/Gateway-for-Good", label: "Join our giving circle",
   body: "Giving alongside others multiplies what each of us can do. Our Gateway for Good giving circle on Grapevine is a place to give together with people who care about the same things." };
@@ -563,8 +477,8 @@ const SFI_LINK_PRO = { url: "https://calendly.com/gatewayforgood/connect-with-ga
 const SFI_LINK_COMMUNITY = { url: "https://www.gatewayforgood.com/offers/R6CUkaMz/checkout", label: "Join the Community",
   body: "The Gateway for Good Community is where people share ideas, projects, and encouragement as they put their giving to work." };
 // After My Mission, "find organizations" points to the search prompt in the report and to the Charity Analyzer.
-const SFI_LINK_ANALYZE = { url: SFI_GIVINGLENS_URL, label: "Analyze an organization",
-  body: `Your giving statement is written. Use your search prompt (below) to find organizations that fit, then check each one's numbers with ${SFI_GIVING_NAME} before you give.` };
+const SFI_LINK_ANALYZE = { url: SFI_ANALYZER_URL, label: "Analyze an organization",
+  body: `Your giving statement is written. Use your search prompt (below) to find organizations that fit, then check each one's numbers with ${SFI_ANALYZER_NAME} before you give.` };
 const SFI_NEXT_LINKS = {
   "Find organizations that align with my causes": SFI_LINK_STATEMENT,
   "Explore a giving project with others": SFI_LINK_CIRCLE,
@@ -592,8 +506,8 @@ const SFI_NEXT_TITLES = {
 const SFI_BARRIER_TIPS = {
   "Time": "Short on time? Start with a one time event, or a role you can do from home in an hour a week. Small and steady beats big and rare.",
   "Knowing where to start": "Not sure where to start? Begin with your giving statement. Once you know what you're giving for, the right next step gets much easier to see.",
-  "Finding the right opportunity": `Looking for the right fit? Your giving statement gives you the criteria. Then use the search terms under each cause, and check what you find with ${SFI_GIVING_NAME}.`,
-  "Feeling like my contribution matters": `Wondering if it matters? Ask the organization how they measure results, and check their numbers with ${SFI_GIVING_NAME} before you give.`,
+  "Finding the right opportunity": `Looking for the right fit? Your giving statement gives you the criteria. Then use the search terms under each cause, and check what you find with ${SFI_ANALYZER_NAME}.`,
+  "Feeling like my contribution matters": `Wondering if it matters? Ask the organization how they measure results, and check their numbers with ${SFI_ANALYZER_NAME} before you give.`,
   "I would help if I was asked": "Waiting to be asked? Consider this your invitation. Reach out to one organization working on your top cause and ask, \"How can I help?\" Most are thrilled to hear it.",
   "Connecting with others who care about the same things": "Want company? Share your Social Fingerprint with a friend or your group and compare. Shared causes make great group projects.",
 };
@@ -714,12 +628,12 @@ function buildSfiReport(p, content, opts = {}) {
     { title: "Connect", here: !M, blurb: "Know what you care about and what you bring.", steps: [
       { t: "Discover your causes", s: DONE },
       { t: "Identify your strengths", s: DONE },
-      { t: "Draft your giving statement and the ways you'll make a difference", s: M ? DONE : NEXT, url: SFI_MISSION_URL || SFI_PURPOSELENS_URL, label: "Write my giving statement" },
+      { t: "Draft your giving statement and the ways you'll make a difference", s: M ? DONE : NEXT, url: SFI_MISSION_URL, label: "Write my giving statement" },
     ] },
     { title: "Analyze", here: !!M, blurb: "Find organizations that fit, and see where you can make the most impact.", steps: [
       M ? { t: "Seek organizations that align with your giving statement: use your search prompt above", s: NEXT }
         : { t: "Seek organizations that align with your giving statement", s: SOON },
-      { t: "The Numbers: check an organization's finances", s: OPEN, url: SFI_GIVINGLENS_URL, label: SFI_GIVING_NAME },
+      { t: "The Numbers: check an organization's finances", s: OPEN, url: SFI_ANALYZER_URL, label: SFI_ANALYZER_NAME },
       { t: "The People: an organization's leadership and culture", s: SOON },
     ], out: "The result: an assessment of how you can make an impact with each organization." },
     { title: "Invest", blurb: "Take action and measure what changes.", steps: [
@@ -775,7 +689,7 @@ function buildSfiReport(p, content, opts = {}) {
       <div style="font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.5;color:${INK};background:${BG};border:1px solid ${LINE};border-radius:12px;padding:14px;white-space:pre-wrap">${esc(M.prompt)}</div></td></tr>` : ""}
     ${M.webSearches && M.webSearches.length ? `<tr><td style="padding:12px 28px 4px"><div style="${FONT}font-size:13px;font-weight:bold;color:${INK};margin-bottom:4px">Or search the web</div>
       ${M.webSearches.map(w => `<div style="${FONT}font-size:14px;margin:4px 0"><a href="https://www.google.com/search?q=${encodeURIComponent(w.q)}" target="_blank" style="color:${GREEN};font-weight:bold">Search: ${esc(w.label || w.q)} &rarr;</a></div>`).join("")}</td></tr>` : ""}
-    <tr><td style="padding:10px 28px 0">${P(`These are starting points from a search, not endorsements by Gateway for Good. Always check an organization yourself before you give, and use ${SFI_GIVING_NAME} to look at its numbers.`, `font-size:13px;color:${MUTED}`)}${btn(SFI_GIVINGLENS_URL, "Analyze an organization")}</td></tr>` : "";
+    <tr><td style="padding:10px 28px 0">${P(`These are starting points from a search, not endorsements by Gateway for Good. Always check an organization yourself before you give, and use ${SFI_ANALYZER_NAME} to look at its numbers.`, `font-size:13px;color:${MUTED}`)}${btn(SFI_ANALYZER_URL, "Analyze an organization")}</td></tr>` : "";
 
   const preheader = M ? `Your Giving Statement: ${M.combined.slice(0, 90)}` : next.length
     ? `Your next step: ${title(next[0])}. Plus your top causes and strengths.`
@@ -849,7 +763,7 @@ ${body.replace("<!--SFI_SHARE-->", "")}
     (M.summary || []).forEach(([k, v]) => T.push(`${k}: ${v}`));
     if (M.prompt) T.push("", "Your search prompt (copy into any AI tool):", M.prompt);
     (M.webSearches || []).forEach(w => T.push(`Search: https://www.google.com/search?q=${encodeURIComponent(w.q)}`));
-    T.push(`Analyze an organization: ${SFI_GIVINGLENS_URL}`);
+    T.push(`Analyze an organization: ${SFI_ANALYZER_URL}`);
   }
   T.push("", "THE CAUSES YOU CARE ABOUT MOST");
   causes.forEach(c => { T.push(`${c.name}: ${c.tag}`); (c.items || []).forEach(x => T.push(`   - ${x}`)); if ((c.search || []).length) T.push(`   Search terms: ${c.search.slice(0, 5).join(", ")}`); });
@@ -951,10 +865,9 @@ const BANDS = {
 const COLORS = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"] };
 const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString("en-US");
 
-const GIVINGLENS = { name: "GivingLens", url: "https://www.gatewayforgood.com/charity-analyzer", addr: "gatewayforgood.com/givinglens", tag: " · Know before you give" };
 const ANALYZER = { name: "Charity Analyzer", url: "https://www.gatewayforgood.com/charity-analyzer", addr: "gatewayforgood.com/charity-analyzer", tag: " · by Gateway for Good" };
-function givingLensEmail(d) {
-  const T = d.tool || GIVINGLENS;
+function analyzerEmail(d) {
+  const T = ANALYZER;
   const rows = [], flagged = [], textRows = [];
   for (const [id, cfg] of Object.entries(BANDS)) {
     const v = d.ratios[id];
@@ -1072,7 +985,7 @@ async function kajabiTest(url, env) {
   if (!env.ADMIN_KEY || url.searchParams.get("key") !== env.ADMIN_KEY) return json({ error: "unauthorized" }, 401);
   const email = cleanEmail(url.searchParams.get("email"));
   if (!email) return json({ error: "add &email=you@example.com" }, 400);
-  const log = await kajabiSync(env, { email, name: clip(url.searchParams.get("name"), 80), subscribed: true, tags: ["Tool: GivingLens"] });
+  const log = await kajabiSync(env, { email, name: clip(url.searchParams.get("name"), 80), subscribed: true, tags: ["Tool: Charity Analyzer"] });
   return json({ email, steps: log });
 }
 
