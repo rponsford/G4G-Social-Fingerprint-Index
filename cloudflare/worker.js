@@ -968,10 +968,15 @@ async function kajabiSync(env, { email, name, subscribed, tags, zip }, log = [])
   if (!env.KAJABI_CLIENT_ID || !env.KAJABI_CLIENT_SECRET) { log.push("no Kajabi credentials"); return log; }
   try {
     const API = "https://api.kajabi.com/v1";
-    const tok = await fetch(API + "/oauth/token", {
-      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "client_credentials", client_id: env.KAJABI_CLIENT_ID, client_secret: env.KAJABI_CLIENT_SECRET }),
-    }).then(async (r) => { const t = await r.text(); log.push("token: HTTP " + r.status); try { return JSON.parse(t); } catch { log.push("token body: " + t.slice(0, 300)); return {}; } });
+    // Form body first; if Kajabi refuses it, try the same credentials as JSON (logged, so /admin/kajabi-test shows which works).
+    const cid = String(env.KAJABI_CLIENT_ID).trim(), csec = String(env.KAJABI_CLIENT_SECRET).trim();
+    log.push("client id: " + cid.slice(0, 4) + "…" + cid.slice(-4) + " (" + cid.length + " chars), secret " + csec.length + " chars");
+    const getTok = (label, headers, body) => fetch(API + "/oauth/token", { method: "POST", headers, body })
+      .then(async (r) => { const t = await r.text(); log.push("token (" + label + "): HTTP " + r.status); try { return JSON.parse(t); } catch { log.push("token body: " + t.slice(0, 300)); return {}; } });
+    let tok = await getTok("form", { "Content-Type": "application/x-www-form-urlencoded" },
+      new URLSearchParams({ grant_type: "client_credentials", client_id: cid, client_secret: csec }));
+    if (!tok.access_token) tok = await getTok("json", { "Content-Type": "application/json", "Accept": "application/json" },
+      JSON.stringify({ grant_type: "client_credentials", client_id: cid, client_secret: csec }));
     if (!tok.access_token) { log.push("no access token: " + JSON.stringify(tok).slice(0, 300)); return log; }
     const H = { "Authorization": "Bearer " + tok.access_token, "Content-Type": "application/vnd.api+json", "Accept": "application/vnd.api+json" };
 
