@@ -1,7 +1,7 @@
 {
  "_readme": "All words, cards, questions, and organization settings for the Social Fingerprint Index live in this file. Edit text here; the page picks up changes automatically within about 10 minutes.",
  "endpoint": "https://g4gminion1.team-a92.workers.dev/sfi",
- "turnstile_sitekey": "",
+ "turnstile_sitekey": "0x4AAAAAAFmGzBcnJZlHXA4Z",
  "share_display": "MySocialFingerprint.com",
  "videos": {
   "welcome": {
