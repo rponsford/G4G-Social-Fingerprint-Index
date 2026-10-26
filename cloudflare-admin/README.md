@@ -7,7 +7,7 @@ Code for both pieces is in the repo. These steps happen in the Cloudflare dashbo
 1. Cloudflare dashboard → **Turnstile** → **Add widget**.
    - Name: `Social Fingerprint`
    - Hostnames: `gatewayforgood.com`, `www.gatewayforgood.com`, `tools.gatewayforgood.com`
-   - Widget mode: **Invisible** (or Managed; the tool only shows it if Cloudflare needs a click)
+   - Widget mode: **Managed**. The tool runs it with `appearance: interaction-only`, so most people see nothing and only high-risk visitors get a checkbox. (Invisible mode would require citing Cloudflare's Turnstile Privacy Addendum in our privacy policy; Managed doesn't.)
 2. Copy the **Site key** into `content.json` → `"turnstile_sitekey"` (or send it to Gigi). Wait ~10 minutes for the page to pick it up.
 3. Only then: Workers → **g4gminion1** → Settings → Variables and Secrets → add secret **TURNSTILE_SECRET** = the widget's **Secret key**.
    - Order matters: with the secret set but no site key on the page, every save counts as "missing" and no reports get emailed.
