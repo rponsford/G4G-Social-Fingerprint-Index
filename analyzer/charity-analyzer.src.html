@@ -387,7 +387,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     </label>
     <label class="age" id="age-wrap">
       <input type="checkbox" id="age">
-      <span>I'm 13 or older.</span>
+      <span>I'm 13 or older, and I agree to the <a href="https://www.gatewayforgood.com/terms-of-use" target="_blank" rel="noopener">Terms of Use</a> and have read the <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</span>
     </label>
     <div class="actions">
       <button class="btn" type="button" id="saveorg">Save organization</button>
@@ -398,7 +398,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
       <div class="eyebrow">Your research progress</div>
       <div class="badges" id="badges"></div>
     </div>
-    <p class="privacy">Saved organizations stay in this browser so you can compare them and add them to your profile. If you share, your findings go to Gateway for Good without your name. If you add your email, we use it only to keep your record of organizations you've analyzed. We never sell or share your email. Sharing and email are for people 13 and older.</p>
+    <p class="privacy">Saved organizations stay in this browser so you can compare them and add them to your profile. If you share, your findings go to Gateway for Good without your name. If you add your email, we use it only to keep your record of organizations you've analyzed. We never sell or share your email. Sharing and email are for people 13 and older. See our <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
 
 
@@ -953,6 +953,9 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
     HOST.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => $("org").focus({ preventScroll: true }), 400);
   };
+  // Ages 13-17 (from the Social Fingerprint): no marketing emails.
+  const TEEN = (loadWB().person || {}).age === "13-17";
+  if (TEEN) { $("sub-wrap").hidden = true; $("subscribe").checked = false; }
   $("age").addEventListener("change", () => $("age-wrap").classList.remove("need"));
 
   $("saveorg").onclick = () => {
@@ -979,7 +982,7 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       tool: "charity-analyzer",
       shareWithLibrary: $("share").checked,
-      causes: selectedCauses.slice(), analyst: $("o-first").value.trim(), subscribe: $("subscribe").checked,
+      causes: selectedCauses.slice(), analyst: $("o-first").value.trim(), subscribe: !TEEN && $("subscribe").checked, policy: "beta-1.0",
       savedAt: new Date().toISOString()
     };
     const before = earnedBadges();

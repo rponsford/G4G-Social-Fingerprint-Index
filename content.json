@@ -924,7 +924,9 @@
  },
  "_videos_help": "Each video: id is the YouTube id. start and end are in seconds (0 means the full video). skip lists sections to jump over, as [from, to] pairs in seconds; for example [[48, 75]] jumps from 0:48 straight to 1:15.",
  "content_version": 3,
- "privacy_url": "https://www.gatewayforgood.com/policies",
+ "privacy_url": "https://www.gatewayforgood.com/privacy-policy",
+ "terms_url": "https://www.gatewayforgood.com/terms-of-use",
+ "policy_version": "beta-1.0",
  "ages": [
   [
    "under13",

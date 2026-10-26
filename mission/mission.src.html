@@ -243,7 +243,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       <button class="btn" id="go-draft" type="button">Draft my statement</button>
       <button class="linkish" id="go-manual" type="button">I'd rather write it myself</button>
     </div>
-    <p class="ai"><span aria-hidden="true">✦</span><span><b>Drafting uses AI.</b> When you tap Draft, Gigi, our fun-loving, hard-working AI giving intern, turns your notes and picks into suggested wording. Every suggestion is yours to change, and nothing is saved with your name unless you choose to email yourself a copy.</span></p>
+    <p class="ai"><span aria-hidden="true">✦</span><span><b>Drafting uses AI.</b> When you tap Draft, Gigi, our fun-loving, hard-working AI giving intern, turns your notes and picks into suggested wording. Gigi is an AI powered by Claude from Anthropic: your notes and picks are sent to write the drafts, but your name and email aren't. Please leave out health, financial or other sensitive details. Every suggestion is yours to change, and nothing is saved with your name unless you choose to email yourself a copy.</span></p>
   </section>
 
   <!-- PART 1 · STEP B: Choose -->
@@ -468,15 +468,15 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       </div>
       <label class="field" for="group" id="group-wrap" hidden>Group or family name<input id="group" type="text"></label>
       <label class="field" for="email">Email<input id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
-      <label class="check"><input type="checkbox" id="subscribe" checked><span>Keep me informed about ways to make a difference with Gateway for Good.</span></label>
-      <label class="check" id="age-wrap"><input type="checkbox" id="age"><span>I'm 13 or older.</span></label>
+      <label class="check" id="sub-wrap"><input type="checkbox" id="subscribe" checked><span>Keep me informed about ways to make a difference with Gateway for Good.</span></label>
+      <label class="check" id="age-wrap"><input type="checkbox" id="age"><span>I'm 13 or older, and I agree to the <a href="https://www.gatewayforgood.com/terms-of-use" target="_blank" rel="noopener">Terms of Use</a> and have read the <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
       <p class="err" id="err4" hidden></p>
       <div class="actions">
         <button class="btn" type="button" id="send">Email my updated report</button>
         <button class="btn ghost" type="button" id="pdf">Download my report (PDF)</button>
       </div>
     </div>
-    <p class="privacy">If you add your email, Gateway for Good keeps your statement with it so we can send your copy and connect it to later steps. We never sell or share what you write. Email copies are for people 13 and older.</p>
+    <p class="privacy">If you add your email, Gateway for Good keeps your statement with it so we can send your copy and connect it to later steps. We never sell what you write. Email copies are for people 13 and older. See our <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
 
   <div class="overlay" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="done-h">
@@ -730,6 +730,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const MINOR = ["under13", "13-17"].includes(wb.person.age);
   const nameOK = () => !MINOR && !!wb.person.showName;
   const whoLine = () => !nameOK() ? "" : st.group ? (wb.person.groupName || "") : [wb.person.first, wb.person.last].filter(Boolean).join(" ");
+  if (MINOR) { $("sub-wrap").hidden = true; $("subscribe").checked = false; }
   function setupName() {
     $("namebox").hidden = MINOR;
     $("n-group-wrap").hidden = !st.group;
@@ -1248,7 +1249,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       const r = await fetch(API + "/mission", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, first: wb.person.first, last: wb.person.last, groupName: wb.person.groupName, isGroup: st.group, showName: nameOK(),
-          ...wb.statements, causes: st.causes, strengths: st.strengths, subscribe: $("subscribe").checked, age13: true,
+          ...wb.statements, causes: st.causes, strengths: st.strengths, subscribe: !MINOR && $("subscribe").checked, age13: true, policy: "beta-1.0",
           responseId: wb.fingerprint.response_id || "", involvement: inv, summary: summaryRows(), searchPrompt: promptText, webSearches: webQueries() }),
       });
       res = await r.json().catch(() => null);

@@ -56,7 +56,7 @@
         kajabi_tag: IDX.kajabi_tag, page: location.href.split("#")[0],
         first_name: S.name, email: (S.contact||{}).email||"", zip: (S.contact||{}).zip||"", subscribe: !!(S.contact||{}).sub,
         elapsed_s: S.started_at ? Math.round((Date.now()-S.started_at)/1000) : null, hp: S.hp||"",
-        top_causes: ids("cause"), top_strengths: ids("strength"), answers: Object.assign({}, S.ans, {_v: CONTENT.content_version||1, _consent_at: S.consent_at||""}) };
+        top_causes: ids("cause"), top_strengths: ids("strength"), answers: Object.assign({}, S.ans, {_v: CONTENT.content_version||1, _consent_at: S.consent_at||"", _policy: S.consent_at?(CONTENT.policy_version||""):""}) };
     }
     // Shared workbook used by the other Gateway for Good tools (My Mission and the Charity Analyzer read the same key).
     function remember(p){
@@ -164,13 +164,13 @@ welcome(){
   <label for="ag" class="sub">Your age</label>
   <select id="ag"><option value="">Choose your age range</option>${(CONTENT.ages||[]).map(([v,t])=>`<option value="${v}" ${S.age===v?"selected":""}>${esc(t)}</option>`).join("")}</select>
   <p class="note" id="kid" ${S.age==="under13"?"":"hidden"}>Welcome! You can do the whole thing and see your results. Because you're under 13, we won't save your answers or ask for your email.</p>
-  <label class="check"><input type="checkbox" id="ok" ${S.consent_at?"checked":""}><span>I agree to the <a href="${esc(CONTENT.privacy_url||"#")}" target="_blank" rel="noopener">Terms of Service and Privacy Policy</a>.</span></label>
+  <label class="check" id="okwrap" ${S.age==="under13"?"hidden":""}><input type="checkbox" id="ok" ${S.consent_at?"checked":""}><span>I agree to the <a href="${esc(CONTENT.terms_url||"#")}" target="_blank" rel="noopener">Terms of Use</a> and have read the <a href="${esc(CONTENT.privacy_url||"#")}" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
   <button class="primary" id="go">Let's begin</button>
   `;
-  const ready=()=>{ const a=$("#ag").value; $("#kid").hidden=a!=="under13"; $("#go").disabled=!(a&&$("#ok").checked) };
+  const ready=()=>{ const a=$("#ag").value, kid=a==="under13"; $("#kid").hidden=!kid; $("#okwrap").hidden=kid; $("#go").disabled=!(a&&(kid||$("#ok").checked)) };
   $("#ag").onchange=ready; $("#ok").onchange=ready; ready();
   $("#nm").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("#go").disabled)$("#go").click()});
-  $("#go").onclick=()=>{S.name=$("#nm").value.trim();S.age=$("#ag").value;S.consent_at=new Date().toISOString();S.started_at=Date.now();S.step=0;S.ans={};S.contact=null;H=[];if(S.age!=="under13"&&CONTENT.endpoint)tsLoad();enter()};
+  $("#go").onclick=()=>{S.name=$("#nm").value.trim();S.age=$("#ag").value;S.consent_at=S.age==="under13"?"":new Date().toISOString();S.started_at=Date.now();S.step=0;S.ans={};S.contact=null;H=[];if(S.age!=="under13"&&CONTENT.endpoint)tsLoad();enter()};
 },
 intro(){
   const x=TEXT[T.sec];
