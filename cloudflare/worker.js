@@ -1,9 +1,10 @@
 // Gateway for Good API (Cloudflare Worker) — version 3
 // Dashboard setup:
 //   Binding:  D1 database, variable name DB  ->  gfg-research
-//   Secrets:  ANTHROPIC_API_KEY, ADMIN_KEY, RESEND_API_KEY
-//   Optional: KAJABI_CLIENT_ID, KAJABI_CLIENT_SECRET (Kajabi Public API; contacts + tags sync turns on when present)
-//   Optional: TURNSTILE_SECRET (Cloudflare Turnstile human check on /sfi; enforced once present)
+//   Secrets:  ANTHROPIC_API_KEY, RESEND_API_KEY, TURNSTILE_SECRET (live since Oct 25, 2026)
+//   Removed:  ADMIN_KEY (deleted Oct 25, 2026; data downloads moved to the g4g-admin Worker behind Cloudflare Access)
+//   Optional: KAJABI_CLIENT_ID, KAJABI_CLIENT_SECRET (Kajabi Public API; contacts + tags sync turns on when present).
+//             Oct 2026: the Kajabi plan lacks the Public API (token 403), so contacts go in by weekly CSV from g4g-admin.
 //
 // Routes
 //   GET  /health
@@ -15,8 +16,7 @@
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
 //   POST /mission/report returns My Mission's updated report HTML for the PDF download (stores nothing, sends nothing)
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
-//   GET  /admin/export?table=analyses|statements|sfi_responses&key=ADMIN_KEY[&format=csv]
-//        Retired once the g4g-admin Worker (Cloudflare Access) is live: delete ADMIN_KEY in the dashboard and this stops working.
+//   GET  /admin/export, /admin/kajabi-test   retired: they need ADMIN_KEY, which was deleted Oct 25, 2026 (use g4g-admin)
 
 const ALLOWED_ORIGINS = ["https://www.gatewayforgood.com", "https://gatewayforgood.com"];
 const MODEL = "claude-sonnet-5-5";
