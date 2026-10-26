@@ -36,3 +36,19 @@ Code for both pieces is in the repo. These steps happen in the Cloudflare dashbo
 | `quality_flags` | `honeypot` (hidden field filled), `too_fast` (finished in under 60 seconds) |
 
 `failed`, `missing` and `honeypot` rows are stored but get no email and no Kajabi sync, and the admin downloads leave them out unless you pick "incl. flagged". `too_fast` rows are kept in the downloads with the flag so you can filter them.
+
+## C. Kajabi import (interim, until Kajabi's Public API is on)
+
+The Gateway for Good plan doesn't include Kajabi's Public API yet (Oct 25, 2026: the token request returns 403), so the Worker can't create contacts. Until it does, the admin page has a **Kajabi import** card (full-access people only):
+
+| File | Who | In Kajabi |
+|---|---|---|
+| Subscribed | checked "keep me informed", 13+ | tick **Subscribe to email marketing** |
+| Not subscribed | everyone else with an email (incl. 13–17) | leave it unticked |
+
+- One row per email across all three tools (Social Fingerprint, My Mission, Charity Analyzer), columns `Email, Name, Tags`. Tags match what the Worker's sync would add: Tool, Cause, Strength, Group (Group never for 13–17).
+- Left out: bot-flagged rows, unfinished Social Fingerprint runs, rows with no email.
+- **New** = not downloaded before, or picked up new tags or opted in since. Each download is recorded in the `kajabi_exports` table, and the card shows who downloaded last. **Everyone** re-downloads all; Kajabi matches on email, so a repeat import only updates.
+- Weekly: Kajabi → Contacts → Import → choose the file → set the subscribe box as above → don't grant an offer.
+
+When the Public API is on: add a new User API Key's ID and secret to g4gminion1 (KAJABI_CLIENT_ID / KAJABI_CLIENT_SECRET), run a one-time backfill so everyone saved so far gets synced with ZIP codes, then remove this card and drop `kajabi_exports`.
