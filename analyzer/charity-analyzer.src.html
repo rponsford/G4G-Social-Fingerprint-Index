@@ -210,7 +210,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 .getit { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .getit h3 { color: var(--green-ink); }
 
-/* Two views: My organization list (start here) and Check the numbers */
+/* Two views: My organization list (start here) and Analyze the numbers */
 .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; max-width: 620px; }
 .tabs button { font: inherit; font-size: 15px; font-weight: 700; border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; line-height: 1.2; }
 .tabs button[aria-selected="true"] { background: var(--green); color: #fff; }
@@ -269,7 +269,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 
   <div class="tabs" role="tablist" aria-label="Charity Analyzer">
     <button type="button" role="tab" id="tab-list" aria-controls="view-list" aria-selected="true"><span class="tn">1</span><span>My organization list</span><span class="count" id="tab-count"></span></button>
-    <button type="button" role="tab" id="tab-numbers" aria-controls="view-numbers" aria-selected="false"><span class="tn">2</span><span>Check the numbers</span></button>
+    <button type="button" role="tab" id="tab-numbers" aria-controls="view-numbers" aria-selected="false"><span class="tn">2</span><span>Analyze the numbers</span></button>
   </div>
 
   <!-- VIEW 1: MY ORGANIZATION LIST (start here). Online version of the guidebook's Organization Intake Notes. -->
@@ -278,7 +278,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
       <div class="brand"><span class="mark">Charity Analyzer</span><span class="tag">by Gateway for Good · Know before you give</span></div>
       <div class="eyebrow">Analyze · Start here · Your organization list</div>
       <h1>Capture the organizations you want to explore</h1>
-      <p>Your search prompt from My Mission turned up some organizations. Capture each one here before you go deeper. Search by name and we'll fill in what the IRS has on file. Then add the causes it serves and your notes on what you like, or don't. When your first round is captured, check the numbers on each one.</p>
+      <p>Your search prompt from My Mission turned up some organizations. Capture each one here before you go deeper. Search by name and we'll fill in what the IRS has on file. Then add the causes it serves and your notes on what you like, or don't. When your first round is captured, analyze the numbers for each one.</p>
     </div>
     <div class="listwrap">
       <section class="card" id="list-card" aria-labelledby="list-h" hidden>
@@ -343,13 +343,13 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 
       <section class="nextbox" id="list-next" hidden aria-labelledby="list-next-h">
         <h2 id="list-next-h">First round captured?</h2>
-        <p>Next, check the numbers. Pick an organization from your list and we'll pull up its latest IRS Form 990.</p>
-        <button class="btn" type="button" id="go-numbers">Check the numbers →</button>
+        <p>Next, analyze the numbers. Pick an organization from your list and we'll pull up its latest IRS Form 990.</p>
+        <button class="btn" type="button" id="go-numbers">Analyze the numbers →</button>
       </section>
     </div>
   </section>
 
-  <!-- VIEW 2: CHECK THE NUMBERS -->
+  <!-- VIEW 2: ANALYZE THE NUMBERS -->
   <div class="view" id="view-numbers" role="tabpanel" aria-labelledby="tab-numbers" hidden>
   <section class="intro">
     <div class="brand"><span class="mark">Charity Analyzer</span><span class="tag">by Gateway for Good · Know before you give</span></div>
@@ -1180,7 +1180,7 @@ ${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your or
     renderBadges();
     const newBadges = rec.badges.filter(b => !before.includes(b));
     const nDone = wb.orgs.filter(analyzed).length, nLeft = wb.orgs.length - nDone;
-    const count = `You've analyzed ${nDone} organization${nDone === 1 ? "" : "s"}.` + (nLeft ? ` ${nLeft} more on your list to check.` : "");
+    const count = `You've analyzed ${nDone} organization${nDone === 1 ? "" : "s"}.` + (nLeft ? ` ${nLeft} more on your list to analyze.` : "");
     const extras = [count, ...newBadges.map(b => `New badge earned: ${b}`)];
     if (!wantsServer) {
       if (savedLocal) showDone(true, `${name} saved`, ["Saved in this browser.", ...extras]);
@@ -1333,9 +1333,9 @@ ${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your or
     const nDone = orgs.filter(analyzed).length;
     $("list-card").hidden = !orgs.length;
     $("tab-count").textContent = orgs.length ? String(orgs.length) : "";
-    $("list-sum").textContent = orgs.length ? `${orgs.length} organization${orgs.length === 1 ? "" : "s"} · ${nDone} with numbers checked` : "";
+    $("list-sum").textContent = orgs.length ? `${orgs.length} organization${orgs.length === 1 ? "" : "s"} · ${nDone} with numbers analyzed` : "";
     $("list-next").hidden = !orgs.length;
-    $("list-next-h").textContent = nDone && nDone === orgs.length ? "Every organization's numbers are checked" : "First round captured?";
+    $("list-next-h").textContent = nDone && nDone === orgs.length ? "Every organization's numbers are analyzed" : "First round captured?";
     orgs.forEach(o => {
       const li = document.createElement("li"); li.className = "oitem"; li.dataset.id = o.id || "";
       const top = document.createElement("div"); top.className = "otop";
@@ -1346,7 +1346,7 @@ ${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your or
       if (o.website) { if (meta.textContent) meta.append(" · "); const a = document.createElement("a"); a.href = webHref(o.website); a.target = "_blank"; a.rel = "noopener"; a.textContent = o.website.replace(/^https?:\/\//i, "").replace(/\/$/, ""); meta.appendChild(a); }
       head.append(nm, meta);
       const pill = document.createElement("span");
-      pill.className = "pill " + (analyzed(o) ? "good" : "none"); pill.textContent = analyzed(o) ? "Numbers checked" + (o.year ? " · " + o.year : "") : "Numbers not checked yet";
+      pill.className = "pill " + (analyzed(o) ? "good" : "none"); pill.textContent = analyzed(o) ? "Numbers analyzed" + (o.year ? " · " + o.year : "") : "Numbers not analyzed yet";
       top.append(head, pill); li.appendChild(top);
       if ((o.causes || []).length) {
         const cz = document.createElement("div"); cz.className = "ocz";
@@ -1358,7 +1358,7 @@ ${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your or
       if (o.notes) { const n = document.createElement("p"); n.className = "onotes"; n.textContent = o.notes; li.appendChild(n); }
       const act = document.createElement("div"); act.className = "oact";
       const go = document.createElement("button"); go.type = "button"; go.className = "btn" + (analyzed(o) ? " ghost" : "");
-      go.textContent = analyzed(o) ? "See its numbers →" : "Check its numbers →";
+      go.textContent = analyzed(o) ? "See its numbers →" : "Analyze its numbers →";
       go.onclick = () => { loadFromList(o.id); showView("numbers", true); };
       const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkish"; ed.textContent = "Edit";
       ed.onclick = () => openEntry(listOrgs().find(x => x.id === o.id));
@@ -1386,7 +1386,7 @@ ${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your or
     $("pickbox").hidden = !orgs.length;
     sel.innerHTML = "";
     const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Choose an organization…"; sel.appendChild(o0);
-    orgs.forEach(o => { const op = document.createElement("option"); op.value = o.id; op.textContent = o.name + (analyzed(o) ? " (numbers checked)" : ""); sel.appendChild(op); });
+    orgs.forEach(o => { const op = document.createElement("option"); op.value = o.id; op.textContent = o.name + (analyzed(o) ? " (numbers analyzed)" : ""); sel.appendChild(op); });
     sel.value = orgs.some(o => o.id === activeId) ? activeId : "";
   }
   $("pick").onchange = () => { if ($("pick").value) loadFromList($("pick").value); else { activeId = ""; } };
