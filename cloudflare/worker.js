@@ -12,7 +12,8 @@
 //   POST /mission      saves My Mission (Index Step 3: Giving Statement + how they want to get involved), emails the UPDATED Social Fingerprint report, syncs Kajabi
 //   POST /analysis     saves a Charity Analyzer analysis, emails the report, syncs Kajabi
 //   GET  /org-search?q=   organization name search (ProPublica Nonprofit Explorer), for the Charity Analyzer
-//   GET  /org?ein=        latest filing for one organization: name, EIN, tax year, form type, 990 PDF link
+//   GET  /org?ein=        latest filing for one organization: name, EIN, tax year, form type, 990 PDF link,
+//                         plus 501(c) subsection, NTEE category and latest revenue (used by the organization list)
 //   POST /sfi/report   returns the on-screen report HTML for the results screen (stores nothing)
 //   POST /mission/report returns My Mission's updated report HTML for the PDF download (stores nothing, sends nothing)
 //   POST /sfi          saves Social Fingerprint progress (milestones) and the finished response; emails the report once on completion; syncs Kajabi
@@ -303,7 +304,14 @@ async function orgLatest(url, request, env, cors) {
   const withPdf = filings.find((f) => f.pdf);
   const latest = filings[0] || null;
   const strein = String(o.ein || ein).padStart(9, "0").replace(/^(\d{2})(\d{7})$/, "$1-$2");
+  // Extras for the organization list: 501(c) subsection (3 = 501(c)(3)), IRS NTEE category, latest revenue/expenses.
+  const fin = (data.filings_with_data || []).slice().sort((a, b) => (Number(b.tax_prd) || 0) - (Number(a.tax_prd) || 0))[0] || null;
+  const sub = Number(o.subsection_code);
   return json({ name: o.name || "", ein: strein, city: o.city || "", state: o.state || "",
+    subsection: isFinite(sub) && sub > 0 ? sub : null, ntee: String(o.ntee_code || "").toUpperCase(),
+    revenue: fin && isFinite(Number(fin.totrevenue)) ? Number(fin.totrevenue) : null,
+    expenses: fin && isFinite(Number(fin.totfuncexpns)) ? Number(fin.totfuncexpns) : null,
+    finYear: fin ? String(fin.tax_prd_yr || String(fin.tax_prd || "").slice(0, 4)) : "",
     latest, pdfFiling: withPdf || null,
     explorer: "https://projects.propublica.org/nonprofits/organizations/" + ein }, 200, cors);
 }

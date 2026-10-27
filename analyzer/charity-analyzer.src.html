@@ -209,6 +209,56 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 [data-mode] [hidden] { display: none !important; }
 .getit { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .getit h3 { color: var(--green-ink); }
+
+/* Two views: My organization list (start here) and Check the numbers */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; max-width: 620px; }
+.tabs button { font: inherit; font-size: 15px; font-weight: 700; border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; line-height: 1.2; }
+.tabs button[aria-selected="true"] { background: var(--green); color: #fff; }
+.tabs .tn { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 12.5px; background: var(--bg); color: var(--green-ink); flex: none; }
+.tabs button[aria-selected="true"] .tn { background: #fff; }
+.tabs .count { font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 1px 8px; background: var(--sky-soft); color: #0b4a63; }
+.tabs .count:empty { display: none; }
+@media (max-width: 520px) { .tabs { border-radius: 16px; } .tabs button { font-size: 14px; padding: 9px 8px; flex-direction: column; gap: 4px; } }
+.view { display: flex; flex-direction: column; gap: 20px; }
+.view[hidden] { display: none; }
+.listwrap { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.olist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.olist:empty { display: none; }
+.oitem { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.oitem .otop { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.oitem .onm { font-weight: 800; font-size: 17px; color: var(--green-ink); line-height: 1.25; }
+.oitem .ometa { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.oitem .ometa a { color: var(--muted); }
+.oitem .onotes { font-size: 14.5px; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.oitem .ocz { display: flex; flex-wrap: wrap; gap: 6px; }
+.oitem .ocz span { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; background: var(--green-soft); color: var(--green-ink); border-radius: 999px; padding: 2px 10px 2px 2px; }
+.oitem .ocz img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.oitem .oact { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.oitem .oact .btn { padding: 7px 14px; font-size: 14px; }
+.linkish.danger { color: #8a3a00; }
+.facts { background: var(--sky-soft); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #0b4a63; }
+.facts[hidden] { display: none; }
+.facts b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.facts ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+.opt { font-weight: 400; color: var(--muted); font-size: 13.5px; }
+.seg.wide { flex-wrap: wrap; }
+.seg .auto { font-size: 11px; }
+.from-irs { font-size: 12px; font-weight: 700; color: var(--sky); }
+.addmore { display: flex; }
+.addmore[hidden] { display: none; }
+.addmore .btn { width: 100%; border-style: dashed; padding: 14px 18px; }
+.nextbox { background: var(--green); color: #fff; border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.nextbox[hidden] { display: none; }
+.nextbox h2 { color: #fff; }
+.nextbox .btn { background: #fff; color: var(--green-ink); border-color: #fff; }
+.nextbox .btn:hover { background: var(--green-soft); }
+.flash { animation: flash 1.2s ease; }
+@keyframes flash { from { box-shadow: 0 0 0 4px var(--sky); } to { box-shadow: 0 1px 2px rgba(46,60,40,.06); } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } }
+.pickbox { background: var(--green-soft); border-radius: 10px; padding: 10px 12px; }
+.pickbox[hidden] { display: none; }
+.card[hidden] { display: none; }
 </style>
 
 <div class="wrap">
@@ -217,13 +267,97 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     <ol id="journey"></ol>
   </nav>
 
+  <div class="tabs" role="tablist" aria-label="Charity Analyzer">
+    <button type="button" role="tab" id="tab-list" aria-controls="view-list" aria-selected="true"><span class="tn">1</span><span>My organization list</span><span class="count" id="tab-count"></span></button>
+    <button type="button" role="tab" id="tab-numbers" aria-controls="view-numbers" aria-selected="false"><span class="tn">2</span><span>Check the numbers</span></button>
+  </div>
+
+  <!-- VIEW 1: MY ORGANIZATION LIST (start here). Online version of the guidebook's Organization Intake Notes. -->
+  <section class="view" id="view-list" role="tabpanel" aria-labelledby="tab-list">
+    <div class="intro">
+      <div class="brand"><span class="mark">Charity Analyzer</span><span class="tag">by Gateway for Good · Know before you give</span></div>
+      <div class="eyebrow">Analyze · Start here · Your organization list</div>
+      <h1>Capture the organizations you want to explore</h1>
+      <p>Your search prompt from My Mission turned up some organizations. Capture each one here before you go deeper. Search by name and we'll fill in what the IRS has on file. Then add the causes it serves and your notes on what you like, or don't. When your first round is captured, check the numbers on each one.</p>
+    </div>
+    <div class="listwrap">
+      <section class="card" id="list-card" aria-labelledby="list-h" hidden>
+        <div class="list-head"><h2 id="list-h">Your list</h2><span class="hint" id="list-sum"></span></div>
+        <ul class="olist" id="olist"></ul>
+      </section>
+
+      <form class="card" id="entry" novalidate autocomplete="off">
+        <h2 id="entry-h">Add an organization</h2>
+        <div class="f find">
+          <label for="e-find">Find the organization</label>
+          <input id="e-find" type="search" placeholder="Type a name, e.g. Habitat for Humanity" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="e-find-list" aria-expanded="false">
+          <ul class="find-list" id="e-find-list" role="listbox" aria-label="Matching organizations" hidden></ul>
+          <span class="where">Pick it from the matches and we'll fill in what we can. Not listed? Type the details in yourself below. <span class="pp">Search by <a href="https://projects.propublica.org/nonprofits/" target="_blank" rel="noopener">ProPublica Nonprofit Explorer</a>.</span></span>
+        </div>
+        <div class="alert" id="e-msg" data-kind="info" hidden></div>
+        <div class="facts" id="e-facts" hidden><b>From IRS records</b><ul id="e-facts-list"></ul></div>
+        <div class="f"><label for="e-name">Organization name</label><input id="e-name" type="text" placeholder="e.g. Riverside Community Pantry"></div>
+        <div class="f">
+          <label for="e-web">Website</label>
+          <input id="e-web" type="text" inputmode="url" placeholder="www.example.org">
+          <a class="where" id="e-web-find" target="_blank" rel="noopener" hidden>Search the web for its website →</a>
+        </div>
+        <div class="f"><label for="e-contact">Contact person <span class="opt">(if known)</span></label><input id="e-contact" type="text" placeholder="Name, title, email, or phone"></div>
+        <div class="row2">
+          <div class="f">
+            <span class="lbl" id="e-c3-lbl">501(c)(3) charity?</span>
+            <div class="seg" id="e-c3" role="radiogroup" aria-labelledby="e-c3-lbl">
+              <button type="button" role="radio" data-v="yes" aria-checked="false">Yes</button>
+              <button type="button" role="radio" data-v="no" aria-checked="false">No</button>
+              <button type="button" role="radio" data-v="unsure" aria-checked="false">Not sure</button>
+            </div>
+            <span class="where" id="e-c3-note">Gifts to 501(c)(3) charities are usually tax-deductible.</span>
+          </div>
+          <div class="f">
+            <span class="lbl" id="e-vol-lbl">Volunteer opportunities?</span>
+            <div class="seg" id="e-vol" role="radiogroup" aria-labelledby="e-vol-lbl">
+              <button type="button" role="radio" data-v="yes" aria-checked="false">Yes</button>
+              <button type="button" role="radio" data-v="no" aria-checked="false">No</button>
+              <button type="button" role="radio" data-v="unsure" aria-checked="false">Not sure</button>
+            </div>
+            <span class="where">Look for a Volunteer or Get Involved page on its website.</span>
+          </div>
+        </div>
+        <div class="f"><label for="e-mission">Mission statement <span class="opt">(if available)</span></label><textarea id="e-mission" rows="3" placeholder="Usually on the About page of its website."></textarea></div>
+        <div class="f">
+          <div class="picked-row"><span class="lbl">Causes it serves</span><button class="linkish" type="button" id="e-chg" hidden>Change</button></div>
+          <p class="where" id="e-cause-help"></p>
+          <div class="causes" id="e-causes" role="group" aria-label="Causes it serves"></div>
+          <button class="linkish" type="button" id="e-more" hidden></button>
+        </div>
+        <div class="f"><label for="e-notes">Your notes</label><textarea id="e-notes" rows="4" placeholder="Why does it stand out? What do you like, or not like? Anything you want to ask?"></textarea></div>
+        <div class="actions">
+          <button class="btn" type="submit" id="e-save">Add to my list</button>
+          <button class="btn ghost" type="button" id="e-cancel" hidden>Cancel</button>
+          <span class="hint" id="e-err" hidden></span>
+        </div>
+        <p class="privacy">Your list is saved in this browser so it carries into the next steps. Come back on the same device and browser to pick up where you left off.</p>
+      </form>
+
+      <div class="addmore" id="addmore" hidden><button class="btn ghost" type="button" id="add-another">+ Add another organization</button></div>
+
+      <section class="nextbox" id="list-next" hidden aria-labelledby="list-next-h">
+        <h2 id="list-next-h">First round captured?</h2>
+        <p>Next, check the numbers. Pick an organization from your list and we'll pull up its latest IRS Form 990.</p>
+        <button class="btn" type="button" id="go-numbers">Check the numbers →</button>
+      </section>
+    </div>
+  </section>
+
+  <!-- VIEW 2: CHECK THE NUMBERS -->
+  <div class="view" id="view-numbers" role="tabpanel" aria-labelledby="tab-numbers" hidden>
   <section class="intro">
     <div class="brand"><span class="mark">Charity Analyzer</span><span class="tag">by Gateway for Good · Know before you give</span></div>
     <div class="eyebrow">Analyze · Step 1 of 3 · The Numbers</div>
     <h1>See how a charity uses its money</h1>
     <p>Use this tool to enter numbers from a charity's IRS Form 990 tax return and calculate five key ratios. Every nonprofit files a 990 each year, and these ratios show how it spends, raises, and saves its money. Each result explains what it means and the questions worth asking.</p>
     <ol class="how">
-      <li><b>Find the 990.</b> It's free on <a href="https://projects.propublica.org/nonprofits/" target="_blank" rel="noopener">ProPublica Nonprofit Explorer</a>, <a href="https://www.guidestar.org" target="_blank" rel="noopener">Candid (GuideStar)</a>, or <a href="https://www.charitynavigator.org" target="_blank" rel="noopener">Charity Navigator</a>. Use the most recent year. You can also ask the organization for a copy.</li>
+      <li><b>Find the 990.</b> Pick an organization from your list or search by name, and we'll link you to its latest 990. It's also free on <a href="https://projects.propublica.org/nonprofits/" target="_blank" rel="noopener">ProPublica Nonprofit Explorer</a>, <a href="https://www.guidestar.org" target="_blank" rel="noopener">Candid (GuideStar)</a>, or <a href="https://www.charitynavigator.org" target="_blank" rel="noopener">Charity Navigator</a>. Use the most recent year. You can also ask the organization for a copy.</li>
       <li><b>Enter the numbers.</b> Each box tells you the page and line to look for. Your results update as you type.</li>
       <li><b>Read your results</b> and save the organization to get an emailed report.</li>
     </ol>
@@ -239,6 +373,11 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     <form class="card inputs" id="form" novalidate autocomplete="off" data-mode="990">
       <fieldset>
         <legend>Organization</legend>
+        <div class="f pickbox" id="pickbox" hidden>
+          <label for="pick">Pick from your list</label>
+          <select id="pick"></select>
+          <span class="where">Or search for any organization below.</span>
+        </div>
         <div class="f find">
           <label for="find">Find the organization</label>
           <input id="find" type="search" placeholder="Type a name, e.g. Habitat for Humanity" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="find-list" aria-expanded="false">
@@ -400,6 +539,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     </div>
     <p class="privacy">Saved organizations stay in this browser so you can compare them and add them to your profile. If you share, your findings go to Gateway for Good without your name. If you add your email, we use it only to keep your record of organizations you've analyzed. We never sell or share your email. Sharing and email are for people 13 and older. See our <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </section>
+  </div><!-- /view-numbers -->
 
 
   <div class="overlay" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="done-h">
@@ -409,6 +549,7 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
       <ul class="done-list" id="done-list"></ul>
       <div class="actions done-actions">
         <button class="btn" type="button" id="another">Analyze another organization</button>
+        <button class="btn ghost" type="button" id="back-list">Back to my list</button>
         <button class="btn ghost" type="button" id="share-done">Share with a friend</button>
         <button class="btn ghost" type="button" id="keep">Keep editing this one</button>
       </div>
@@ -488,45 +629,62 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
   // once a cause is picked the unpicked ones hide (Change / Add another brings them back). Up to 3.
   const toIds = arr => (Array.isArray(arr) ? arr : []).map(v => { const s = String(v).toLowerCase(); const hit = CAUSE_LIST.find(([id, l]) => id === s || l.toLowerCase() === s); return hit && hit[0]; }).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).slice(0, 3);
   const myCauses = toIds((loadWB().fingerprint || {}).causes);
-  let selectedCauses = [];
-  let causeView = myCauses.length ? "mine" : "all"; // mine | all | picked
-  function renderCauses() {
-    const box = $("causes"); box.innerHTML = "";
-    if (selectedCauses.length && causeView !== "all") causeView = "picked";
-    if (!selectedCauses.length && causeView === "picked") causeView = myCauses.length ? "mine" : "all";
-    const shown = causeView === "picked" ? CAUSE_LIST.filter(([id]) => selectedCauses.includes(id))
-      : causeView === "mine" ? CAUSE_LIST.filter(([id]) => myCauses.includes(id)) : CAUSE_LIST;
-    box.classList.toggle("few", causeView !== "all");
-    shown.forEach(([id, label]) => {
-      const b = document.createElement("button"); b.type = "button"; b.className = "cz";
-      const on = selectedCauses.includes(id);
-      b.setAttribute("aria-pressed", String(on)); b.disabled = !on && selectedCauses.length >= 3;
-      const img = document.createElement("img"); img.src = ICONS + id + ".jpg"; img.alt = ""; img.loading = "lazy";
-      const t = document.createElement("span"); t.textContent = label;
-      b.append(img, t);
-      if (causeView === "mine" && myCauses.includes(id)) { const f = document.createElement("span"); f.className = "from"; f.textContent = "Your cause"; b.appendChild(f); }
-      b.onclick = () => {
-        selectedCauses = on ? selectedCauses.filter(x => x !== id) : [...selectedCauses, id];
-        if (!on) causeView = "picked";
-        renderCauses();
-      };
-      box.appendChild(b);
-    });
-    const help = $("cause-help"), more = $("more-causes"), chg = $("chg-causes");
-    chg.hidden = causeView !== "picked";
-    chg.onclick = () => { causeView = "all"; renderCauses(); };
-    if (causeView === "mine") {
-      help.textContent = "Which cause or causes does this organization serve? Here are the causes from your Social Fingerprint®. Tap the ones that fit, or show all causes.";
-      more.hidden = false; more.textContent = "Show all causes"; more.onclick = () => { causeView = "all"; renderCauses(); };
-    } else if (causeView === "picked") {
-      help.textContent = selectedCauses.length >= 3 ? "Got it. Tap Change to swap one." : "Got it. Does it serve another cause too?";
-      more.hidden = selectedCauses.length >= 3; more.textContent = "Add another cause"; more.onclick = () => { causeView = "all"; renderCauses(); };
-    } else {
-      help.textContent = "Which cause or causes does this organization serve? Choose up to 3.";
-      more.hidden = !selectedCauses.length; more.textContent = "Done"; more.onclick = () => { causeView = "picked"; renderCauses(); };
+  const causeName = id => (CAUSE_LIST.find(c => c[0] === id) || [])[1] || "";
+  // One picker per form (the list entry form and the numbers form). `suggested` = causes hinted by the IRS category.
+  function makeCausePicker(ids) {
+    let selected = [], suggested = [];
+    let view = myCauses.length ? "mine" : "all"; // mine | all | picked
+    function render() {
+      const box = $(ids.box); box.innerHTML = "";
+      const short = [...new Set([...myCauses, ...suggested])];
+      if (selected.length && view !== "all") view = "picked";
+      if (!selected.length && view === "picked") view = short.length ? "mine" : "all";
+      if (view === "mine" && !short.length) view = "all";
+      const shown = view === "picked" ? CAUSE_LIST.filter(([id]) => selected.includes(id))
+        : view === "mine" ? CAUSE_LIST.filter(([id]) => short.includes(id)) : CAUSE_LIST;
+      box.classList.toggle("few", view !== "all");
+      shown.forEach(([id, label]) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "cz";
+        const on = selected.includes(id);
+        b.setAttribute("aria-pressed", String(on)); b.disabled = !on && selected.length >= 3;
+        const img = document.createElement("img"); img.src = ICONS + id + ".jpg"; img.alt = ""; img.loading = "lazy";
+        const t = document.createElement("span"); t.textContent = label;
+        b.append(img, t);
+        if (view !== "picked") {
+          const tag = myCauses.includes(id) ? "Your cause" : suggested.includes(id) ? "IRS category" : "";
+          if (tag) { const f = document.createElement("span"); f.className = "from"; f.textContent = tag; b.appendChild(f); }
+        }
+        b.onclick = () => {
+          selected = on ? selected.filter(x => x !== id) : [...selected, id];
+          if (!on) view = "picked";
+          render();
+        };
+        box.appendChild(b);
+      });
+      const help = $(ids.help), more = $(ids.more), chg = $(ids.chg);
+      chg.hidden = view !== "picked";
+      chg.onclick = () => { view = "all"; render(); };
+      if (view === "mine") {
+        const parts = [myCauses.length && "the causes from your Social Fingerprint®", suggested.some(s => !myCauses.includes(s)) && "a match for its IRS category"].filter(Boolean);
+        help.textContent = "Which cause or causes does this organization serve? Here " + (parts.length > 1 || myCauses.length > 1 ? "are " : "is ") + parts.join(", plus ") + ". Tap the ones that fit, or show all causes.";
+        more.hidden = false; more.textContent = "Show all causes"; more.onclick = () => { view = "all"; render(); };
+      } else if (view === "picked") {
+        help.textContent = selected.length >= 3 ? "Got it. Tap Change to swap one." : "Got it. Does it serve another cause too?";
+        more.hidden = selected.length >= 3; more.textContent = "Add another cause"; more.onclick = () => { view = "all"; render(); };
+      } else {
+        help.textContent = "Which cause or causes does this organization serve? Choose up to 3.";
+        more.hidden = !selected.length; more.textContent = "Done"; more.onclick = () => { view = "picked"; render(); };
+      }
     }
+    render();
+    return {
+      get: () => selected.slice(),
+      set(arr) { selected = toIds(arr); view = selected.length ? "picked" : "mine"; render(); },
+      suggest(arr) { suggested = toIds(arr); if (!selected.length) view = "mine"; render(); },
+      reset() { selected = []; suggested = []; view = "mine"; render(); },
+    };
   }
-  renderCauses();
+  const numCauses = makeCausePicker({ box: "causes", help: "cause-help", more: "more-causes", chg: "chg-causes" });
   const MONEY = ["rev","contrib","exp","prog","mgmt","fund","cash","sav","sec","ezprog","ezliq"];
   let formType = "990";
   const isEZ = () => formType === "990-EZ";
@@ -706,55 +864,73 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
 
   // ---------- Find the organization (ProPublica, through our Worker) ----------
   const titleCase = t => /[a-z]/.test(t) ? t : t.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\b(Of|And|For|The|In|On|At|To)\b/g, w => w.toLowerCase()).replace(/^./, c => c.toUpperCase()).replace(/\b(Inc|Llc|Usa|Ymca|Ywca)\b/gi, w => w.length <= 3 && w.toLowerCase() !== "inc" ? w.toUpperCase() : w);
-  let findTimer = 0, findSeq = 0, findItems = [], findActive = -1;
-  function closeList() { $("find-list").hidden = true; $("find").setAttribute("aria-expanded", "false"); findActive = -1; }
-  function listMsg(t) { const ul = $("find-list"); ul.innerHTML = ""; const li = document.createElement("li"); li.className = "msg"; li.textContent = t; ul.appendChild(li); ul.hidden = false; $("find").setAttribute("aria-expanded", "true"); }
-  function renderList() {
-    const ul = $("find-list"); ul.innerHTML = "";
-    if (!findItems.length) { listMsg("No matches. Try fewer words, or type the details in below."); return; }
-    findItems.forEach((o, i) => {
-      const li = document.createElement("li"); li.setAttribute("role", "option"); li.id = "find-opt-" + i;
-      li.setAttribute("aria-selected", String(i === findActive));
-      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = titleCase(o.name);
-      const loc = document.createElement("span"); loc.className = "loc"; loc.textContent = [o.city && titleCase(o.city), o.state].filter(Boolean).join(", ") + (o.strein ? " · EIN " + o.strein : "");
-      li.append(nm, loc);
-      li.onmousedown = e => { e.preventDefault(); pickOrg(o); };
-      ul.appendChild(li);
+  // Search box with a dropdown of matches; used by both the list entry form and the numbers form.
+  function attachSearch(inputId, listId, onPick) {
+    const inp = $(inputId), ul = $(listId);
+    let timer = 0, seq = 0, items = [], active = -1;
+    const close = () => { ul.hidden = true; inp.setAttribute("aria-expanded", "false"); active = -1; };
+    const say = t => { ul.innerHTML = ""; const li = document.createElement("li"); li.className = "msg"; li.textContent = t; ul.appendChild(li); ul.hidden = false; inp.setAttribute("aria-expanded", "true"); };
+    const pick = o => { close(); inp.value = titleCase(o.name); onPick(o); };
+    function render() {
+      ul.innerHTML = "";
+      if (!items.length) { say("No matches. Try fewer words, or type the details in below."); return; }
+      items.forEach((o, i) => {
+        const li = document.createElement("li"); li.setAttribute("role", "option"); li.id = listId + "-opt-" + i;
+        li.setAttribute("aria-selected", String(i === active));
+        const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = titleCase(o.name);
+        const loc = document.createElement("span"); loc.className = "loc"; loc.textContent = [o.city && titleCase(o.city), o.state].filter(Boolean).join(", ") + (o.strein ? " · EIN " + o.strein : "");
+        li.append(nm, loc);
+        li.onmousedown = e => { e.preventDefault(); pick(o); };
+        ul.appendChild(li);
+      });
+      ul.hidden = false; inp.setAttribute("aria-expanded", "true");
+    }
+    inp.addEventListener("input", () => {
+      clearTimeout(timer);
+      const q = inp.value.trim();
+      if (q.length < 3) { close(); return; }
+      timer = setTimeout(async () => {
+        const n = ++seq; say("Searching…");
+        try {
+          const r = await fetch(API + "/org-search?q=" + encodeURIComponent(q));
+          const j = await r.json(); if (n !== seq) return;
+          if (!r.ok) throw 0;
+          items = j.results || []; active = -1; render();
+        } catch { if (n === seq) say("Search isn't available right now. Type the details in below."); }
+      }, 350);
     });
-    ul.hidden = false; $("find").setAttribute("aria-expanded", "true");
+    inp.addEventListener("keydown", e => {
+      if (ul.hidden || !items.length) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); active = (active + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length; render(); inp.setAttribute("aria-activedescendant", listId + "-opt-" + active); }
+      else if (e.key === "Enter" && active >= 0) { e.preventDefault(); pick(items[active]); }
+      else if (e.key === "Escape") close();
+    });
+    inp.addEventListener("blur", () => setTimeout(close, 150));
+    return { close };
   }
-  $("find").addEventListener("input", () => {
-    clearTimeout(findTimer);
-    const q = $("find").value.trim();
-    if (q.length < 3) { closeList(); return; }
-    findTimer = setTimeout(async () => {
-      const seq = ++findSeq; listMsg("Searching…");
-      try {
-        const r = await fetch(API + "/org-search?q=" + encodeURIComponent(q));
-        const j = await r.json(); if (seq !== findSeq) return;
-        if (!r.ok) throw 0;
-        findItems = j.results || []; findActive = -1; renderList();
-      } catch { if (seq === findSeq) listMsg("Search isn't available right now. Type the details in below."); }
-    }, 350);
-  });
-  $("find").addEventListener("keydown", e => {
-    if ($("find-list").hidden || !findItems.length) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); findActive = (findActive + (e.key === "ArrowDown" ? 1 : -1) + findItems.length) % findItems.length; renderList(); $("find").setAttribute("aria-activedescendant", "find-opt-" + findActive); }
-    else if (e.key === "Enter" && findActive >= 0) { e.preventDefault(); pickOrg(findItems[findActive]); }
-    else if (e.key === "Escape") closeList();
-  });
-  $("find").addEventListener("blur", () => setTimeout(closeList, 150));
+  const orgCache = {};
+  async function getOrg(ein) {
+    const k = String(ein || "").replace(/\D/g, "");
+    if (orgCache[k]) return orgCache[k];
+    const r = await fetch(API + "/org?ein=" + encodeURIComponent(k));
+    const j = await r.json(); if (!r.ok) throw r.status;
+    return (orgCache[k] = j);
+  }
+  const numSearch = attachSearch("find", "find-list", o => { activeId = ""; syncPick(); pickOrg(o); });
+  const closeList = numSearch.close;
   async function pickOrg(o) {
-    closeList(); $("find").value = titleCase(o.name);
     $("org").value = titleCase(o.name); $("ein").value = o.strein || o.ein; $("year").value = "";
+    return loadFiling(o.ein || o.strein, {});
+  }
+  // Looks up an organization's latest 990 and shows the PDF link. keep.year / keep.form leave what the person already has.
+  async function loadFiling(ein, keep) {
     const msg = t => { $("find-msg").textContent = t; $("find-msg").hidden = !t; };
     msg("Looking up its latest 990…"); $("pdf-box").hidden = true; update();
     try {
-      const r = await fetch(API + "/org?ein=" + encodeURIComponent(o.ein));
-      const j = await r.json(); if (!r.ok) throw r.status;
+      const j = await getOrg(ein);
       const f = j.pdfFiling || j.latest;
       if (!f) { msg("We couldn't find a 990 on file for this organization. Very small organizations file only a 990-N postcard, which has no financial numbers."); return; }
-      $("year").value = f.year;
+      if (!keep.year || !$("year").value.trim()) $("year").value = f.year;
       if (f.pdf) {
         $("pdf-link").href = f.pdf;
         $("pdf-link").textContent = "Open its Form " + (f.form || "990") + " for tax year " + f.year + " (PDF)";
@@ -762,7 +938,8 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
         $("pdf-box").hidden = false;
       }
       const notes = [];
-      if (f.form === "990-EZ") { setForm("990-EZ"); notes.push("This organization files the shorter Form 990-EZ, so we've switched the boxes below to match."); }
+      if (keep.form) { if (f.form === "990-PF") notes.push("This is a private foundation (Form 990-PF). These ratios are built for public charities, so results may not fit."); }
+      else if (f.form === "990-EZ") { setForm("990-EZ"); notes.push("This organization files the shorter Form 990-EZ, so we've switched the boxes below to match."); }
       else if (f.form === "990-PF") notes.push("This is a private foundation (Form 990-PF). These ratios are built for public charities, so results may not fit.");
       else setForm("990");
       if (!f.pdf) notes.push("ProPublica doesn't have a PDF of this filing yet. Try the organization's website or Candid (GuideStar), or ask the organization for a copy.");
@@ -779,11 +956,11 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
   $("sample").onclick = () => {
     resetFind(); setForm("990");
     Object.entries(SAMPLE).forEach(([k, v]) => { $(k).value = typeof v === "number" ? v.toLocaleString("en-US") : v; });
-    selectedCauses = ["hunger"]; causeView = "picked"; renderCauses();
+    activeId = ""; syncPick(); numCauses.set(["hunger"]);
     update(); $("sample-note").hidden = false;
     try { $("r-org").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); } catch {}
   };
-  $("clear").onclick = () => { resetFind(); selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses(); $("form").reset(); $("sample-note").hidden = true; update(); };
+  $("clear").onclick = () => { resetFind(); numCauses.reset(); $("form").reset(); activeId = ""; syncPick(); $("sample-note").hidden = true; update(); };
 
   function summary() {
     const lines = [`${$("r-org").textContent}${$("r-meta").textContent.startsWith("Enter") ? "" : " — " + $("r-meta").textContent}`, ""];
@@ -801,7 +978,8 @@ input[type=search] { font: inherit; color: var(--ink); background: #fff; border:
     const org = $("org").value.trim() || "Your organization";
     const meta = [isEZ() && "Form 990-EZ", $("year").value.trim() && "Tax year " + $("year").value.trim(), $("ein").value.trim() && "EIN " + $("ein").value.trim()].filter(Boolean).join(" · ");
     const analyst = $("o-first").value.trim();
-    const causes = selectedCauses.map(id => (CAUSE_LIST.find(c => c[0] === id) || [])[1]).filter(Boolean);
+    const causes = numCauses.get().map(causeName).filter(Boolean);
+    const lr = activeRec();
     const COL = { good: ["#dcefd9", "#2e7d32"], ok: ["#d9eff9", "#0a7fb0"], look: ["#fbecd0", "#9a5b00"], none: ["#f5f3e6", "#5d6a60"] };
     const rows = RATIOS.map(r => {
       const x = results[r.id];
@@ -870,6 +1048,7 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
 <h2>Numbers entered</h2>
 <table class="inputs keep">${inputs}</table>
 <p class="note">Numbers are as entered from the organization's IRS Form ${isEZ() ? "990-EZ" : "990"}.${pdfUrl ? ` Filing: <a href="${esc(pdfUrl)}">${esc(pdfUrl)}</a>` : ""}</p>
+${lr && (lr.notes || lr.mission || lr.website || lr.contact) ? `<h2>From your organization list</h2><table class="inputs keep">${[["Website", lr.website], ["Contact", lr.contact], ["Mission statement", lr.mission], ["Your notes", lr.notes]].filter(r => r[1]).map(r => `<tr><td style="width:1.6in"><b>${esc(r[0])}</b></td><td style="white-space:pre-line">${esc(r[1])}</td></tr>`).join("")}</table>` : ""}
 <h2>Next steps</h2>
 <p class="note" style="font-size:10.5pt">Talk with the organization's leaders, read its impact reports, and visit a program if you can. Go deeper at <a href="https://www.gatewayforgood.com/analyzing-organizations">gatewayforgood.com/analyzing-organizations</a>.</p>
 <footer><span>Charity Analyzer by Gateway for Good® · Reuniting a divided world</span><span>gatewayforgood.com/charity-analyzer</span></footer>
@@ -916,12 +1095,12 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
     // Field Researcher and Trusted Reviewer (outreach-based) return with Step 2, The People.
   ];
   function badgeStats() {
-    const orgs = loadWB().orgs || [];
+    const orgs = (loadWB().orgs || []).filter(analyzed);
     return { orgs: orgs.length, outreach: orgs.filter(o => o.outreach && (o.outreach.stoodOut || o.outreach.responsiveness || o.outreach.outcome)).length };
   }
   function earnedBadges() { const s = badgeStats(); return BADGES.filter(b => { const [h, n] = b.need(s); return h >= n; }).map(b => b.name); }
   function renderBadges() {
-    const wb = loadWB(), orgs = wb.orgs || [];
+    const wb = loadWB(), orgs = (wb.orgs || []).filter(analyzed);
     const s = { orgs: orgs.length, outreach: orgs.filter(o => o.outreach && (o.outreach.stoodOut || o.outreach.responsiveness || o.outreach.outcome)).length };
     const box = $("badges"); box.innerHTML = "";
     BADGES.forEach(b => {
@@ -948,10 +1127,10 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
   $("done").addEventListener("click", e => { if (e.target === $("done")) $("done").hidden = true; });
   $("another").onclick = () => {
     $("done").hidden = true;
-    $("form").reset(); resetFind(); setForm("990"); selectedCauses = []; causeView = myCauses.length ? "mine" : "all"; renderCauses();
+    $("form").reset(); resetFind(); setForm("990"); numCauses.reset(); activeId = ""; syncPick();
     $("sample-note").hidden = true; $("saved").hidden = true; update();
     HOST.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => $("org").focus({ preventScroll: true }), 400);
+    setTimeout(() => ($("pickbox").hidden ? $("org") : $("pick")).focus({ preventScroll: true }), 400);
   };
   // Ages 13-17 (from the Social Fingerprint): no marketing emails.
   const TEEN = (loadWB().person || {}).age === "13-17";
@@ -982,18 +1161,26 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
       ratios: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, typeof v === "object" ? v.value : v])),
       tool: "charity-analyzer",
       shareWithLibrary: $("share").checked,
-      causes: selectedCauses.slice(), analyst: $("o-first").value.trim(), subscribe: !TEEN && $("subscribe").checked, policy: "beta-1.0",
+      causes: numCauses.get(), analyst: $("o-first").value.trim(), subscribe: !TEEN && $("subscribe").checked, policy: "beta-1.0",
       savedAt: new Date().toISOString()
     };
     const before = earnedBadges();
-    const i = wb.orgs.findIndex(o => o.name === name && o.year === rec.year);
-    if (i >= 0) wb.orgs[i] = { ...wb.orgs[i], ...rec }; else wb.orgs.push({ id: "org_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ...rec });
+    // Same organization = the list entry loaded from "Pick from your list", else a match on EIN or name
+    // (a list entry not yet analyzed, or an earlier analysis of the same tax year).
+    const einKey = v => String(v || "").replace(/\D/g, "");
+    const same = o => (rec.ein && einKey(o.ein) === einKey(rec.ein)) || o.name.toLowerCase() === name.toLowerCase();
+    let i = activeId ? wb.orgs.findIndex(o => o.id === activeId) : -1;
+    if (i < 0) i = wb.orgs.findIndex(o => same(o) && (!analyzed(o) || o.year === rec.year));
+    if (i >= 0) wb.orgs[i] = { ...wb.orgs[i], ...rec }; else wb.orgs.push({ id: newId(), listedAt: rec.savedAt, ...rec });
     wb.currentOrg = (wb.orgs[i >= 0 ? i : wb.orgs.length - 1] || {}).id || "";
+    activeId = wb.currentOrg;
     const savedLocal = saveWB(wb);
+    renderOList();
     rec.badges = earnedBadges();
     renderBadges();
     const newBadges = rec.badges.filter(b => !before.includes(b));
-    const count = `You've analyzed ${wb.orgs.length} organization${wb.orgs.length === 1 ? "" : "s"}.`;
+    const nDone = wb.orgs.filter(analyzed).length, nLeft = wb.orgs.length - nDone;
+    const count = `You've analyzed ${nDone} organization${nDone === 1 ? "" : "s"}.` + (nLeft ? ` ${nLeft} more on your list to check.` : "");
     const extras = [count, ...newBadges.map(b => `New badge earned: ${b}`)];
     if (!wantsServer) {
       if (savedLocal) showDone(true, `${name} saved`, ["Saved in this browser.", ...extras]);
@@ -1012,6 +1199,236 @@ ${qs ? `<h2>Questions worth asking</h2><div class="qs keep">Every number has a s
       .catch(() => showDone(false, "Not shared yet", [(savedLocal ? "Your analysis is saved in this browser, but " : "") + "we couldn't reach Gateway for Good just now.", "Close this and click Save again in a moment."]))
       .finally(() => { btn.disabled = false; btn.textContent = "Save organization"; });
   };
+  // ---------- My organization list (online version of the guidebook's Organization Intake Notes) ----------
+  // Lives in gfg_workbook_v1.orgs alongside analyzed organizations, so steps 2 and 3 can pick from the same list.
+  // A list entry becomes "analyzed" once it has ratios from the numbers view.
+  const NTEE_MAJOR = { A: ["Arts, Culture & Humanities", "arts"], B: ["Education", "education"], C: ["Environment", "environment"], D: ["Animal-Related", "animal"], E: ["Health Care", "hospitals"], F: ["Mental Health & Crisis Intervention", "disability"], G: ["Diseases, Disorders & Medical Disciplines", "research"], H: ["Medical Research", "research"], I: ["Crime & Legal-Related", "justice"], J: ["Employment", "family"], K: ["Food, Agriculture & Nutrition", "hunger"], L: ["Housing & Shelter", "housing"], M: ["Public Safety & Disaster Relief", "emergency"], N: ["Recreation & Sports", ""], O: ["Youth Development", "children"], P: ["Human Services", "family"], Q: ["International Affairs", ""], R: ["Civil Rights, Social Action & Advocacy", "justice"], S: ["Community Improvement", ""], T: ["Philanthropy & Grantmaking", ""], U: ["Science & Technology", ""], V: ["Social Science", ""], W: ["Public & Societal Benefit", ""], X: ["Religion-Related", "religious"], Y: ["Mutual & Membership Benefit", ""], Z: ["Unknown", ""] };
+  const NTEE_SUB = [["A23", "cultural"], ["A8", "historic"], ["B6", "informal"], ["B7", "informal"], ["E7", "pubhealth"], ["E9", "elder"], ["P81", "elder"], ["P3", "children"], ["W3", "vets"], ["M2", "emergency"]];
+  function nteeInfo(code) {
+    const c = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); const maj = NTEE_MAJOR[c[0]];
+    if (!maj) return null;
+    const sub = NTEE_SUB.find(([p]) => c.startsWith(p));
+    return { code: c, label: maj[0], cause: sub ? sub[1] : maj[1] };
+  }
+  const fmtBig = n => n >= 1e9 ? "$" + (n / 1e9).toFixed(1).replace(/\.0$/, "") + " billion" : n >= 1e6 ? "$" + (n / 1e6).toFixed(1).replace(/\.0$/, "") + " million" : fmt$(n);
+  const analyzed = o => !!(o && o.ratios && Object.keys(o.ratios).length);
+  const listOrgs = () => loadWB().orgs || [];
+  const activeRec = () => (activeId && listOrgs().find(o => o.id === activeId)) || null;
+  const newId = () => "org_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const webHref = w => /^https?:\/\//i.test(w) ? w : "https://" + w;
+  var activeId = "";   // list entry loaded into the numbers view
+  let editId = "";     // list entry open in the entry form ("" = adding a new one)
+  let eOrg = null;     // what the IRS lookup found for the entry form
+
+  // Yes / No / Not sure buttons
+  const segGet = id => { const b = ROOT.querySelector("#" + id + " button[aria-checked='true']"); return b ? b.dataset.v : ""; };
+  const segSet = (id, v) => ROOT.querySelectorAll("#" + id + " button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.v === v)));
+  ROOT.querySelectorAll("#e-c3 button, #e-vol button").forEach(b => b.onclick = () => {
+    const id = b.parentElement.id; segSet(id, segGet(id) === b.dataset.v ? "" : b.dataset.v);
+    if (id === "e-c3") $("e-c3-note").textContent = "Gifts to 501(c)(3) charities are usually tax-deductible.";
+  });
+
+  const eCauses = makeCausePicker({ box: "e-causes", help: "e-cause-help", more: "e-more", chg: "e-chg" });
+  const eMsg = t => { $("e-msg").textContent = t; $("e-msg").hidden = !t; };
+  const eSearch = attachSearch("e-find", "e-find-list", o => fillFromIRS(o));
+
+  function webFind() {
+    const nm = $("e-name").value.trim(), a = $("e-web-find");
+    a.hidden = !nm || !!$("e-web").value.trim();
+    if (nm) a.href = "https://www.google.com/search?q=" + encodeURIComponent([nm, eOrg && eOrg.city, eOrg && eOrg.state].filter(Boolean).join(" "));
+  }
+  $("e-name").addEventListener("input", webFind);
+  $("e-web").addEventListener("input", webFind);
+
+  function showFacts() {
+    const ul = $("e-facts-list"); ul.innerHTML = "";
+    if (!eOrg) { $("e-facts").hidden = true; return; }
+    const add = t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); };
+    add([eOrg.ein && "EIN " + eOrg.ein, [eOrg.city, eOrg.state].filter(Boolean).join(", ")].filter(Boolean).join(" · "));
+    if (eOrg.subsection === 3) add(eOrg.form === "990-PF" ? "501(c)(3) private foundation" : "501(c)(3) public charity");
+    else if (eOrg.subsection) add("501(c)(" + eOrg.subsection + ") organization. Gifts may not be tax-deductible.");
+    const n = nteeInfo(eOrg.ntee); if (n) add("IRS category: " + n.label + " (" + n.code + ")");
+    if (eOrg.revenue != null) add("Revenue: " + fmtBig(eOrg.revenue) + (eOrg.finYear ? " (tax year " + eOrg.finYear + ")" : ""));
+    if (eOrg.year) add("Latest 990 on file: tax year " + eOrg.year + (eOrg.form && eOrg.form !== "990" ? " (Form " + eOrg.form + ")" : ""));
+    $("e-facts").hidden = !ul.children.length;
+  }
+  async function fillFromIRS(o) {
+    $("e-name").value = titleCase(o.name);
+    eOrg = { name: titleCase(o.name), ein: o.strein || o.ein, city: o.city ? titleCase(o.city) : "", state: o.state || "" };
+    showFacts(); webFind(); eMsg("Looking it up…");
+    try {
+      const j = await getOrg(o.ein || o.strein);
+      const f = j.pdfFiling || j.latest || {};
+      eOrg = { ...eOrg, subsection: j.subsection || null, ntee: j.ntee || "", revenue: j.revenue == null ? null : j.revenue, finYear: j.finYear || "", year: f.year || "", form: f.form || "" };
+      if (eOrg.subsection === 3) { segSet("e-c3", "yes"); $("e-c3-note").textContent = "From IRS records."; }
+      else if (eOrg.subsection) { segSet("e-c3", "no"); $("e-c3-note").textContent = "From IRS records: it's a 501(c)(" + eOrg.subsection + "), so gifts may not be tax-deductible."; }
+      const n = nteeInfo(eOrg.ntee); if (n && n.cause) eCauses.suggest([n.cause]);
+      showFacts(); eMsg("");
+    } catch { eMsg("We filled in the name and tax ID, but couldn't look up the rest just now. Add what you know below."); }
+  }
+
+  function resetEntry() {
+    $("entry").reset(); eSearch.close(); eOrg = null; editId = "";
+    segSet("e-c3", ""); segSet("e-vol", ""); $("e-c3-note").textContent = "Gifts to 501(c)(3) charities are usually tax-deductible.";
+    eCauses.reset(); showFacts(); eMsg(""); webFind(); $("e-err").hidden = true;
+    $("entry-h").textContent = "Add an organization"; $("e-save").textContent = "Add to my list";
+  }
+  function showEntry(on) {
+    const has = listOrgs().length > 0;
+    $("entry").hidden = !on && has;
+    $("e-cancel").hidden = !has;
+    $("addmore").hidden = on || !has;
+  }
+  function openEntry(rec) {
+    resetEntry();
+    if (rec) {
+      editId = rec.id;
+      $("entry-h").textContent = "Edit " + rec.name; $("e-save").textContent = "Save changes";
+      $("e-name").value = rec.name || ""; $("e-web").value = rec.website || ""; $("e-contact").value = rec.contact || "";
+      $("e-mission").value = rec.mission || ""; $("e-notes").value = rec.notes || "";
+      segSet("e-c3", rec.c3 || ""); segSet("e-vol", rec.volunteer || "");
+      if (rec.ein || rec.city || rec.ntee) eOrg = { name: rec.name, ein: rec.ein || "", city: rec.city || "", state: rec.state || "", subsection: rec.subsection || null, ntee: rec.ntee || "", revenue: rec.revenue == null ? null : rec.revenue, finYear: rec.finYear || "", year: rec.irsYear || "", form: rec.irsForm || "" };
+      const n = nteeInfo(rec.ntee); if (n && n.cause) eCauses.suggest([n.cause]);
+      eCauses.set(rec.causes || []); showFacts(); webFind();
+    }
+    showEntry(true);
+    $("entry").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    setTimeout(() => (rec ? $("e-name") : $("e-find")).focus({ preventScroll: true }), 350);
+  }
+  $("add-another").onclick = () => openEntry(null);
+  $("e-cancel").onclick = () => { resetEntry(); showEntry(false); };
+
+  $("entry").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = $("e-name").value.trim();
+    const err = t => { $("e-err").textContent = t; $("e-err").hidden = !t; };
+    if (!name) { err("Add the organization's name first."); $("e-name").focus(); return; }
+    const wb = loadWB(); wb.version = 1; wb.orgs = wb.orgs || [];
+    const now = new Date().toISOString();
+    const rec = {
+      name, website: $("e-web").value.trim(), contact: $("e-contact").value.trim(),
+      c3: segGet("e-c3"), volunteer: segGet("e-vol"), mission: $("e-mission").value.trim(),
+      causes: eCauses.get(), notes: $("e-notes").value.trim(), updatedAt: now,
+    };
+    if (eOrg) Object.assign(rec, { ein: eOrg.ein || "", city: eOrg.city || "", state: eOrg.state || "", subsection: eOrg.subsection || null, ntee: eOrg.ntee || "", revenue: eOrg.revenue == null ? null : eOrg.revenue, finYear: eOrg.finYear || "", irsYear: eOrg.year || "", irsForm: eOrg.form || "" });
+    const einKey = v => String(v || "").replace(/\D/g, "");
+    let i = editId ? wb.orgs.findIndex(o => o.id === editId) : -1;
+    let dup = false;
+    if (i < 0) { i = wb.orgs.findIndex(o => (rec.ein && einKey(o.ein) === einKey(rec.ein)) || (o.name || "").toLowerCase() === name.toLowerCase()); dup = i >= 0; }
+    let id;
+    if (i >= 0) { wb.orgs[i] = { ...wb.orgs[i], ...rec }; id = wb.orgs[i].id || (wb.orgs[i].id = newId()); }
+    else { id = newId(); wb.orgs.push({ id, listedAt: now, source: eOrg ? "irs" : "manual", ...rec }); }
+    if (!saveWB(wb)) { err("This browser isn't allowing saves, so your list can't be kept here. Try a different browser, or turn off private browsing."); return; }
+    resetEntry(); renderOList(); showEntry(false);
+    const li = $("olist").querySelector(`[data-id="${id}"]`);
+    if (li) {
+      li.classList.add("flash"); setTimeout(() => li.classList.remove("flash"), 1300);
+      if (dup) { const n = document.createElement("p"); n.className = "hint"; n.textContent = "This one was already on your list, so we updated it."; li.appendChild(n); setTimeout(() => n.remove(), 5000); }
+    }
+    $("addmore").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  });
+
+  function renderOList() {
+    const orgs = listOrgs(), ul = $("olist"); ul.innerHTML = "";
+    const nDone = orgs.filter(analyzed).length;
+    $("list-card").hidden = !orgs.length;
+    $("tab-count").textContent = orgs.length ? String(orgs.length) : "";
+    $("list-sum").textContent = orgs.length ? `${orgs.length} organization${orgs.length === 1 ? "" : "s"} · ${nDone} with numbers checked` : "";
+    $("list-next").hidden = !orgs.length;
+    $("list-next-h").textContent = nDone && nDone === orgs.length ? "Every organization's numbers are checked" : "First round captured?";
+    orgs.forEach(o => {
+      const li = document.createElement("li"); li.className = "oitem"; li.dataset.id = o.id || "";
+      const top = document.createElement("div"); top.className = "otop";
+      const head = document.createElement("div");
+      const nm = document.createElement("div"); nm.className = "onm"; nm.textContent = o.name;
+      const meta = document.createElement("div"); meta.className = "ometa";
+      meta.textContent = [[o.city, o.state].filter(Boolean).join(", "), o.ein && "EIN " + o.ein].filter(Boolean).join(" · ");
+      if (o.website) { if (meta.textContent) meta.append(" · "); const a = document.createElement("a"); a.href = webHref(o.website); a.target = "_blank"; a.rel = "noopener"; a.textContent = o.website.replace(/^https?:\/\//i, "").replace(/\/$/, ""); meta.appendChild(a); }
+      head.append(nm, meta);
+      const pill = document.createElement("span");
+      pill.className = "pill " + (analyzed(o) ? "good" : "none"); pill.textContent = analyzed(o) ? "Numbers checked" + (o.year ? " · " + o.year : "") : "Numbers not checked yet";
+      top.append(head, pill); li.appendChild(top);
+      if ((o.causes || []).length) {
+        const cz = document.createElement("div"); cz.className = "ocz";
+        o.causes.forEach(id => { const label = causeName(id); if (!label) return; const s = document.createElement("span"); const im = document.createElement("img"); im.src = ICONS + id + ".jpg"; im.alt = ""; im.loading = "lazy"; s.append(im, label); cz.appendChild(s); });
+        li.appendChild(cz);
+      }
+      const facts = [o.c3 === "yes" && "501(c)(3)", o.c3 === "no" && "Not a 501(c)(3)", o.volunteer === "yes" && "Volunteer opportunities", o.contact && "Contact: " + o.contact].filter(Boolean);
+      if (facts.length) { const f = document.createElement("div"); f.className = "ometa"; f.textContent = facts.join(" · "); li.appendChild(f); }
+      if (o.notes) { const n = document.createElement("p"); n.className = "onotes"; n.textContent = o.notes; li.appendChild(n); }
+      const act = document.createElement("div"); act.className = "oact";
+      const go = document.createElement("button"); go.type = "button"; go.className = "btn" + (analyzed(o) ? " ghost" : "");
+      go.textContent = analyzed(o) ? "See its numbers →" : "Check its numbers →";
+      go.onclick = () => { loadFromList(o.id); showView("numbers", true); };
+      const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkish"; ed.textContent = "Edit";
+      ed.onclick = () => openEntry(listOrgs().find(x => x.id === o.id));
+      const rm = document.createElement("button"); rm.type = "button"; rm.className = "linkish danger"; rm.textContent = "Remove";
+      let armed = 0;
+      rm.onclick = () => {
+        if (!armed) { rm.textContent = "Tap again to remove"; armed = setTimeout(() => { armed = 0; rm.textContent = "Remove"; }, 4000); return; }
+        clearTimeout(armed);
+        const wb = loadWB(); wb.orgs = (wb.orgs || []).filter(x => x.id !== o.id);
+        if (wb.currentOrg === o.id) wb.currentOrg = "";
+        if (activeId === o.id) activeId = "";
+        if (editId === o.id) resetEntry();
+        saveWB(wb); renderOList(); renderBadges();
+        showEntry(!wb.orgs.length || !$("entry").hidden);
+      };
+      act.append(go, ed, rm); li.appendChild(act);
+      ul.appendChild(li);
+    });
+    syncPick();
+  }
+
+  // "Pick from your list" in the numbers view
+  function syncPick() {
+    const orgs = listOrgs(), sel = $("pick");
+    $("pickbox").hidden = !orgs.length;
+    sel.innerHTML = "";
+    const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Choose an organization…"; sel.appendChild(o0);
+    orgs.forEach(o => { const op = document.createElement("option"); op.value = o.id; op.textContent = o.name + (analyzed(o) ? " (numbers checked)" : ""); sel.appendChild(op); });
+    sel.value = orgs.some(o => o.id === activeId) ? activeId : "";
+  }
+  $("pick").onchange = () => { if ($("pick").value) loadFromList($("pick").value); else { activeId = ""; } };
+  function loadFromList(id) {
+    const wb = loadWB(), rec = (wb.orgs || []).find(o => o.id === id);
+    if (!rec) return;
+    activeId = id; wb.currentOrg = id; saveWB(wb);
+    $("form").reset(); resetFind(); $("sample-note").hidden = true; $("saved").hidden = true;
+    const hasInputs = rec.inputs && Object.values(rec.inputs).some(v => v != null);
+    setForm(rec.form || rec.irsForm === "990-EZ" && "990-EZ" || "990");
+    $("org").value = rec.name || ""; $("ein").value = rec.ein || ""; $("year").value = rec.year || "";
+    if (hasInputs) Object.entries(rec.inputs).forEach(([k, v]) => { if ($(k)) $(k).value = v == null ? "" : Math.round(v).toLocaleString("en-US"); });
+    if (rec.causes && rec.causes.length) numCauses.set(rec.causes); else numCauses.reset();
+    syncPick(); update();
+    if (rec.ein) loadFiling(rec.ein, { year: !!rec.year, form: hasInputs });
+    else { $("find-msg").textContent = "No tax ID on file for this one. Search for it above to find its 990, or type the numbers in from a copy you have."; $("find-msg").hidden = false; }
+  }
+
+  // ---------- Views ----------
+  function showView(v, scroll) {
+    const isList = v !== "numbers";
+    $("view-list").hidden = !isList; $("view-numbers").hidden = isList;
+    $("tab-list").setAttribute("aria-selected", String(isList)); $("tab-numbers").setAttribute("aria-selected", String(!isList));
+    try { history.replaceState(null, "", location.pathname + location.search + (isList ? "#list" : "#numbers")); } catch {}
+    if (scroll) HOST.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+  $("tab-list").onclick = () => showView("list");
+  $("tab-numbers").onclick = () => showView("numbers");
+  $("go-numbers").onclick = () => {
+    const next = listOrgs().find(o => !analyzed(o));
+    if (next && !activeId) loadFromList(next.id);
+    showView("numbers", true);
+  };
+  $("back-list").onclick = () => { $("done").hidden = true; showView("list", true); };
+  ROOT.querySelectorAll('[role="tab"]').forEach((t, i, all) => t.addEventListener("keydown", e => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const n = all[(i + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length]; n.click(); n.focus();
+  }));
+
+  renderOList(); resetEntry(); showEntry(!listOrgs().length);
+  showView(location.hash === "#numbers" ? "numbers" : "list");
+
   try { const p = loadWB().person; if (p && p.email) $("o-email").value = p.email; if (p && p.first) $("o-first").value = p.first; } catch {}
   renderBadges();
 
