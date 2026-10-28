@@ -173,6 +173,7 @@ async function kajabiContacts(env) {
     const p = get(r.email); if (!p) continue;
     const nm = [r.first_name, r.last_name].filter(Boolean).join(" "); if (nm) p.name = nm;
     if (r.subscribe) p.sub = true;
+    if (r.tool === "mission-group") { p.tags.add("Tool: My Mission"); p.tags.add("Tool: My Mission (Group)"); cs(p, r.causes, ""); continue; } // group's focus causes only; the group's strengths aren't this person's
     if (r.tool === "mission") { p.tags.add("Tool: My Mission"); p.tags.add("Tool: Social Fingerprint Index"); } else p.tags.add("Tool: Statements");
     cs(p, r.causes, r.strengths);
   }

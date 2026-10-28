@@ -178,9 +178,27 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 .sites a, .sites button { font: inherit; font-size: 14px; font-weight: 600; color: var(--green-ink); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; text-decoration: none; cursor: pointer; }
 .sites a:hover, .sites button:hover { border-color: var(--green); }
 .star-note { font-size: 14px; color: var(--green-ink); background: var(--green-soft); border-radius: 10px; padding: 10px 12px; }
+
+/* Group mode: one page, two voices. .grp-only shows only for "Our group"; .me-only only for "Myself". */
+.wrap.grp .me-only { display: none !important; }
+.wrap:not(.grp) .grp-only { display: none !important; }
+.who-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.who-row .hint { font-weight: 600; color: var(--ink); }
+.tally { display: grid; gap: 6px; }
+.trow { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
+.trow img { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex: none; }
+.trow .nm { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.25; }
+.trow label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.trow input[type=number] { font: inherit; font-size: 15px; width: 64px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); text-align: center; }
+.trow button.star { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; flex: none; }
+.trow button.star svg { width: 17px; height: 17px; stroke: var(--muted); fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.trow button.star[aria-pressed="true"] { border-color: var(--gold); background: #fff6dc; }
+.trow button.star[aria-pressed="true"] svg { stroke: var(--gold); fill: var(--gold); }
+.trow button.star:disabled { opacity: .35; cursor: not-allowed; }
+.focus-line { font-size: 14px; color: var(--green-ink); background: var(--green-soft); border-radius: 10px; padding: 8px 12px; }
 </style>
 
-<div class="wrap">
+<div class="wrap" id="wrap">
   <span id="top"></span>
   <nav class="journey" aria-label="Social Fingerprint Index steps">
     <span class="jt">Make a Difference · Connect · Your Social Fingerprint®</span>
@@ -194,9 +212,40 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 1 · STEP A: Notes -->
   <section class="card" id="s1" aria-labelledby="h-s1">
     <div class="eyebrow">Social Fingerprint Index · Step 3: My Mission</div>
-    <h1 id="h-s1">Discover Your Giving Mission</h1>
-    <p class="lead">You know what you care about and the strengths you bring. Now let's put why into words. Jot down thoughts, phrases, or stories for each prompt. Gigi will shape them into your Giving Statement, and you choose the version that feels right.</p>
-    <div class="fp" id="fp">
+    <h1 id="h-s1"><span class="me-only">Discover Your Giving Mission</span><span class="grp-only">Discover Your Group's Giving Mission</span></h1>
+    <p class="lead me-only">You know what you care about and the strengths you bring. Now let's put why into words. Jot down thoughts, phrases, or stories for each prompt. Gigi will shape them into your Giving Statement, and you choose the version that feels right.</p>
+    <p class="lead grp-only">You know what your group cares about and the strengths you bring together. Now let's put your why into words. Talk it through as a group, then jot down thoughts, phrases, or stories for each prompt. Gigi will shape them into your group's Giving Statement, and you choose the version that fits.</p>
+
+    <div class="who-row" role="group" aria-label="Who is this Giving Statement for">
+      <span class="hint">This Giving Statement is for:</span>
+      <div class="seg">
+        <button type="button" id="who-me" aria-pressed="true">Myself</button>
+        <button type="button" id="who-group" aria-pressed="false">Our group</button>
+      </div>
+    </div>
+
+    <!-- Group mode: about the group -->
+    <div class="fp grp-only" id="gsetup">
+      <div class="fp-head"><h2>About your group</h2></div>
+      <label class="field" for="g-name">Group name <span class="hint" style="font-weight:400">Shown on your group's statement and report.</span><input id="g-name" type="text" maxlength="60" placeholder="e.g. Tuesday Rotary, The Garcia Family, Grade 8 Leadership"></label>
+      <div class="qrow"><h3>What kind of group are you?</h3><div class="seg" id="seg-gtype"></div></div>
+      <div class="qrow"><h3>About how many of you?</h3><div class="seg" id="seg-gsize"></div></div>
+      <div class="qrow"><h3>Ages in your group <span class="hint" style="font-weight:400">Pick any. We'll suggest age-appropriate opportunities.</span></h3><div class="seg" id="seg-gages"></div></div>
+    </div>
+
+    <!-- Group mode: the group's causes and strengths, entered by hand for now -->
+    <div class="fp grp-only" id="gfp">
+      <div class="fp-head"><h2>Your group's causes &amp; strengths</h2></div>
+      <p class="hint">Gather everyone's Social Fingerprint® results, or the list from your Community Social Fingerprint® Circle, and enter them here.</p>
+      <div class="qrow"><h3>Which causes are you entering?</h3><div class="seg" id="seg-gscope"></div></div>
+      <p class="hint" id="gscope-help"></p>
+      <div><div class="picked-row"><span class="picked">Causes</span><span class="hint" id="gc-count"></span></div><div class="icons" id="gic-causes"></div></div>
+      <div class="tally" id="gt-causes" hidden></div>
+      <div><div class="picked-row"><span class="picked">Giving strengths <span class="hint" style="font-weight:400">Everyone's, as many as you have</span></span><span class="hint" id="gs-count"></span></div><div class="icons" id="gic-strengths"></div></div>
+      <div class="tally" id="gt-strengths" hidden></div>
+    </div>
+
+    <div class="fp me-only" id="fp">
       <div class="fp-head"><h2>Your causes &amp; strengths</h2><span class="hint" id="fp-src">Pick three of each</span></div>
       <p class="hint" id="fp-help">Tap your top three causes and top three giving strengths. Haven't done My Causes and My Strengths yet? <a id="fp-link" target="_top">Start with My Causes</a></p>
       <div><div class="picked-row"><span class="picked">Causes</span><button class="linkish" type="button" id="chg-causes" hidden>Change</button></div><div class="icons" id="ic-causes"></div></div>
@@ -209,14 +258,6 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
     <blockquote class="twain">"The two most important days in your life are the day you are born and the day you find out why." — Mark Twain</blockquote>
 
-    <div class="actions" role="group" aria-label="Who is this for">
-      <span class="hint">I'm writing this for:</span>
-      <div class="seg">
-        <button type="button" id="who-me" aria-pressed="true">Myself</button>
-        <button type="button" id="who-group" aria-pressed="false">My group or family</button>
-      </div>
-    </div>
-
     <div class="mic">
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="#00a8e8"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="#00a8e8" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
       <span>Rather talk than type? Tap a box, then tap the microphone on your keyboard and just say what comes to mind.</span>
@@ -224,24 +265,27 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
     <div class="prompt">
       <h2>1. Purpose <small>Why we care</small></h2>
-      <ul><li>Why does this cause matter to you?</li><li>What experiences or values make it personal?</li></ul>
-      <textarea id="purpose" aria-label="Purpose notes" placeholder="e.g. My dad volunteered at the food bank every Saturday. Nobody should go to bed hungry in a town this generous…"></textarea>
+      <ul class="me-only"><li>Why does this cause matter to you?</li><li>What experiences or values make it personal?</li></ul>
+      <ul class="grp-only"><li>Why do these causes matter to us?</li><li>What experiences or values make it personal for our group?</li></ul>
+      <textarea id="purpose" aria-label="Purpose notes"></textarea>
     </div>
     <div class="prompt">
       <h2>2. Vision <small>What success looks like</small></h2>
-      <ul><li>What impact do you want to create?</li><li>What will be different, however small, because of what you've done?</li></ul>
-      <textarea id="vision" aria-label="Vision notes" placeholder="e.g. More families in our neighborhood know where to get help, and more neighbors are showing up to give it…"></textarea>
+      <ul class="me-only"><li>What impact do you want to create?</li><li>What will be different, however small, because of what you've done?</li></ul>
+      <ul class="grp-only"><li>What impact do we want to create together?</li><li>What will be different, however small, when we've completed this journey?</li></ul>
+      <textarea id="vision" aria-label="Vision notes"></textarea>
     </div>
     <div class="prompt">
       <h2>3. Mission <small>How we'll make it happen</small></h2>
-      <ul><li>How will you use your time, strengths, or resources?</li><li>What steps will you take, alone or as a group?</li></ul>
-      <textarea id="mission" aria-label="Mission notes" placeholder="e.g. Host a monthly food drive, use my network to recruit volunteers, donate a set amount each quarter…"></textarea>
+      <ul class="me-only"><li>How will you use your time, strengths, or resources?</li><li>What steps will you take, alone or as a group?</li></ul>
+      <ul class="grp-only"><li>How will we use our time, strengths, or resources?</li><li>Which of our giving strengths can we put to work?</li></ul>
+      <textarea id="mission" aria-label="Mission notes"></textarea>
     </div>
 
     <p class="err" id="err1" hidden></p>
     <div class="actions">
-      <button class="btn" id="go-draft" type="button">Draft my statement</button>
-      <button class="linkish" id="go-manual" type="button">I'd rather write it myself</button>
+      <button class="btn" id="go-draft" type="button"><span class="me-only">Draft my statement</span><span class="grp-only">Draft our statement</span></button>
+      <button class="linkish" id="go-manual" type="button"><span class="me-only">I'd rather write it myself</span><span class="grp-only">We'd rather write it ourselves</span></button>
     </div>
     <p class="ai"><span aria-hidden="true">✦</span><span><b>Drafting uses AI.</b> When you tap Draft, Gigi, our fun-loving, hard-working AI giving intern, turns your notes and picks into suggested wording. Gigi is an AI powered by Claude from Anthropic: your notes and picks are sent to write the drafts, but your name and email aren't. Please leave out health, financial or other sensitive details. Every suggestion is yours to change, and nothing is saved with your name unless you choose to email yourself a copy.</span></p>
   </section>
@@ -249,7 +293,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 1 · STEP B: Choose -->
   <section class="card" id="s2" hidden aria-labelledby="h-s2">
     <div class="eyebrow">Choose a starting point</div>
-    <h1 id="h-s2">Which of these sounds most like you?</h1>
+    <h1 id="h-s2"><span class="me-only">Which of these sounds most like you?</span><span class="grp-only">Which of these sounds most like your group?</span></h1>
     <p>Pick the one closest to how you'd say it. You'll be able to change any word on the next screen.</p>
     <div class="thinking" id="thinking" hidden><span class="dots"><i></i><i></i><i></i></span><span>Gigi is reading your notes and drafting three versions…</span></div>
     <div class="options" id="options" role="radiogroup" aria-label="Statement versions"></div>
@@ -264,7 +308,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 1 · STEP C: Refine -->
   <section class="card" id="s3" hidden aria-labelledby="h-s3">
     <div class="eyebrow">Make it yours</div>
-    <h1 id="h-s3">Refine your statement</h1>
+    <h1 id="h-s3"><span class="me-only">Refine your statement</span><span class="grp-only">Refine your group's statement</span></h1>
     <p id="refine-intro">Change anything that doesn't sound like you. Short and memorable beats complete.</p>
     <label class="field" for="e-purpose">Purpose<textarea id="e-purpose" style="min-height:76px"></textarea></label>
     <label class="field" for="e-vision">Vision<textarea id="e-vision" style="min-height:76px"></textarea></label>
@@ -272,7 +316,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     <label class="field" for="e-combined">Giving Statement <span class="hint" style="font-weight:400">Purpose, vision and mission in one or two sentences. Your North Star.</span><textarea id="e-combined"></textarea></label>
     <p class="err" id="err3" hidden></p>
     <div class="actions">
-      <button class="btn" id="go-save" type="button">This is my Giving Statement</button>
+      <button class="btn" id="go-save" type="button"><span class="me-only">This is my Giving Statement</span><span class="grp-only">This is our Giving Statement</span></button>
       <button class="linkish" id="back2" type="button">Back to the versions</button>
     </div>
   </section>
@@ -280,7 +324,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 1 · STEP D: Your Giving Statement (share) -->
   <section class="card" id="s4" hidden aria-labelledby="h-s4">
     <div class="north">
-      <div class="eyebrow" id="h-s4">Your Giving Statement</div>
+      <div class="eyebrow" id="h-s4"><span class="me-only">Your Giving Statement</span><span class="grp-only">Our Giving Statement</span></div>
       <p class="stmt" id="out-combined"></p>
       <div class="who" id="out-who"></div>
     </div>
@@ -295,28 +339,28 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
 
     <div class="namebox" id="namebox">
-      <h2>Put your name on it</h2>
-      <p class="hint" id="name-help">Your name appears after your statement on the image you share, like a quote.</p>
-      <div class="row2">
+      <h2><span class="me-only">Put your name on it</span><span class="grp-only">Put your group's name on it</span></h2>
+      <p class="hint" id="name-help"><span class="me-only">Your name appears after your statement on the image you share, like a quote.</span><span class="grp-only">Your group's name appears after your statement on the image you share, like a quote.</span></p>
+      <div class="row2 me-only">
         <label class="field" for="n-first">First name<input id="n-first" type="text" autocomplete="given-name" maxlength="40"></label>
         <label class="field" for="n-last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="n-last" type="text" autocomplete="family-name" maxlength="40"></label>
       </div>
-      <label class="field" for="n-group" id="n-group-wrap" hidden>Group or family name<input id="n-group" type="text" maxlength="60"></label>
-      <label class="check" id="n-adult-wrap"><input type="checkbox" id="n-adult"><span>Show my name on my shared statement. I'm 18 or older.</span></label>
+      <label class="field grp-only" for="n-group" id="n-group-wrap">Group name<input id="n-group" type="text" maxlength="60"></label>
+      <label class="check" id="n-adult-wrap"><input type="checkbox" id="n-adult"><span class="me-only">Show my name on my shared statement. I'm 18 or older.</span><span class="grp-only">Show our group name on our shared statement. I'm 18 or older.</span></label>
     </div>
 
     <div class="nextbox">
-      <h2>Part 2: How You Want to Get Involved</h2>
-      <p class="hint">Six quick questions, about two minutes. Your answers turn your Giving Statement into a search that finds organizations that fit you.</p>
+      <h2><span class="me-only">Part 2: How You Want to Get Involved</span><span class="grp-only">Part 2: How Your Group Wants to Get Involved</span></h2>
+      <p class="hint"><span class="me-only">Six quick questions, about two minutes. Your answers turn your Giving Statement into a search that finds organizations that fit you.</span><span class="grp-only">Five quick questions, about two minutes. Your answers turn your group's Giving Statement into a search that finds organizations that fit your group.</span></p>
       <div class="actions"><button class="btn" type="button" id="go-part2">Continue to Part 2 →</button></div>
     </div>
 
     <div class="starshare">
-      <h2>Share your Giving Statement</h2>
-      <p class="hint">Here's your statement as an image. Post it to inspire friends, or save it as a daily reminder of why you give.</p>
+      <h2><span class="me-only">Share your Giving Statement</span><span class="grp-only">Share your group's Giving Statement</span></h2>
+      <p class="hint"><span class="me-only">Here's your statement as an image. Post it to inspire friends, or save it as a daily reminder of why you give.</span><span class="grp-only">Here's your statement as an image. Share it with your group, post it to inspire others, or print it for your next meeting.</span></p>
       <img class="star-img" id="star-img" alt="Your Giving Statement as a shareable image">
       <div class="actions">
-        <button class="btn" type="button" id="star-share">Share my Giving Statement</button>
+        <button class="btn" type="button" id="star-share"><span class="me-only">Share my Giving Statement</span><span class="grp-only">Share our Giving Statement</span></button>
         <button class="btn ghost" type="button" id="star-dl">Save image</button>
       </div>
       <div class="sites" aria-label="Post on a site">
@@ -335,7 +379,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 2 · Q1: How -->
   <section class="card" id="g1" hidden aria-labelledby="h-g1">
     <div class="eyebrow">How you want to get involved · 1 of 6</div>
-    <h1 id="h-g1">How do you want to get involved?</h1>
+    <h1 id="h-g1"><span class="me-only">How do you want to get involved?</span><span class="grp-only">How does your group want to get involved?</span></h1>
     <p id="g1-intro">Pick as many as you like, then tap the star on your top one or two.</p>
     <div class="tiles" id="t-how"></div>
     <p class="counter" id="star-count"></p>
@@ -366,7 +410,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 2 · Q3: Where -->
   <section class="card" id="g3" hidden aria-labelledby="h-g3">
     <div class="eyebrow">How you want to get involved · 3 of 6</div>
-    <h1 id="h-g3">Where do you want to make a difference?</h1>
+    <h1 id="h-g3"><span class="me-only">Where do you want to make a difference?</span><span class="grp-only">Where does your group want to make a difference?</span></h1>
     <p>Pick any that fit.</p>
     <div class="tiles" id="t-where"></div>
     <div class="followup" id="zip-wrap" hidden>
@@ -389,7 +433,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 2 · Q4: Time -->
   <section class="card" id="g4" hidden aria-labelledby="h-g4">
     <div class="eyebrow">How you want to get involved · 4 of 6</div>
-    <h1 id="h-g4">How much time do you want to give?</h1>
+    <h1 id="h-g4"><span class="me-only">How much time do you want to give?</span><span class="grp-only">How much time does your group want to give?</span></h1>
     <p>Pick one.</p>
     <div class="tiles wide" id="t-time"></div>
     <div class="actions">
@@ -402,7 +446,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   <!-- PART 2 · Q5: Organization -->
   <section class="card" id="g5" hidden aria-labelledby="h-g5">
     <div class="eyebrow">How you want to get involved · 5 of 6</div>
-    <h1 id="h-g5">What kind of organization fits you?</h1>
+    <h1 id="h-g5"><span class="me-only">What kind of organization fits you?</span><span class="grp-only">What kind of organization fits your group?</span></h1>
     <div class="qrow"><h3>Size <span class="hint" style="font-weight:400">Pick any that fit.</span></h3><div class="tiles wide" id="t-size"></div></div>
     <div class="qrow"><h3>Approach</h3><div class="tiles wide" id="t-approach"></div></div>
     <div class="actions">
@@ -427,9 +471,9 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
   <!-- RESULT: Search prompt -->
   <section class="card" id="out" hidden aria-labelledby="h-out">
-    <div class="eyebrow">Your Social Fingerprint is complete</div>
+    <div class="eyebrow"><span class="me-only">Your Social Fingerprint is complete</span><span class="grp-only">Your group's Social Fingerprint is complete</span></div>
     <h1 id="h-out">Let's find where it fits.</h1>
-    <p>Here's a search prompt built from your Giving Statement, causes, strengths, and how you want to get involved. Paste it into any AI tool, like ChatGPT, Claude, Gemini, or Perplexity, and it will suggest organizations that match. You can also run quick web searches below.</p>
+    <p>Here's a search prompt built from your <span class="grp-only">group's </span>Giving Statement, causes, strengths, and how you want to get involved. Paste it into any AI tool, like ChatGPT, Claude, Gemini, or Perplexity, and it will suggest organizations that match. You can also run quick web searches below.</p>
     <div class="summary" id="summary"></div>
     <div class="actions"><button class="linkish" type="button" id="edit-answers">Change my answers</button></div>
 
@@ -460,13 +504,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     </div>
 
     <div class="sendbox">
-      <h2>Get your updated Social Fingerprint report</h2>
-      <p class="hint">We'll email your full Social Fingerprint report, now with your Giving Statement at the top, your search prompt, and where you are on your giving path. Prefer a file? Download it as a PDF. Your answers are also saved in this browser.</p>
+      <h2><span class="me-only">Get your updated Social Fingerprint report</span><span class="grp-only">Get your Group Social Fingerprint report</span></h2>
+      <p class="hint me-only">We'll email your full Social Fingerprint report, now with your Giving Statement at the top, your search prompt, and where you are on your giving path. Prefer a file? Download it as a PDF. Your answers are also saved in this browser.</p>
+      <p class="hint grp-only">We'll email your group's report: your Giving Statement at the top, your group's causes and strengths, your search prompt, and where you are on your giving path. Forward it to your group, or download it as a PDF to print. Your answers are also saved in this browser.</p>
       <div class="row2">
         <label class="field" for="first">First name<input id="first" type="text" autocomplete="given-name"></label>
         <label class="field" for="last">Last name <span class="hint" style="font-weight:400">(optional)</span><input id="last" type="text" autocomplete="family-name"></label>
       </div>
-      <label class="field" for="group" id="group-wrap" hidden>Group or family name<input id="group" type="text"></label>
+      <label class="field grp-only" for="group" id="group-wrap">Group name<input id="group" type="text" maxlength="60"></label>
       <label class="field" for="email">Email<input id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
       <label class="check" id="sub-wrap"><input type="checkbox" id="subscribe" checked><span>Keep me informed about ways to make a difference with Gateway for Good.</span></label>
       <label class="check" id="age-wrap"><input type="checkbox" id="age"><span>I'm 13 or older, and I agree to the <a href="https://www.gatewayforgood.com/terms-of-use" target="_blank" rel="noopener">Terms of Use</a> and have read the <a href="https://www.gatewayforgood.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
@@ -562,25 +607,167 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const show = (el, msg) => { el.textContent = msg; el.hidden = !msg; };
   const toTop = () => { try { $("top").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); } catch {} };
 
+  // ---------- Group mode ----------
+  // "Our group" keeps its own notes, statement, causes, strengths and Part 2 answers in wb.group, so a person's own
+  // Social Fingerprint and Giving Statement are never overwritten. Causes and strengths are entered by hand for now
+  // (from everyone's results); later, group codes can fill wb.group.causes / strengths automatically in the same shape.
+  const G = wb.group = Object.assign({ name: "", type: "", size: "", ages: [], scope: "focus", causes: [], strengths: [], focus: [], notes: {}, statements: {}, involvement: null }, wb.group || {});
+  if (!G.name && wb.person.groupName) G.name = wb.person.groupName;
+  const GTYPES = [["team","Team or workplace"],["family","Family"],["club","Club or service group"],["faith","Faith community"],["school","School or class"],["friends","Friends"],["other","Other"]];
+  const GSIZES = [["2-5","2–5"],["6-10","6–10"],["11-25","11–25"],["26+","26 or more"]];
+  const GAGES = [["under12","Under 12"],["teens","Teens"],["adults","Adults"]];
+  const GSCOPE = [["focus","Just our focus causes"],["all","All of our causes"]];
+  const MAX_FOCUS = 3;
+  const byCount = (arr) => arr.map((x, i) => ({ ...x, i })).sort((a, b) => (b.n || 0) - (a.n || 0) || a.i - b.i);
+  // Focus causes for this project: focus mode = what they picked (up to 3); all mode = starred, else the most-picked three.
+  function gFocus() {
+    const ids = G.causes.map((x) => x.id);
+    if (G.scope !== "all") return ids.slice(0, MAX_FOCUS);
+    const f = (G.focus || []).filter((id) => ids.includes(id));
+    return f.length ? f.slice(0, MAX_FOCUS) : byCount(G.causes).slice(0, MAX_FOCUS).map((x) => x.id);
+  }
+  const gStrengthIds = () => byCount(G.strengths).map((x) => x.id);
+  const gCount = (key, id) => { const x = G[key].find((y) => y.id === id); return x && x.n ? x.n : 0; };
+  const withCount = (key, list, id) => label(list, id) + (gCount(key, id) ? " (" + gCount(key, id) + ")" : "");
+
+  // Which link opened the page: ?mode=group (book QR code) or data-mode="group" on the embed. ?mode=me forces Myself.
+  const URL_MODE = (() => {
+    try { const m = (new URLSearchParams(location.search).get("mode") || "").toLowerCase(); if (["group","team","our-group"].includes(m)) return "group"; if (["me","individual","myself"].includes(m)) return "me"; } catch {}
+    try { if (typeof HOST !== "undefined" && HOST.dataset && HOST.dataset.mode === "group") return "group"; } catch {}
+    return "";
+  })();
+
   // ---------- State ----------
-  const st = { group: !!wb.person.isGroup, causes: toIds(CAUSES, wb.fingerprint.causes), strengths: toIds(STRENGTHS, wb.fingerprint.strengths), options: [], chosen: -1, manual: false };
-  ["purpose","vision","mission"].forEach((k) => { $(k).value = (wb.notes && wb.notes[k]) || ""; });
+  const st = { group: URL_MODE ? URL_MODE === "group" : !!wb.person.isGroup, causes: toIds(CAUSES, wb.fingerprint.causes), strengths: toIds(STRENGTHS, wb.fingerprint.strengths), options: [], chosen: -1, manual: false };
+  // The causes and strengths in effect: the person's own, or the group's focus causes and most-picked strengths.
+  const C = () => st.group ? gFocus() : st.causes;
+  const S = () => st.group ? gStrengthIds().slice(0, 3) : st.strengths;
+  const NOTES = () => (st.group ? G.notes : wb.notes) || {};
+  const SM = () => (st.group ? G.statements : wb.statements) || {};
+  const setSM = (o) => { if (st.group) G.statements = o; else wb.statements = o; save(wb); };
   const fromIndex = wb.fingerprint.source === "social-fingerprint" && (st.causes.length || st.strengths.length);
   if (fromIndex) {
     $("fp-src").textContent = "From your Social Fingerprint®";
     $("fp-help").textContent = "These came from My Causes and My Strengths. Tap Change if you'd like to swap one.";
   }
-  if (wb.statements && wb.statements.combined) $("resume").hidden = false;
+  const PLACEHOLDERS = {
+    me: { purpose: "e.g. My dad volunteered at the food bank every Saturday. Nobody should go to bed hungry in a town this generous…", vision: "e.g. More families in our neighborhood know where to get help, and more neighbors are showing up to give it…", mission: "e.g. Host a monthly food drive, use my network to recruit volunteers, donate a set amount each quarter…" },
+    group: { purpose: "e.g. Several of us have needed a hand at some point. We believe no family in our town should go without food…", vision: "e.g. By the end of this project, the food pantry has a full shelf and a few more of us are regular volunteers…", mission: "e.g. Run a food drive at our next meeting, have our connectors recruit volunteers, and our investors match what we raise…" },
+  };
 
-  function setWho(group) {
-    st.group = group;
+  const track = (name, params) => { try { if (typeof window.gtag === "function") window.gtag("event", name, params || {}); } catch {} };
+  function setWho(group, init) {
+    if (!init && group === st.group) return;
+    if (!init) persistNotes(); // keep what was typed with the mode it was typed in
+    st.group = group; wb.person.isGroup = group; save(wb);
+    inv = group ? G.involvement : wb.involvement;
     $("who-me").setAttribute("aria-pressed", String(!group));
     $("who-group").setAttribute("aria-pressed", String(group));
-    $("group-wrap").hidden = !group;
+    $("wrap").classList.toggle("grp", group);
+    const n = NOTES(), ph = PLACEHOLDERS[group ? "group" : "me"];
+    ["purpose","vision","mission"].forEach((k) => { $(k).value = n[k] || ""; $(k).placeholder = ph[k]; });
+    $("resume").hidden = !SM().combined;
+    $("send").textContent = sendLabel(); $("pdf").textContent = pdfLabel();
+    show($("err1"), "");
+    if (group) renderGroup(); else renderIcons();
+    fillInvInputs();
+    if (!init || URL_MODE) track("mission_mode", { mode: group ? "group" : "individual", source: init ? "link" : "toggle" });
   }
+  const sendLabel = () => st.group ? "Email our group report" : "Email my updated report";
+  const pdfLabel = () => st.group ? "Download our group report (PDF)" : "Download my report (PDF)";
   $("who-me").onclick = () => setWho(false);
   $("who-group").onclick = () => setWho(true);
-  setWho(st.group);
+
+  // ---------- Group setup and the group's causes & strengths ----------
+  function gseg(boxId, opts, key, multi, after) {
+    const box = $(boxId); box.innerHTML = "";
+    opts.forEach(([id, t]) => {
+      const on = multi ? G[key].includes(id) : G[key] === id;
+      const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-pressed", String(on));
+      b.onclick = () => {
+        if (multi) G[key] = on ? G[key].filter((x) => x !== id) : opts.map((o) => o[0]).filter((x) => x === id || G[key].includes(x));
+        else G[key] = on && key !== "scope" ? "" : id;
+        save(wb); gseg(boxId, opts, key, multi, after); if (after) after();
+      };
+      box.appendChild(b);
+    });
+  }
+  function setScope() {
+    // Narrowing to focus causes keeps the current focus three.
+    if (G.scope === "focus" && G.causes.length > MAX_FOCUS) {
+      G.scope = "all"; const f = gFocus(); G.scope = "focus";
+      G.causes = G.causes.filter((x) => f.includes(x.id)); save(wb);
+    }
+    gGrid("causes", CAUSES, "cause");
+  }
+  function renderGroup() {
+    $("g-name").value = G.name || "";
+    gseg("seg-gtype", GTYPES, "type");
+    gseg("seg-gsize", GSIZES, "size");
+    gseg("seg-gages", GAGES, "ages", true);
+    gseg("seg-gscope", GSCOPE, "scope", false, setScope);
+    gGrid("causes", CAUSES, "cause"); gGrid("strengths", STRENGTHS, "strength");
+  }
+  $("g-name").oninput = () => { G.name = $("g-name").value.trim(); wb.person.groupName = G.name; save(wb); };
+  function gGrid(key, list, kind) {
+    const box = $("gic-" + key); box.innerHTML = "";
+    const sel = G[key], max = key === "causes" && G.scope !== "all" ? MAX_FOCUS : list.length;
+    list.forEach(([id, name]) => {
+      const on = sel.some((x) => x.id === id);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "cz";
+      b.setAttribute("aria-pressed", String(on)); b.disabled = !on && sel.length >= max;
+      const img = document.createElement("img"); img.src = ICONS + kind + "/" + id + ".jpg"; img.alt = ""; img.loading = "lazy";
+      const t = document.createElement("span"); t.textContent = name;
+      b.append(img, t);
+      b.onclick = () => {
+        G[key] = on ? sel.filter((x) => x.id !== id) : list.map((x) => x[0]).filter((i) => i === id || sel.some((x) => x.id === i)).map((i) => sel.find((x) => x.id === i) || { id: i, n: null });
+        if (key === "causes") G.focus = (G.focus || []).filter((f) => G.causes.some((x) => x.id === f));
+        save(wb); gGrid(key, list, kind);
+      };
+      box.appendChild(b);
+    });
+    if (key === "causes") {
+      $("gc-count").textContent = G.scope === "all" ? (sel.length ? sel.length + " picked" : "") : sel.length + " of " + MAX_FOCUS;
+      $("gscope-help").textContent = G.scope === "all"
+        ? "Tap every cause anyone in your group picked. Then star up to three to focus on for this project. No stars? We'll use the ones picked most."
+        : "Pick up to three causes your group has chosen to focus on for this project.";
+    } else $("gs-count").textContent = sel.length ? sel.length + " picked" : "";
+    gTally(key, list, kind);
+  }
+  function gTally(key, list, kind) {
+    const box = $("gt-" + key); box.innerHTML = "";
+    const sel = G[key];
+    box.hidden = !sel.length; if (!sel.length) return;
+    const starOK = key === "causes" && G.scope === "all";
+    const head = document.createElement("p"); head.className = "hint";
+    head.textContent = "Optional: how many of you picked each one? We'll show your group's mix in your report." + (starOK ? " Tap the star to choose up to three focus causes." : "");
+    box.appendChild(head);
+    const focusLine = document.createElement("p"); focusLine.className = "focus-line";
+    const updFocus = () => { focusLine.textContent = "Focus causes for this project: " + gFocus().map((id) => label(CAUSES, id)).join(", "); };
+    sel.forEach((x) => {
+      const name = label(list, x.id);
+      const row = document.createElement("div"); row.className = "trow";
+      const img = document.createElement("img"); img.src = ICONS + kind + "/" + x.id + ".jpg"; img.alt = ""; img.loading = "lazy";
+      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
+      const lb = document.createElement("label");
+      const inp = document.createElement("input"); inp.type = "number"; inp.min = "1"; inp.max = "999"; inp.inputMode = "numeric"; inp.placeholder = "#";
+      inp.value = x.n || ""; inp.setAttribute("aria-label", "How many of you picked " + name);
+      inp.oninput = () => { const v = parseInt(inp.value, 10); x.n = v > 0 ? Math.min(v, 999) : null; save(wb); if (key === "causes") updFocus(); };
+      lb.append(inp, document.createTextNode("of us"));
+      row.append(img, nm, lb);
+      if (starOK) {
+        const starred = (G.focus || []).includes(x.id);
+        const s = document.createElement("button"); s.type = "button"; s.className = "star"; s.innerHTML = STAR;
+        s.setAttribute("aria-pressed", String(starred)); s.setAttribute("aria-label", (starred ? "Remove focus from " : "Make a focus cause: ") + name);
+        s.disabled = !starred && (G.focus || []).length >= MAX_FOCUS;
+        s.onclick = () => { G.focus = starred ? G.focus.filter((f) => f !== x.id) : [...(G.focus || []), x.id]; save(wb); gTally(key, list, kind); };
+        row.appendChild(s);
+      }
+      box.appendChild(row);
+    });
+    if (key === "causes") { updFocus(); box.appendChild(focusLine); }
+  }
 
   const open = { causes: false, strengths: false };
   function iconGrid(box, list, kind, key) {
@@ -622,10 +809,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   }
 
   function persistNotes() {
-    wb.notes = { purpose: $("purpose").value.trim(), vision: $("vision").value.trim(), mission: $("mission").value.trim() };
+    const n = { purpose: $("purpose").value.trim(), vision: $("vision").value.trim(), mission: $("mission").value.trim() };
+    if (st.group) G.notes = n;
+    else {
+      wb.notes = n;
+      wb.fingerprint.causes = st.causes; wb.fingerprint.strengths = st.strengths;
+      if (!wb.fingerprint.source) wb.fingerprint.source = "mission";
+    }
     wb.person.isGroup = st.group;
-    wb.fingerprint.causes = st.causes; wb.fingerprint.strengths = st.strengths;
-    if (!wb.fingerprint.source) wb.fingerprint.source = "mission";
     save(wb);
   }
 
@@ -633,7 +824,10 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   async function draftJSON() {
     const r = await fetch(API + "/draft", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: wb.notes, causes: st.causes.map((c) => label(CAUSES, c)), strengths: st.strengths.map((s) => label(STRENGTHS, s)), isGroup: st.group }),
+      body: JSON.stringify({ notes: NOTES(), causes: C().map((c) => label(CAUSES, c)), isGroup: st.group,
+        strengths: (st.group ? gStrengthIds().slice(0, 8) : st.strengths).map((s) => label(STRENGTHS, s)),
+        // Group context only (never the group's name): kind of group, size, and other causes members chose.
+        group: st.group ? { type: G.type, size: G.size, otherCauses: G.causes.map((x) => x.id).filter((id) => !C().includes(id)).map((id) => label(CAUSES, id)) } : null }),
     });
     let data = null; try { data = await r.json(); } catch {}
     if (!r.ok) throw { code: (data && data.error) || "upstream_error" };
@@ -693,9 +887,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     });
   }
 
+  const groupReady = () => {
+    if (!st.group || G.causes.length) return true;
+    show($("err1"), "Add at least one of your group's causes above, so the statement has something to build on."); return false;
+  };
   $("go-draft").onclick = () => {
     persistNotes();
-    const n = wb.notes;
+    if (!groupReady()) return;
+    const n = NOTES();
     if (!n.purpose && !n.vision && !n.mission) { show($("err1"), "Add a few thoughts to at least one prompt so there's something to work from."); return; }
     show($("err1"), "");
     runDraft();
@@ -705,22 +904,22 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
 
   function startManual() {
     st.manual = true;
-    const n = wb.notes || {}, s = wb.statements;
+    const n = NOTES(), s = SM();
     $("e-purpose").value = s.purpose || n.purpose || "";
     $("e-vision").value = s.vision || n.vision || "";
     $("e-mission").value = s.mission || n.mission || "";
     $("e-combined").value = s.combined || "";
-    $("refine-intro").textContent = "Write one short sentence for each, then join them into your Giving Statement.";
+    $("refine-intro").textContent = st.group ? "Write one short sentence for each, then join them into your group's Giving Statement." : "Write one short sentence for each, then join them into your Giving Statement.";
     $("back2").textContent = "Back to my notes";
     go("s3");
   }
-  $("go-manual").onclick = () => { persistNotes(); startManual(); };
+  $("go-manual").onclick = () => { persistNotes(); if (!groupReady()) return; show($("err1"), ""); startManual(); };
 
   $("go-refine").onclick = () => {
     const o = st.options[st.chosen]; if (!o) return;
     st.manual = false;
     $("e-purpose").value = o.purpose; $("e-vision").value = o.vision; $("e-mission").value = o.mission; $("e-combined").value = o.combined;
-    $("refine-intro").textContent = "Change anything that doesn't sound like you. Short and memorable beats complete.";
+    $("refine-intro").textContent = st.group ? "Change anything that doesn't sound like your group. Short and memorable beats complete." : "Change anything that doesn't sound like you. Short and memorable beats complete.";
     $("back2").textContent = "Back to the versions";
     go("s3");
   };
@@ -729,17 +928,17 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   // Names are shown only for adults who opt in (same rule as the Index's share image: never for under 18).
   const MINOR = ["under13", "13-17"].includes(wb.person.age);
   const nameOK = () => !MINOR && !!wb.person.showName;
-  const whoLine = () => !nameOK() ? "" : st.group ? (wb.person.groupName || "") : [wb.person.first, wb.person.last].filter(Boolean).join(" ");
+  const whoLine = () => !nameOK() ? "" : st.group ? (G.name || "") : [wb.person.first, wb.person.last].filter(Boolean).join(" ");
   if (MINOR) { $("sub-wrap").hidden = true; $("subscribe").checked = false; }
   function setupName() {
     $("namebox").hidden = MINOR;
-    $("n-group-wrap").hidden = !st.group;
-    $("n-first").value = wb.person.first || ""; $("n-last").value = wb.person.last || ""; $("n-group").value = wb.person.groupName || "";
+    $("n-first").value = wb.person.first || ""; $("n-last").value = wb.person.last || ""; $("n-group").value = G.name || "";
     const adultKnown = wb.person.age && !MINOR;
-    if (wb.person.showName === undefined) wb.person.showName = !!(adultKnown && wb.person.first);
+    if (wb.person.showName === undefined) wb.person.showName = !!(adultKnown && (st.group ? G.name : wb.person.first));
     $("n-adult").checked = !!wb.person.showName;
     const upd = () => {
-      wb.person.first = $("n-first").value.trim(); wb.person.last = $("n-last").value.trim(); wb.person.groupName = $("n-group").value.trim();
+      wb.person.first = $("n-first").value.trim(); wb.person.last = $("n-last").value.trim();
+      if (st.group) { G.name = $("n-group").value.trim(); wb.person.groupName = G.name; }
       wb.person.showName = $("n-adult").checked; save(wb);
       const who = whoLine(); $("out-who").textContent = who ? "— " + who : ""; renderStarSoon();
     };
@@ -748,10 +947,11 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   }
   let starTimer = 0; const renderStarSoon = () => { clearTimeout(starTimer); starTimer = setTimeout(renderStar, 250); };
   function showStatement() {
-    $("out-combined").textContent = wb.statements.combined;
-    $("out-purpose").textContent = wb.statements.purpose || "—";
-    $("out-vision").textContent = wb.statements.vision || "—";
-    $("out-mission").textContent = wb.statements.mission || "—";
+    const sm = SM();
+    $("out-combined").textContent = sm.combined;
+    $("out-purpose").textContent = sm.purpose || "—";
+    $("out-vision").textContent = sm.vision || "—";
+    $("out-mission").textContent = sm.mission || "—";
     setupName();
     const who = whoLine(); $("out-who").textContent = who ? "— " + who : "";
     go("s4");
@@ -761,16 +961,15 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const v = (k) => $("e-" + k).value.trim();
     if (!v("combined")) { show($("err3"), "Your Giving Statement is the one piece we need. Add a sentence or two."); return; }
     show($("err3"), "");
-    wb.statements = { purpose: v("purpose"), vision: v("vision"), mission: v("mission"), combined: v("combined"), updatedAt: new Date().toISOString() };
-    save(wb);
+    setSM({ purpose: v("purpose"), vision: v("vision"), mission: v("mission"), combined: v("combined"), updatedAt: new Date().toISOString() });
     showStatement();
   };
   $("back3").onclick = () => {
-    const s = wb.statements;
+    const s = SM();
     $("e-purpose").value = s.purpose || ""; $("e-vision").value = s.vision || ""; $("e-mission").value = s.mission || ""; $("e-combined").value = s.combined || "";
     go("s3");
   };
-  $("resume-go").onclick = () => { persistNotes(); startPart2(); };
+  $("resume-go").onclick = () => { persistNotes(); if (!groupReady()) return; startPart2(); };
 
   // ---------- Giving Statement image (1080 x 1080) + social sharing ----------
   const LOGO = "https://tools.gatewayforgood.com/mission/img/g4g-logo.png";
@@ -782,7 +981,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     if (line) lines.push(line); return lines;
   }
   async function renderStar() {
-    const text = (wb.statements && wb.statements.combined) || ""; if (!text) return;
+    const text = SM().combined || ""; if (!text) return;
     const S = 1080, c = document.createElement("canvas"); c.width = S; c.height = S;
     const x = c.getContext("2d");
     x.fillStyle = "#f5f3e6"; x.fillRect(0, 0, S, S);
@@ -808,15 +1007,16 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const SHARE_PAGE = "https://www.gatewayforgood.com/social-fingerprint"; // hidden links (share buttons)
   const SHARE_SHOW = "MySocialFingerprint.com"; // what people see and might type (image, captions)
   const caption = (max) => {
-    let t = (wb.statements && wb.statements.combined) || "";
+    let t = SM().combined || "";
     const pre = st.group ? "Our giving statement: “" : "My giving statement: “", post = "” I discovered it with the Social Fingerprint® Index from Gateway for Good. Discover yours:";
     if (max && (pre + t + post + SHARE_SHOW).length + 30 > max) t = t.slice(0, Math.max(40, max - (pre + post + SHARE_SHOW).length - 32)).replace(/\s+\S*$/, "") + "…";
     return pre + t + post + " " + SHARE_SHOW + " #MakeADifference #GatewayForGood";
   };
   const starNote = (t) => { $("star-note").textContent = t; $("star-note").hidden = !t; };
-  const starFile = () => starBlob ? new File([starBlob], "my-giving-statement.png", { type: "image/png" }) : null;
+  const starName = () => st.group ? "our-giving-statement.png" : "my-giving-statement.png";
+  const starFile = () => starBlob ? new File([starBlob], starName(), { type: "image/png" }) : null;
   function saveStar() {
-    const a = document.createElement("a"); a.href = $("star-img").src; a.download = "my-giving-statement.png";
+    const a = document.createElement("a"); a.href = $("star-img").src; a.download = starName();
     document.body.appendChild(a); a.click(); a.remove();
   }
   async function copyCaption() { try { await navigator.clipboard.writeText(caption()); return true; } catch { return false; } }
@@ -824,7 +1024,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const f = starFile();
     if (f && navigator.canShare && navigator.canShare({ files: [f] })) {
       await copyCaption();
-      try { await navigator.share({ files: [f], text: caption(), title: "My giving statement" }); return "shared"; }
+      try { await navigator.share({ files: [f], text: caption(), title: st.group ? "Our giving statement" : "My giving statement" }); return "shared"; }
       catch (e) { return e && e.name === "AbortError" ? "cancelled" : "failed"; }
     }
     return "unsupported";
@@ -912,18 +1112,18 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const STAR = I('<path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6L3.2 9.4l6.1-.8z"/>');
 
   const HOW = [
-    { id: "skills", t: "Share my skills", d: "Use my professional skills, pro bono", q: "sharing my professional skills (skills-based or pro bono volunteering)" },
+    { id: "skills", t: "Share my skills", d: "Use my professional skills, pro bono", tg: "Share our skills", dg: "Use our professional skills, pro bono", q: "sharing my professional skills (skills-based or pro bono volunteering)" },
     { id: "inperson", t: "Volunteer in person", d: "Show up and help hands-on", q: "volunteering in person" },
     { id: "home", t: "Volunteer from home", d: "Help online or by phone", q: "volunteering from home (virtual or remote)" },
     { id: "money", t: "Give money", d: "Make a donation, one time or ongoing", q: "giving money (donations)" },
-    { id: "fundraise", t: "Fundraise", d: "Raise money from friends and family", q: "fundraising from friends and family (peer-to-peer campaigns)" },
+    { id: "fundraise", t: "Fundraise", d: "Raise money from friends and family", dg: "Raise money together, like a campaign or match", q: "fundraising from friends and family (peer-to-peer campaigns)" },
     { id: "items", t: "Donate items", d: "Give goods, food, clothing or supplies", q: "donating items (in-kind donations)" },
     { id: "event", t: "Attend an event", d: "Galas, runs, workshops, community days", q: "attending events" },
     { id: "share", t: "Speak up and share", d: "Advocate, share stories, spread the word", q: "speaking up and sharing my story (advocacy or ambassador roles)" },
     { id: "mentor", t: "Mentor or teach", d: "Guide someone one-on-one or in a group", q: "mentoring or teaching" },
     { id: "board", t: "Serve on a board", d: "Join a board, committee or advisory group", q: "serving on a board or committee" },
-    { id: "ownproj", t: "Lead my own project", d: "Plan something myself, like a drive", q: "leading my own project (such as a drive or campaign)" },
-    { id: "groupproj", t: "Join a group project", d: "Do something with a team", q: "joining a group project or group volunteer day" },
+    { id: "ownproj", t: "Lead my own project", d: "Plan something myself, like a drive", tg: "Lead our own project", dg: "Plan something ourselves, like a drive", q: "leading my own project (such as a drive or campaign)" },
+    { id: "groupproj", t: "Join a group project", d: "Do something with a team", tg: "Join a larger project", dg: "Team up with another group or organization", q: "joining a group project or group volunteer day" },
   ];
   // Each giving strength (Index card id) turns on the tiles that use it.
   const STRENGTH_TILES = {
@@ -944,10 +1144,10 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const KIDS = [["under12","Under 12"],["teens","Teens"],["adults","Adults"]];
   const WHERE = [
     { id: "near", ic: "near", t: "Close to home", d: "About 25 miles", q: "close to home (within about 25 miles)" },
-    { id: "state", ic: "state", t: "My state or region", q: "in my state or region" },
+    { id: "state", ic: "state", t: "My state or region", tg: "Our state or region", q: "in my state or region" },
     { id: "us", ic: "us", t: "Anywhere in the U.S.", q: "anywhere in the U.S." },
     { id: "world", ic: "world", t: "Around the world", q: "internationally" },
-    { id: "place", ic: "place", t: "A place that matters to me", d: "Like a hometown", q: "" },
+    { id: "place", ic: "place", t: "A place that matters to me", tg: "A place that matters to us", d: "Like a hometown", q: "" },
   ];
   const LOCMUST = [["must","Location is a must"],["flex","I'm flexible"]];
   const TIME = [
@@ -973,10 +1173,17 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const FAITH = [["none","No preference"],["preferred","Preferred"],["secular","Prefer secular"]];
 
   // Part 2 answers live in the shared workbook as wb.involvement.
-  const inv = wb.involvement = Object.assign({ how: [], stars: [], with: [], kids: [], where: [], place: "", zip: "", locMust: "flex", time: "", size: [], approach: "", tax: "", faith: "none", note: "", prefilled: false }, wb.involvement || {});
-  if (!Array.isArray(inv.kids)) inv.kids = inv.kids === "both" ? ["under12","teens"] : inv.kids ? [inv.kids] : [];
-  if (inv.faith === "welcome") inv.faith = "preferred";
-  if (!Array.isArray(inv.size)) inv.size = inv.size ? [inv.size] : [];
+  // Part 2 answers: wb.involvement for "Myself", wb.group.involvement for "Our group".
+  function mkInv(o) {
+    const v = Object.assign({ how: [], stars: [], with: [], kids: [], where: [], place: "", zip: "", locMust: "flex", time: "", size: [], approach: "", tax: "", faith: "none", note: "", prefilled: false }, o || {});
+    if (!Array.isArray(v.kids)) v.kids = v.kids === "both" ? ["under12","teens"] : v.kids ? [v.kids] : [];
+    if (v.faith === "welcome") v.faith = "preferred";
+    if (!Array.isArray(v.size)) v.size = v.size ? [v.size] : [];
+    return v;
+  }
+  wb.involvement = mkInv(wb.involvement); G.involvement = mkInv(G.involvement);
+  let inv = st.group ? G.involvement : wb.involvement;
+  const T = (item) => (st.group && item.tg) || item.t;
   const persistInv = () => { inv.updatedAt = new Date().toISOString(); save(wb); };
   const MAX_STARS = 2;
 
@@ -993,7 +1200,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   function prefillFromStrengths() {
     if (inv.prefilled === 2) return;
     const set = new Set(inv.how);
-    st.strengths.forEach((s) => (STRENGTH_TILES[s] || []).forEach((t) => set.add(t)));
+    (st.group ? gStrengthIds() : st.strengths).forEach((s) => (STRENGTH_TILES[s] || []).forEach((t) => set.add(t)));
+    if (st.group) { inv.how = HOW.map((h) => h.id).filter((id) => set.has(id)); inv.prefilled = 2; persistInv(); return; } // the person's own answers don't speak for the group
     idxAnswers().forEach((a) => (ANSWER_TILES[a] || []).forEach((t) => set.add(t)));
     if (!inv.time && (wb.fingerprint.answers || {}).open_to) {
       const o = wb.fingerprint.answers.open_to;
@@ -1003,8 +1211,8 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     inv.prefilled = 2; persistInv();
   }
   const fromStrength = (tileId) => {
-    const out = st.strengths.filter((s) => (STRENGTH_TILES[s] || []).includes(tileId)).map((s) => label(STRENGTHS, s));
-    if (idxAnswers().some((a) => (ANSWER_TILES[a] || []).includes(tileId))) out.push("your answers");
+    const out = (st.group ? gStrengthIds() : st.strengths).filter((s) => (STRENGTH_TILES[s] || []).includes(tileId)).map((s) => label(STRENGTHS, s));
+    if (!st.group && idxAnswers().some((a) => (ANSWER_TILES[a] || []).includes(tileId))) out.push("your answers");
     return out;
   };
 
@@ -1012,10 +1220,11 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const wrapEl = document.createElement("div"); wrapEl.className = "tile";
     const b = document.createElement("button"); b.type = "button"; b.className = "t"; b.setAttribute("aria-pressed", String(on));
     const ic = document.createElement("span"); ic.className = "ic"; ic.innerHTML = ICON[item.ic || item.id] || ICON.any;
-    const tl = document.createElement("span"); tl.className = "tl"; tl.textContent = item.t;
+    const tl = document.createElement("span"); tl.className = "tl"; tl.textContent = T(item);
     b.append(ic, tl);
-    if (item.d) { const td = document.createElement("span"); td.className = "td"; td.textContent = item.d; b.appendChild(td); }
-    if (extra && extra.from) { const f = document.createElement("span"); f.className = "from"; f.textContent = "From your Social Fingerprint: " + extra.from; b.appendChild(f); }
+    const d = (st.group && item.dg) || item.d;
+    if (d) { const td = document.createElement("span"); td.className = "td"; td.textContent = d; b.appendChild(td); }
+    if (extra && extra.from) { const f = document.createElement("span"); f.className = "from"; f.textContent = (st.group ? "From your group's strengths: " : "From your Social Fingerprint: ") + extra.from; b.appendChild(f); }
     b.onclick = onClick; wrapEl.appendChild(b);
     return wrapEl;
   }
@@ -1069,7 +1278,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       }, { from });
       if (on) {
         const s = document.createElement("button"); s.type = "button"; s.className = "star"; s.innerHTML = STAR;
-        s.setAttribute("aria-pressed", String(starred)); s.setAttribute("aria-label", (starred ? "Remove star from " : "Star ") + h.t);
+        s.setAttribute("aria-pressed", String(starred)); s.setAttribute("aria-label", (starred ? "Remove star from " : "Star ") + T(h));
         s.disabled = !starred && inv.stars.length >= MAX_STARS;
         s.onclick = () => { inv.stars = starred ? inv.stars.filter((x) => x !== h.id) : [...inv.stars, h.id]; persistInv(); renderHow(); };
         el.appendChild(s);
@@ -1078,7 +1287,9 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     });
     const n = inv.how.length, k = inv.stars.length;
     $("star-count").textContent = n ? n + " picked · " + (k ? k + " starred as top" : "tap a star to mark your top one or two") : "";
-    $("g1-intro").textContent = st.strengths.length || idxAnswers().length
+    $("g1-intro").textContent = st.group
+      ? (G.strengths.length ? "We've picked ways to get involved that match your group's strengths. Add or remove any, then tap the star on your top one or two." : "Pick as many as you like, then tap the star on your top one or two.")
+      : st.strengths.length || idxAnswers().length
       ? "We've picked ways to get involved that match your strengths and what you told us in your Social Fingerprint. Add or remove any, then tap the star on your top one or two."
       : "Pick as many as you like, then tap the star on your top one or two.";
   }
@@ -1087,10 +1298,13 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     $("zip-wrap").hidden = !(inv.where.includes("near") || inv.where.includes("state"));
     $("place-wrap").hidden = !inv.where.includes("place");
   };
-  if (!inv.zip && wb.person.zip) inv.zip = wb.person.zip;
-  $("zip").value = inv.zip || "";
-  $("place").value = inv.place || "";
-  $("note").value = inv.note || "";
+  function fillInvInputs() {
+    if (!inv.zip && wb.person.zip) inv.zip = wb.person.zip;
+    $("zip").value = inv.zip || "";
+    $("place").value = inv.place || "";
+    $("note").value = inv.note || "";
+    $("note").placeholder = st.group ? "e.g. We'd love something we can do together on a Saturday morning" : "e.g. I'd love something I can do on weekends with my teenager";
+  }
   $("zip").oninput = () => { inv.zip = $("zip").value.trim(); persistInv(); };
   $("place").oninput = () => { inv.place = $("place").value.trim(); persistInv(); };
   $("note").oninput = () => { inv.note = $("note").value.trim(); persistInv(); };
@@ -1103,40 +1317,64 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     multiAny("t-size", SIZE, "size"); single("t-approach", APPROACH, "approach");
     seg("seg-tax", TAX, "tax"); seg("seg-faith", FAITH, "faith");
   }
-  function startPart2() { prefillFromStrengths(); renderPart2(); go("g1"); }
+  // Groups skip "Who will you do this with?" (it's the group) and its kids' ages (asked in the group setup).
+  const ORDER_ALL = ["s4","g1","g2","g3","g4","g5","g6","out"];
+  const order = () => st.group ? ORDER_ALL.filter((x) => x !== "g2") : ORDER_ALL;
+  function numberPart2() {
+    const qs = order().filter((x) => x[0] === "g");
+    qs.forEach((id, i) => { $(id).querySelector(".eyebrow").textContent = (st.group ? "How your group wants to get involved" : "How you want to get involved") + " · " + (i + 1) + " of " + qs.length; });
+  }
+  function startPart2() { prefillFromStrengths(); renderPart2(); numberPart2(); go("g1"); }
   $("go-part2").onclick = startPart2;
 
-  const ORDER = ["s4","g1","g2","g3","g4","g5","g6","out"];
   document.querySelectorAll("[data-next],[data-skip]").forEach((b) => b.onclick = () => {
-    if (cur === "g1" && !inv.how.length) { show($("err-g1"), "Pick at least one way you'd like to get involved."); return; }
+    if (cur === "g1" && !inv.how.length) { show($("err-g1"), st.group ? "Pick at least one way your group would like to get involved." : "Pick at least one way you'd like to get involved."); return; }
     show($("err-g1"), "");
-    const nxt = ORDER[ORDER.indexOf(cur) + 1];
+    const o = order(), nxt = o[o.indexOf(cur) + 1];
     if (nxt === "out") showResult(); else go(nxt);
   });
   document.querySelectorAll("[data-back]").forEach((b) => b.onclick = () => {
-    const prev = ORDER[ORDER.indexOf(cur) - 1];
+    const o = order(), prev = o[o.indexOf(cur) - 1];
     if (prev === "s4") showStatement(); else go(prev);
   });
-  $("edit-answers").onclick = () => { renderPart2(); go("g1"); };
+  $("edit-answers").onclick = () => { renderPart2(); numberPart2(); go("g1"); };
 
   // ---------- The search prompt ----------
   const pick = (items, id) => items.find((x) => x.id === id) || {};
   const joinAnd = (a) => a.length <= 1 ? (a[0] || "") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
   function buildPrompt() {
-    const L = [];
-    L.push("Help me find nonprofit organizations I could get involved with.", "");
-    if (wb.statements.combined) L.push('My Giving Statement: "' + wb.statements.combined + '"', "");
-    if (st.causes.length) {
-      L.push("Causes I care about most:");
-      st.causes.forEach((c) => L.push("- " + label(CAUSES, c) + " (for example: " + CAUSE_TERMS[c] + ")"));
+    const g = st.group, L = [];
+    const I_ = g ? "we" : "I", my = g ? "our" : "my", me = g ? "us" : "me";
+    L.push(g ? "Help our group find nonprofit organizations we could get involved with together." : "Help me find nonprofit organizations I could get involved with.", "");
+    if (g) {
+      const kind = (GTYPES.find((t) => t[0] === G.type) || [, "group"])[1].toLowerCase();
+      const size = (GSIZES.find((t) => t[0] === G.size) || [, ""])[1];
+      let about = "About us: a " + (kind === "other" ? "group" : kind) + (size ? " of about " + size.replace("–", " to ") + " people" : "");
+      if (G.ages.length) {
+        about += " (ages: " + joinAnd(G.ages.map((k) => ({ under12: "under 12", teens: "teens", adults: "adults" }[k])));
+        about += G.ages.some((k) => k !== "adults") ? "; please only suggest age-appropriate opportunities)" : ")";
+      }
+      L.push(about + ".", "");
     }
-    if (st.strengths.length) L.push("My giving strengths: " + st.strengths.map((s) => label(STRENGTHS, s)).join(", "));
+    const sm = SM();
+    if (sm.combined) L.push((g ? "Our" : "My") + ' Giving Statement: "' + sm.combined + '"', "");
+    const cs = C();
+    if (cs.length) {
+      L.push(g ? "Causes our group is focusing on:" : "Causes I care about most:");
+      cs.forEach((c) => L.push("- " + label(CAUSES, c) + " (for example: " + CAUSE_TERMS[c] + ")"));
+    }
+    if (g) {
+      const others = byCount(G.causes).map((x) => x.id).filter((id) => !cs.includes(id));
+      if (others.length) L.push("Other causes people in our group care about: " + others.map((id) => withCount("causes", CAUSES, id)).join(", "));
+      if (G.strengths.length) L.push("Our giving strengths" + (G.strengths.some((x) => x.n) ? " (number of us in parentheses)" : "") + ": " + gStrengthIds().map((id) => withCount("strengths", STRENGTHS, id)).join(", "));
+    } else if (st.strengths.length) L.push("My giving strengths: " + st.strengths.map((s) => label(STRENGTHS, s)).join(", "));
     L.push("");
     const starred = inv.stars.map((id) => pick(HOW, id).q).filter(Boolean);
     const others = inv.how.filter((id) => !inv.stars.includes(id)).map((id) => pick(HOW, id).q).filter(Boolean);
-    if (starred.length) L.push("Most important to me: " + joinAnd(starred));
-    if (others.length) L.push((starred.length ? "I'm also open to: " : "How I want to get involved: ") + joinAnd(others));
-    if (inv.with.length) {
+    const gq = (q) => g ? q.replace(/\bmy\b/g, "our").replace(/\bmyself\b/g, "ourselves") : q;
+    if (starred.length) L.push("Most important to " + me + ": " + gq(joinAnd(starred)));
+    if (others.length) L.push((starred.length ? (g ? "We're also open to: " : "I'm also open to: ") : "How " + I_ + " want to get involved: ") + gq(joinAnd(others)));
+    if (!g && inv.with.length) {
       let w = joinAnd(inv.with.map((id) => pick(WITH, id).q));
       if (inv.with.includes("kids") && inv.kids.length) {
         const ages = joinAnd(inv.kids.map((k) => ({ under12: "under 12", teens: "teens", adults: "adults" }[k])));
@@ -1144,37 +1382,51 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
       }
       L.push("Who I'll do this with: " + w);
     }
-    const wh = inv.where.map((id) => id === "place" ? (inv.place ? "in or for " + inv.place : "") : pick(WHERE, id).q).filter(Boolean);
+    const wh = inv.where.map((id) => id === "place" ? (inv.place ? "in or for " + inv.place : "") : gq(pick(WHERE, id).q)).filter(Boolean);
     if (wh.length) {
-      const near = (inv.where.includes("near") || inv.where.includes("state")) && inv.zip ? " (I'm near " + inv.zip + ")" : "";
-      L.push("Where: " + joinAnd(wh) + near + (inv.locMust === "must" ? ". Location is a must." : ". I'm flexible on location."));
+      const near = (inv.where.includes("near") || inv.where.includes("state")) && inv.zip ? (g ? " (we're near " : " (I'm near ") + inv.zip + ")" : "";
+      L.push("Where: " + joinAnd(wh) + near + (inv.locMust === "must" ? ". Location is a must." : g ? ". We're flexible on location." : ". I'm flexible on location."));
     }
-    const tm = pick(TIME, inv.time).q; if (tm) L.push("Time I can give: " + tm);
+    const tm = pick(TIME, inv.time).q; if (tm) L.push((g ? "Time we can give: " : "Time I can give: ") + tm);
     const szs = inv.size.map((id) => pick(SIZE, id).q).filter(Boolean);
     const sz = szs.length <= 1 ? (szs[0] || "") : szs.slice(0, -1).join(", ") + " or " + szs[szs.length - 1], ap = pick(APPROACH, inv.approach).q;
     if (sz || ap) L.push("Kind of organization: " + [sz ? sz : "", ap ? "focused on " + ap : ""].filter(Boolean).join(", "));
-    if (inv.tax === "yes") L.push("Tax-deductible giving matters to me, so please list registered 501(c)(3) public charities.");
-    if (inv.faith === "preferred") L.push("I prefer faith-based organizations.");
-    if (inv.faith === "secular") L.push("I'd prefer organizations that are not faith-based.");
+    if (inv.tax === "yes") L.push("Tax-deductible giving matters to " + me + ", so please list registered 501(c)(3) public charities.");
+    if (inv.faith === "preferred") L.push(g ? "We prefer faith-based organizations." : "I prefer faith-based organizations.");
+    if (inv.faith === "secular") L.push(g ? "We'd prefer organizations that are not faith-based." : "I'd prefer organizations that are not faith-based.");
     if (inv.note) L.push("Anything else: " + inv.note);
     L.push("");
     L.push("Please list 8 to 12 organizations. For each one, give:");
     L.push("1. Name, website, and city/state");
-    L.push("2. EIN (IRS employer identification number), if you can find it, so I can verify it");
+    L.push("2. EIN (IRS employer identification number), if you can find it, so " + I_ + " can verify it");
     L.push("3. One sentence on what they do");
-    L.push("4. How I could get involved in the ways I listed above, with a link to their volunteer, events, or donate page if there is one");
-    L.push("5. Why it fits my Giving Statement and causes");
-    if (inv.how.includes("ownproj")) L.push("", "Because I'd like to lead my own project, also suggest 2 or 3 project ideas I could run myself, and which of the organizations could partner with me on them.");
-    L.push("", "Only include organizations you can confirm are real and currently active. If you aren't sure an organization fits, leave it out. If my filters leave very few options, tell me which preference to loosen.");
+    L.push(g ? "4. How our group could get involved together in the ways we listed above (for example group volunteer days, team projects or a shared fundraiser), with a link to their volunteer, events, or donate page if there is one"
+             : "4. How I could get involved in the ways I listed above, with a link to their volunteer, events, or donate page if there is one");
+    L.push("5. Why it fits " + my + " Giving Statement and causes");
+    if (g) L.push("", "Favor organizations that welcome groups" + (G.size ? " of our size" : "") + ", and note any that can't host a group.");
+    if (inv.how.includes("ownproj")) L.push("", g ? "Because we'd like to lead our own project, also suggest 2 or 3 project ideas our group could run ourselves, and which of the organizations could partner with us on them."
+                                                  : "Because I'd like to lead my own project, also suggest 2 or 3 project ideas I could run myself, and which of the organizations could partner with me on them.");
+    L.push("", "Only include organizations you can confirm are real and currently active. If you aren't sure an organization fits, leave it out. If " + my + " filters leave very few options, tell " + me + " which preference to loosen.");
     return L.join("\n");
   }
   function summaryRows() {
     const rows = [];
-    if (st.causes.length) rows.push(["Causes", st.causes.map((c) => label(CAUSES, c)).join(", ")]);
-    if (st.strengths.length) rows.push(["Strengths", st.strengths.map((s) => label(STRENGTHS, s)).join(", ")]);
-    if (inv.how.length) rows.push(["Get involved", inv.how.map((id) => pick(HOW, id).t + (inv.stars.includes(id) ? " ★" : "")).join(", ")]);
-    if (inv.with.length) rows.push(["With", inv.with.map((id) => pick(WITH, id).t).join(", ")]);
-    if (inv.where.length) rows.push(["Where", inv.where.map((id) => id === "place" ? (inv.place || pick(WHERE, id).t) : pick(WHERE, id).t).join(", ")]);
+    if (st.group) {
+      const kind = (GTYPES.find((t) => t[0] === G.type) || [])[1], size = (GSIZES.find((t) => t[0] === G.size) || [])[1];
+      const g = [G.name, kind, size ? "about " + size : ""].filter(Boolean).join(" · ");
+      if (g) rows.push(["Group", g]);
+      if (C().length) rows.push(["Focus causes", C().map((c) => withCount("causes", CAUSES, c)).join(", ")]);
+      const others = byCount(G.causes).map((x) => x.id).filter((id) => !C().includes(id));
+      if (others.length) rows.push(["Our causes", others.map((id) => withCount("causes", CAUSES, id)).join(", ")]);
+      if (G.strengths.length) rows.push(["Our strengths", gStrengthIds().map((id) => withCount("strengths", STRENGTHS, id)).join(", ")]);
+    } else {
+      if (st.causes.length) rows.push(["Causes", st.causes.map((c) => label(CAUSES, c)).join(", ")]);
+      if (st.strengths.length) rows.push(["Strengths", st.strengths.map((s) => label(STRENGTHS, s)).join(", ")]);
+    }
+    if (inv.how.length) rows.push(["Get involved", inv.how.map((id) => T(pick(HOW, id)) + (inv.stars.includes(id) ? " ★" : "")).join(", ")]);
+    if (!st.group && inv.with.length) rows.push(["With", inv.with.map((id) => pick(WITH, id).t).join(", ")]);
+    if (st.group && G.ages.length) rows.push(["Ages", G.ages.map((k) => (GAGES.find((a) => a[0] === k) || [, k])[1]).join(", ")]);
+    if (inv.where.length) rows.push(["Where", inv.where.map((id) => id === "place" ? (inv.place || T(pick(WHERE, id))) : T(pick(WHERE, id))).join(", ")]);
     if (inv.time && pick(TIME, inv.time).q) rows.push(["Time", pick(TIME, inv.time).t]);
     if (inv.size.length) rows.push(["Size", inv.size.map((id) => pick(SIZE, id).t).join(", ")]);
     return rows;
@@ -1188,12 +1440,12 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
   const WEB_WORD = { money: "donate", inperson: "volunteer", home: "virtual volunteer", skills: "skills-based volunteer", fundraise: "fundraiser", items: "donation drop off", event: "events", share: "ambassador", mentor: "mentor", board: "board member", ownproj: "volunteer project", groupproj: "group volunteer" };
   function webQueries() {
     const top = inv.stars[0] || inv.how[0];
-    const verb = WEB_WORD[top] || "volunteer";
+    const verb = st.group && !top ? "group volunteer" : WEB_WORD[top] || "volunteer";
     let where = "";
     if ((inv.where.includes("near") || inv.where.includes("state")) && inv.zip) where = " near " + inv.zip;
     else if (inv.where.includes("place") && inv.place) where = " " + inv.place;
     else if (inv.where.includes("world") && !inv.where.includes("us")) where = " international";
-    return st.causes.map((c) => {
+    return C().map((c) => {
       const t = CAUSE_TERMS[c].split(", ").slice(0, 2).join(" OR ");
       return { label: label(CAUSES, c), q: t + " nonprofit " + verb + where };
     });
@@ -1210,7 +1462,7 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     const wl = $("web-links"); wl.innerHTML = "";
     webQueries().forEach((w) => { const a = document.createElement("a"); a.target = "_blank"; a.rel = "noopener"; a.href = "https://www.google.com/search?q=" + encodeURIComponent(w.q); a.textContent = "Google: " + w.label; a.title = w.q; wl.appendChild(a); });
     renderSummary(); promptNote("");
-    $("first").value = wb.person.first || ""; $("last").value = wb.person.last || ""; $("email").value = wb.person.email || ""; $("group").value = wb.person.groupName || "";
+    $("first").value = wb.person.first || ""; $("last").value = wb.person.last || ""; $("email").value = wb.person.email || ""; $("group").value = G.name || "";
     go("out");
   }
   $("copy-prompt").onclick = async () => {
@@ -1241,22 +1493,23 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show($("err4"), "Enter an email address like name@example.com."); return; }
     if (!$("age").checked) { $("age-wrap").classList.add("need"); show($("err4"), "Please confirm you're 13 or older to get a copy by email. Your statement and answers stay saved in this browser either way."); return; }
     show($("err4"), "");
-    wb.person.first = $("first").value.trim() || wb.person.first || ""; wb.person.last = $("last").value.trim(); wb.person.email = email; wb.person.groupName = $("group").value.trim();
+    wb.person.first = $("first").value.trim() || wb.person.first || ""; wb.person.last = $("last").value.trim(); wb.person.email = email;
+    if (st.group) { G.name = $("group").value.trim(); wb.person.groupName = G.name; }
     save(wb);
     const btn = $("send"); btn.disabled = true; btn.textContent = "Sending…";
     let res = null;
     try {
       const r = await fetch(API + "/mission", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, first: wb.person.first, last: wb.person.last, groupName: wb.person.groupName, isGroup: st.group, showName: nameOK(),
-          ...wb.statements, causes: st.causes, strengths: st.strengths, subscribe: !MINOR && $("subscribe").checked, age13: true, policy: "beta-1.0",
+        body: JSON.stringify({ email, first: wb.person.first, last: wb.person.last, groupName: st.group ? G.name : "", isGroup: st.group, showName: nameOK(),
+          ...SM(), causes: C(), strengths: S(), group: groupPayload(), subscribe: !MINOR && $("subscribe").checked, age13: true, policy: "beta-1.0",
           responseId: wb.fingerprint.response_id || "", involvement: inv, summary: summaryRows(), searchPrompt: promptText, webSearches: webQueries() }),
       });
       res = await r.json().catch(() => null);
       if (!r.ok) res = null;
     } catch {}
-    btn.disabled = false; btn.textContent = "Email my updated report";
-    if (res && res.emailed) done(true, ["We emailed your updated Social Fingerprint report to " + email + ". If you don't see it in a few minutes, check your spam or promotions folder.", "Your statement, answers, and search prompt are also saved in this browser."]);
+    btn.disabled = false; btn.textContent = sendLabel();
+    if (res && res.emailed) { if (st.group) track("mission_group_report", { method: "email" }); done(true, [st.group ? "We emailed your Group Social Fingerprint report to " + email + ". Forward it to your group! If you don't see it in a few minutes, check your spam or promotions folder." : "We emailed your updated Social Fingerprint report to " + email + ". If you don't see it in a few minutes, check your spam or promotions folder.", "Your statement, answers, and search prompt are also saved in this browser."]); }
     else if (res && res.ok && res.email_status === "limited") done(false, ["Your statement and answers were saved. We've already sent several reports to this email address today, so we held this one to protect your inbox. Try again tomorrow.", "Your statement and answers are also saved in this browser."]);
     else if (res && res.ok) done(false, ["Your statement and answers were saved, but the email couldn't be sent right now. Try again in a few minutes, or reply to any Gateway for Good email and we'll help.", "Your statement and answers are also saved in this browser."]);
     else done(false, ["We couldn't reach Gateway for Good just now, so nothing was sent.", "Your statement and answers are still saved in this browser. Try again in a minute."]);
@@ -1274,18 +1527,19 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     try {
       const r = await fetch(API + "/mission/report", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: $("email").value.trim() || wb.person.email || "", first, last: $("last").value.trim(), groupName: $("group").value.trim(), isGroup: st.group, showName: nameOK(),
-          ...wb.statements, causes: st.causes, strengths: st.strengths, responseId: wb.fingerprint.response_id || "",
+        body: JSON.stringify({ email: $("email").value.trim() || wb.person.email || "", first, last: $("last").value.trim(), groupName: st.group ? ($("group").value.trim() || G.name) : "", isGroup: st.group, showName: nameOK(),
+          ...SM(), causes: C(), strengths: S(), group: groupPayload(), responseId: wb.fingerprint.response_id || "",
           answers: (wb.fingerprint && wb.fingerprint.answers) || {}, summary: summaryRows(), searchPrompt: promptText, webSearches: webQueries() }),
       });
       const d = r.ok ? await r.json().catch(() => null) : null;
       html = (d && d.html) || "";
     } catch {}
-    btn.disabled = false; btn.textContent = "Download my report (PDF)";
+    btn.disabled = false; btn.textContent = pdfLabel();
     if (!html) { if (win) try { win.close(); } catch {} show($("err4"), "We couldn't build your report just now. Try again in a minute, or email it to yourself instead."); return; }
     show($("err4"), "");
-    const how = reportPdf(html, (st.group && $("group").value.trim() ? $("group").value.trim() + "'s " : first ? first + "'s " : "My ") + "Social Fingerprint Report", win);
-    try { if (typeof window.gtag === "function") window.gtag("event", "mission_pdf", { method: how }); } catch {}
+    const gname = $("group").value.trim() || G.name;
+    const how = reportPdf(html, st.group ? (gname ? gname + " " : "Our ") + "Group Social Fingerprint Report" : (first ? first + "'s " : "My ") + "Social Fingerprint Report", win);
+    track("mission_pdf", { method: how, mode: st.group ? "group" : "individual" });
   };
 
   // ---------- Download my report (PDF) ----------
@@ -1318,6 +1572,14 @@ footer { font-size: 13px; color: var(--muted); text-align: center; }
     return "frame";
   }
 
+  // Sent with the report when "Our group" is on: the group's own entries, not anyone's personal Social Fingerprint.
+  function groupPayload() {
+    if (!st.group) return null;
+    return { name: G.name, type: G.type, size: G.size, ages: G.ages, scope: G.scope, focus: C(),
+      causes: G.causes.map((x) => ({ id: x.id, n: x.n || null })), strengths: G.strengths.map((x) => ({ id: x.id, n: x.n || null })) };
+  }
+
+  setWho(st.group, true);
   go("s1", false);
 })();
 </script>

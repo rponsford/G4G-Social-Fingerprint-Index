@@ -77,6 +77,21 @@ Edit `mission/mission.src.html`, then rebuild with `python3 givinglens/build.py 
 
 My Mission posts to the Worker's `/mission` route, which saves the statement and answers (statements table, plus the person's sfi_responses row when the browser has their Index response id) and emails their UPDATED Social Fingerprint report: Giving Statement at the top, search prompt, and the giving path moved to Analyze. Set `COMMUNITY_URL` in `mission/mission.src.html` to show the community share button.
 
+### Group mode ("Our group")
+
+The toggle at the top of My Mission switches between **Myself** and **Our group**. A link can open it already in group mode: `gatewayforgood.com/social-fingerprint-mission?mode=group` (the book's group QR code uses this). `?mode=me` forces Myself; `data-mode="group"` on the embed does the same as the link.
+
+- Group mode keeps its own notes, statement, causes, strengths and Part 2 answers in `gfg_workbook_v1` under `group`, so a person's own Social Fingerprint and Giving Statement are never overwritten.
+- Group setup: name, kind of group, size, ages. Causes and strengths are entered by hand from everyone's results: either just the focus causes (up to 3) or all the group's causes with up to 3 starred as focus (no stars = the most-picked three). Each cause and strength can carry an optional "how many of us" count.
+- Wording switches to we/our everywhere, Gigi drafts in group voice (with the group's kind, size and other causes as context, never its name), Part 2 skips "Who will you do this with?", and the search prompt is written for a group.
+- `/mission` and `/mission/report` take a `group` object and send a **Group Social Fingerprint report**: Our Giving Statement, group snapshot, focus causes and strengths with counts, the rest of the group's causes and strengths, and the giving path. Saved as `statements.tool = "mission-group"` with `group_json`; the person's `sfi_responses` row is not touched. Kajabi tags: `Tool: My Mission`, `Tool: My Mission (Group)` and the focus causes.
+- GA4 events: `mission_mode` (mode, source = link or toggle), `mission_group_report`, and `mission_pdf` now carries `mode`.
+- Later (full community report): group codes fill `group.causes` / `group.strengths` automatically in the same shape, so the report doesn't change.
+
+### Group statement QR code (MAD Guidebook)
+
+`qr/group-statement-qr.svg` (print, vector) and `qr/group-statement-qr.png` (2415 px). Link in `qr/group-statement-qr-link.txt`: `?mode=group&utm_source=mad_guidebook&utm_medium=qr_code&utm_content=group`. Error correction H, version 11, icon `icons/group-statement.svg` at 21% width (scan-tested with zbar and OpenCV down to 180 px, plus blurred, rotated and angled captures). Print at least 1.25 in (32 mm) wide with the white border.
+
 ## Download my report (PDF)
 
 Both the Social Fingerprint results screen and My Mission's last screen have a "Download my report (PDF)" button. It opens the report as its own clean page and brings up the print window, where "Save as PDF" makes the file (Mac: Save as PDF in the print dialog; iPhone/iPad: Share, then Save to Files). If pop-ups are blocked it prints from a hidden frame instead. The helper (`pdfDoc` / `reportPdf`) is copied in `sfi.js` and `mission/mission.src.html`; change both together.
