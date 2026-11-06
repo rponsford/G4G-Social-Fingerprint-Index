@@ -52,3 +52,17 @@ The Gateway for Good plan doesn't include Kajabi's Public API yet (Oct 25, 2026:
 - Weekly: Kajabi → Contacts → Import → choose the file → set the subscribe box as above → don't grant an offer.
 
 When the Public API is on: add a new User API Key's ID and secret to g4gminion1 (KAJABI_CLIENT_ID / KAJABI_CLIENT_SECRET), run a one-time backfill so everyone saved so far gets synced with ZIP codes, then remove this card and drop `kajabi_exports`.
+
+## D. Search (added Nov 5, 2026; code in `search.js`)
+
+The admin page opens with a **Search** box. It is read-only and looks across all three tools.
+
+- **Name, email, ZIP, group or organization:** part of a word is enough, any capitals. Blank shows the newest.
+- **From / To:** whole days in the viewer's time zone (the page sends it). Quick buttons: Last 7 days, Last 30 days, This month, Any date.
+- **Tool:** all, Social Fingerprint, My Mission and giving statements, or Charity Analyzer.
+- **Include unfinished and bot-flagged:** off by default, so results match the clean downloads.
+- **Download as spreadsheet (CSV):** the same results, one row per record, with every Social Fingerprint answer in its own column. Saved with a BOM so Numbers and Excel on a Mac show it correctly.
+- Click a name for the **person page**: every Social Fingerprint run, My Mission or statement, and Charity Analyzer record with that email, answers in plain words (labels come from the live `content.json`).
+- Searches are POSTs, so names and emails never appear in addresses or browser history. Up to 500 newest per tool per search.
+
+**Access:** since Nov 5, 2026 everyone who signs in with an @gatewayforgood.com email gets full access (names, emails, ZIP codes), plus anyone in `FULL_ACCESS_EMAILS`. To go back to list-only, add the variable `STAFF_FULL_ACCESS` = `off` to g4g-admin.
